@@ -251,11 +251,13 @@ const formatDate = (dateStr) => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  width: 100%;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 th, td {
@@ -321,27 +323,140 @@ tr:hover td {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .leaderboard {
+    gap: var(--space-md);
+  }
+
   .top-three {
     grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .top-card {
+    flex-direction: row;
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-md);
+    text-align: left;
+    align-items: center;
+  }
+
+  .top-card .medal {
+    position: static;
+    font-size: 1.25rem;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .top-card .top-time {
+    margin-top: 0;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* Override TimeDisplay large size on mobile */
+  .top-card :deep(.time-display.large) {
+    font-size: 1.25rem;
+  }
+  
+  /* Handle long usernames in Top 3 */
+  .top-card :deep(.user-card) {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .top-card :deep(.user-info) {
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .top-card :deep(.username) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+
+  .top-card .top-date {
+    display: none;
   }
 
   .filter-panel {
     flex-direction: column;
     align-items: stretch;
+    gap: var(--space-sm);
   }
 
   .event-selector {
     overflow-x: auto;
     flex-wrap: nowrap;
-    padding-bottom: var(--space-sm);
+    padding-bottom: 2px; /* Prevent scrollbar overlap */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hide scrollbar for event selector */
+  .event-selector::-webkit-scrollbar {
+    display: none;
   }
 
   .event-tab {
     flex-shrink: 0;
+    padding: var(--space-sm);
+  }
+
+  .type-toggle {
+    align-self: flex-start;
+    width: 100%;
+  }
+  
+  .type-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Table optimizations */
+  .rank-table {
+    border-radius: var(--radius-md);
+  }
+
+  th, td {
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .col-rank {
+    width: 40px;
+  }
+
+  .rank-num {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8125rem;
   }
 
   .col-date {
     display: none;
+  }
+  
+  .col-time {
+    width: 90px;
+    text-align: right;
+    padding-right: var(--space-md);
+  }
+
+  .col-player :deep(.user-card) {
+    max-width: 100%;
+  }
+
+  .col-player :deep(.user-info) {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .col-player :deep(.username) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
   }
 }
 </style>
