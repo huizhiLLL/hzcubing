@@ -8,9 +8,8 @@
           :key="event.id"
           class="event-tab"
           :class="{ active: currentEvent === event.id }"
-          @click="currentEvent = event.id"
+          @click="selectEvent(event.id)"
         >
-          <span class="cubing-icon" :class="'event-' + getEventIconId(event.id)"></span>
           <span class="event-name">{{ event.name }}</span>
         </button>
       </div>
@@ -33,30 +32,38 @@
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-state">
+      <span class="loading-icon">⏳</span>
+      <p>加载中...</p>
+    </div>
+
     <!-- Top 3 卡片 -->
-    <div v-if="topThree.length > 0" class="top-three">
+    <div v-else-if="topThree.length > 0" class="top-three">
       <div
         v-for="(player, index) in topThree"
-        :key="player.rank"
+        :key="player._id || index"
         class="top-card"
-        :class="['rank-' + player.rank, 'medal-' + index]"
+        :class="['rank-' + (index + 1)]"
       >
         <div class="medal">{{ medals[index] }}</div>
-        <UserCard
-          :user-id="player.userId"
-          :username="player.username"
-          :nickname="player.nickname"
-          :avatar-url="player.avatar"
-        />
+        <router-link :to="`/user/${player.userId}`" class="user-link">
+          {{ player.nickname }}
+        </router-link>
         <div class="top-time">
-          <TimeDisplay :time="player.time" :large="true" />
+          {{ formatTime(getTimeValue(player)) }}
         </div>
-        <span class="top-date">{{ formatDate(player.date) }}</span>
+        <span class="top-date">{{ formatDate(player.timestamp) }}</span>
       </div>
     </div>
 
     <!-- 排名表格 -->
-    <div class="rank-table">
+    <div v-else-if="sortedRecords.length === 0" class="empty-state">
+      <span class="empty-icon">📊</span>
+      <p>暂无{{ currentEventName }}数据</p>
+    </div>
+
+    <div v-else class="rank-table">
       <table>
         <thead>
           <tr>
@@ -67,66 +74,113 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="player in restPlayers" :key="player.rank">
+          <tr v-for="(player, index) in sortedRecords" :key="player._id || index">
             <td class="col-rank">
-              <span class="rank-num">{{ player.rank }}</span>
+              <span class="rank-num">{{ index + 1 }}</span>
             </td>
             <td class="col-player">
-              <UserCard
-                :user-id="player.userId"
-                :username="player.username"
-                :nickname="player.nickname"
-                :avatar-url="player.avatar"
-              />
+              <router-link :to="`/user/${player.userId}`" class="player-link">
+                {{ player.nickname }}
+              </router-link>
             </td>
             <td class="col-time">
-              <TimeDisplay :time="player.time" />
+              {{ formatTime(getTimeValue(player)) }}
             </td>
-            <td class="col-date">{{ formatDate(player.date) }}</td>
+            <td class="col-date">{{ formatDate(player.timestamp) }}</td>
           </tr>
         </tbody>
       </table>
-
-      <!-- 空状态 -->
-      <div v-if="allPlayers.length === 0" class="empty-state">
-        <span class="empty-icon">📊</span>
-        <p>暂无数据</p>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import UserCard from '../components/common/UserCard.vue'
-import TimeDisplay from '../components/common/TimeDisplay.vue'
-import { events, getEventIconId } from '../config/events'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useRecordsStore } from '../stores/records'
+import { events } from '../config/events'
+
+const route = useRoute()
+const recordsStore = useRecordsStore()
 
 const currentEvent = ref('3x3')
 const type = ref('single')
+const loading = ref(false)
 const medals = ['🥇', '🥈', '🥉']
 
-// 模拟数据
-const allPlayers = ref([
-  { rank: 1, userId: 1, username: 'speedcuber', nickname: '小明', time: 6.54, date: '2024-01-15', avatar: '' },
-  { rank: 2, userId: 2, username: 'cubemaster', nickname: '大神', time: 7.12, date: '2024-01-14', avatar: '' },
-  { rank: 3, userId: 3, username: 'onehand', nickname: '单手王', time: 7.45, date: '2024-01-13', avatar: '' },
-  { rank: 4, userId: 4, username: 'pocket', nickname: '小口袋', time: 8.23, date: '2024-01-12', avatar: '' },
-  { rank: 5, userId: 5, username: 'blind', nickname: '盲拧侠', time: 8.56, date: '2024-01-11', avatar: '' },
-  { rank: 6, userId: 6, username: 'fast', nickname: '快手', time: 9.01, date: '2024-01-10', avatar: '' },
-  { rank: 7, userId: 7, username: 'cube', nickname: '魔方少年', time: 9.34, date: '2024-01-09', avatar: '' },
-  { rank: 8, userId: 8, username: 'twisty', nickname: '扭转者', time: 9.67, date: '2024-01-08', avatar: '' },
-  { rank: 9, userId: 9, username: 'speeder', nickname: '极速者', time: 10.12, date: '2024-01-07', avatar: '' },
-  { rank: 10, userId: 10, username: 'solver', nickname: '解法大师', time: 10.45, date: '2024-01-06', avatar: '' }
-])
+const currentEventName = computed(() => {
+  const event = events.find(e => e.id === currentEvent.value)
+  return event?.name || currentEvent.value
+})
 
-const topThree = computed(() => allPlayers.value.slice(0, 3))
-const restPlayers = computed(() => allPlayers.value.slice(3))
+// Get all records for current event
+const eventRecords = computed(() => {
+  return recordsStore.records.filter(r => {
+    // Map event IDs (e.g., '3x3' -> '333')
+    const eventMapping = {
+      '3x3': '333', '2x2': '222', '4x4': '444', '5x5': '555',
+      '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm',
+      'Pyraminx': 'py', 'Megaminx': 'meg', 'Skewb': 'sk',
+      'Clock': 'clock', 'Sq1': 'sq1'
+    }
+    const mappedEvent = eventMapping[currentEvent.value] || currentEvent.value
+    return r.event === mappedEvent
+  })
+})
 
-const formatDate = (dateStr) => {
+// Sort records based on type
+const sortedRecords = computed(() => {
+  const timeField = type.value === 'single' ? 'singleSeconds' : 'averageSeconds'
+  
+  return [...eventRecords.value]
+    .filter(r => r[timeField] !== null && r[timeField] !== undefined)
+    .sort((a, b) => a[timeField] - b[timeField])
+    .slice(0, 50) // Limit to top 50
+})
+
+const topThree = computed(() => sortedRecords.value.slice(0, 3))
+
+function getTimeValue(player) {
+  return type.value === 'single' ? player.singleSeconds : player.averageSeconds
+}
+
+function formatTime(seconds) {
+  return recordsStore.formatTime(seconds) || '--'
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
   const date = new Date(dateStr)
   return `${date.getMonth() + 1}/${date.getDate()}`
 }
+
+function selectEvent(eventId) {
+  currentEvent.value = eventId
+  // Update URL
+  route.query.event = eventId
+}
+
+watch(() => route.query.event, (newEvent) => {
+  if (newEvent && events.find(e => e.id === newEvent)) {
+    currentEvent.value = newEvent
+  }
+})
+
+onMounted(async () => {
+  // Check URL for event parameter
+  if (route.query.event && events.find(e => e.id === route.query.event)) {
+    currentEvent.value = route.query.event
+  }
+
+  loading.value = true
+  try {
+    await recordsStore.fetchRecords({ pageSize: 500 })
+  } catch (err) {
+    console.error('Failed to load records:', err)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -194,6 +248,21 @@ const formatDate = (dateStr) => {
   color: var(--color-bg);
 }
 
+/* Loading & Empty States */
+.loading-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+  color: var(--color-text-tertiary);
+}
+
+.loading-icon, .empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-md);
+}
+
 /* Top Three */
 .top-three {
   display: grid;
@@ -236,8 +305,21 @@ const formatDate = (dateStr) => {
   font-size: 1.5rem;
 }
 
+.user-link {
+  font-weight: 600;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.user-link:hover {
+  color: var(--color-primary);
+}
+
 .top-time {
   margin-top: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .top-date {
@@ -306,27 +388,18 @@ tr:hover td {
   font-size: 0.9375rem;
 }
 
-/* Empty State */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2xl);
-  color: var(--color-text-tertiary);
+.player-link {
+  color: var(--color-text);
+  text-decoration: none;
+  font-weight: 500;
 }
 
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: var(--space-md);
+.player-link:hover {
+  color: var(--color-primary);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .leaderboard {
-    gap: var(--space-md);
-  }
-
   .top-three {
     grid-template-columns: 1fr;
     gap: var(--space-sm);
@@ -352,29 +425,7 @@ tr:hover td {
     margin-top: 0;
     margin-left: auto;
     flex-shrink: 0;
-  }
-
-  /* Override TimeDisplay large size on mobile */
-  .top-card :deep(.time-display.large) {
     font-size: 1.25rem;
-  }
-  
-  /* Handle long usernames in Top 3 */
-  .top-card :deep(.user-card) {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .top-card :deep(.user-info) {
-    min-width: 0;
-    overflow: hidden;
-  }
-  
-  .top-card :deep(.username) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
   }
 
   .top-card .top-date {
@@ -390,11 +441,10 @@ tr:hover td {
   .event-selector {
     overflow-x: auto;
     flex-wrap: nowrap;
-    padding-bottom: 2px; /* Prevent scrollbar overlap */
+    padding-bottom: 2px;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Hide scrollbar for event selector */
   .event-selector::-webkit-scrollbar {
     display: none;
   }
@@ -414,7 +464,6 @@ tr:hover td {
     text-align: center;
   }
 
-  /* Table optimizations */
   .rank-table {
     border-radius: var(--radius-md);
   }
@@ -441,22 +490,6 @@ tr:hover td {
     width: 90px;
     text-align: right;
     padding-right: var(--space-md);
-  }
-
-  .col-player :deep(.user-card) {
-    max-width: 100%;
-  }
-
-  .col-player :deep(.user-info) {
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .col-player :deep(.username) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
   }
 }
 </style>

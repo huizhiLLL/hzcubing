@@ -12,7 +12,7 @@
         <select v-model="form.event" class="form-select" required>
           <option value="" disabled>请选择项目</option>
           <option v-for="event in events" :key="event.id" :value="event.id">
-            {{ event.icon }} {{ event.name }}
+            {{ event.name }}
           </option>
         </select>
       </div>
@@ -65,9 +65,14 @@
       </div>
 
       <!-- 预览 -->
-      <div v-if="previewTime" class="preview-section">
+      <div v-if="previewTime !== null" class="preview-section">
         <span class="preview-label">成绩预览：</span>
-        <TimeDisplay :time="previewTime" :large="true" />
+        <span class="preview-value">{{ formatPreview(previewTime) }}</span>
+      </div>
+
+      <!-- 错误提示 -->
+      <div v-if="submitError" class="error-message">
+        {{ submitError }}
       </div>
 
       <!-- 提交按钮 -->
@@ -86,10 +91,13 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import TimeDisplay from '../components/common/TimeDisplay.vue'
+import { useUserStore } from '../stores/user'
+import { useRecordsStore } from '../stores/records'
 import { events } from '../config/events'
 
 const router = useRouter()
+const userStore = useUserStore()
+const recordsStore = useRecordsStore()
 
 const form = ref({
   event: '',
@@ -101,22 +109,31 @@ const form = ref({
 })
 
 const timeError = ref('')
+const submitError = ref('')
 const isSubmitting = ref(false)
 const submitSuccess = ref(false)
 
-// 解析时间输入
+// Event mapping (frontend ID -> backend event code)
+const eventMapping = {
+  '3x3': '333', '2x2': '222', '4x4': '444', '5x5': '555',
+  '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm',
+  'Pyraminx': 'py', 'Megaminx': 'meg', 'Skewb': 'sk',
+  'Clock': 'clock', 'Sq1': 'sq1'
+}
+
+// Parse time input
 const parseTime = (input) => {
   if (!input) return null
 
-  // 处理 DNF/DNS
-  if (input.toUpperCase() === 'DNF') return -1
-  if (input.toUpperCase() === 'DNS') return -2
+  // Handle DNF/DNS
+  if (input.toUpperCase() === 'DNF') return null
+  if (input.toUpperCase() === 'DNS') return null
 
-  // 尝试解析数字格式
+  // Try parsing as number
   const num = parseFloat(input)
-  if (!isNaN(num)) return num
+  if (!isNaN(num) && num > 0) return num
 
-  // 尝试解析分秒格式 (m:ss.xx 或 m:ss)
+  // Try parsing m:ss.xx or m:ss format
   const parts = input.split(':')
   if (parts.length === 2) {
     const mins = parseInt(parts[0], 10)
@@ -129,16 +146,23 @@ const parseTime = (input) => {
   return null
 }
 
-// 预览时间
+// Preview time
 const previewTime = computed(() => {
   if (form.value.isDNF) return 'DNF'
   if (form.value.isDNS) return 'DNS'
   return parseTime(form.value.time)
 })
 
+function formatPreview(time) {
+  if (typeof time === 'string') return time
+  if (typeof time === 'number') return recordsStore.formatTime(time)
+  return '--'
+}
+
 const handleTimeInput = () => {
   timeError.value = ''
-  // 自动清除 DNF/DNS 状态如果用户开始输入数字
+  submitError.value = ''
+  // Clear DNF/DNS if user starts typing numbers
   if (form.value.isDNF || form.value.isDNS) {
     if (/^\d/.test(form.value.time) || /^\d/.test(form.value.time.replace(/:/, ''))) {
       form.value.isDNF = false
@@ -191,7 +215,10 @@ const toggleDNS = () => {
 }
 
 const handleSubmit = async () => {
-  // 验证
+  submitError.value = ''
+  timeError.value = ''
+
+  // Validate
   if (!form.value.event) {
     alert('请选择项目')
     return
@@ -205,29 +232,53 @@ const handleSubmit = async () => {
   validateTime()
   if (timeError.value) return
 
-  isSubmitting.value = true
-
-  // 模拟提交
-  await new Promise(resolve => setTimeout(resolve, 1000))
-
-  isSubmitting.value = false
-  submitSuccess.value = true
-
-  // 重置表单
-  form.value = {
-    event: '',
-    time: '',
-    isDNF: false,
-    isDNS: false,
-    cube: '',
-    method: ''
+  // Check if user is logged in
+  if (!userStore.isLoggedIn) {
+    submitError.value = '请先登录后再提交成绩'
+    return
   }
 
-  // 提示后跳转
-  setTimeout(() => {
-    submitSuccess.value = false
-    router.push('/')
-  }, 1500)
+  isSubmitting.value = true
+
+  try {
+    // Map event ID to backend code
+    const backendEvent = eventMapping[form.value.event] || form.value.event
+    
+    // Parse time to seconds
+    const timeSeconds = parseTime(form.value.time)
+
+    const recordData = {
+      event: backendEvent,
+      singleSeconds: timeSeconds,
+      cube: form.value.cube || null,
+      method: form.value.method || null
+    }
+
+    await recordsStore.createRecord(recordData)
+
+    submitSuccess.value = true
+
+    // Reset form
+    form.value = {
+      event: '',
+      time: '',
+      isDNF: false,
+      isDNS: false,
+      cube: '',
+      method: ''
+    }
+
+    // Redirect after success
+    setTimeout(() => {
+      submitSuccess.value = false
+      router.push('/record-history')
+    }, 1500)
+  } catch (err) {
+    console.error('Submit error:', err)
+    submitError.value = err.message || '提交失败，请重试'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -367,6 +418,31 @@ const handleSubmit = async () => {
   color: var(--color-text-secondary);
 }
 
+.preview-value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Error & Success Messages */
+.error-message {
+  padding: var(--space-md);
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  text-align: center;
+}
+
+.success-message {
+  padding: var(--space-md);
+  background: var(--color-success);
+  color: white;
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-weight: 500;
+}
+
 /* Submit Button */
 .submit-btn {
   padding: var(--space-md) var(--space-lg);
@@ -385,15 +461,6 @@ const handleSubmit = async () => {
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-.success-message {
-  padding: var(--space-md);
-  background: var(--color-success);
-  color: white;
-  border-radius: var(--radius-md);
-  text-align: center;
-  font-weight: 500;
 }
 
 @media (max-width: 768px) {

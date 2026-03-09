@@ -8,12 +8,12 @@
 
       <form class="auth-form" @submit.prevent="handleSubmit">
         <div class="form-group">
-          <label class="form-label">用户名</label>
+          <label class="form-label">邮箱</label>
           <input
-            v-model="form.username"
-            type="text"
+            v-model="form.email"
+            type="email"
             class="form-input"
-            placeholder="输入用户名"
+            placeholder="输入邮箱"
             required
           />
         </div>
@@ -25,6 +25,17 @@
             type="password"
             class="form-input"
             placeholder="输入密码"
+            required
+          />
+        </div>
+
+        <div v-if="!isLogin" class="form-group">
+          <label class="form-label">昵称</label>
+          <input
+            v-model="form.nickname"
+            type="text"
+            class="form-input"
+            placeholder="输入昵称"
             required
           />
         </div>
@@ -58,10 +69,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const isLogin = ref(true)
@@ -69,8 +81,9 @@ const isSubmitting = ref(false)
 const error = ref('')
 
 const form = ref({
-  username: '',
+  email: '',
   password: '',
+  nickname: '',
   confirmPassword: ''
 })
 
@@ -87,14 +100,30 @@ const handleSubmit = async () => {
     return
   }
 
+  if (!isLogin.value && !form.value.nickname) {
+    error.value = '请输入昵称'
+    return
+  }
+
   isSubmitting.value = true
 
   try {
-    // 模拟登录/注册
-    await userStore.login(form.value.username, form.value.password)
-    router.push('/')
+    if (isLogin.value) {
+      await userStore.login(form.value.email, form.value.password)
+    } else {
+      await userStore.register({
+        email: form.value.email,
+        password: form.value.password,
+        nickname: form.value.nickname
+      })
+    }
+    
+    // Redirect to intended page or home
+    const redirect = route.query.redirect || '/'
+    router.push(redirect)
   } catch (e) {
-    error.value = '操作失败，请重试'
+    console.error('Auth error:', e)
+    error.value = e.message || '操作失败，请重试'
   } finally {
     isSubmitting.value = false
   }

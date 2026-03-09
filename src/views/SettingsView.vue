@@ -6,21 +6,19 @@
     </div>
 
     <div class="settings-sections">
-      <!-- 基本信息 -->
+      <!-- Basic Info -->
       <section class="settings-section">
         <h2 class="section-title">基本信息</h2>
         <div class="settings-card">
           <div class="form-group">
-            <label class="form-label">头像</label>
-            <div class="avatar-upload">
-              <div class="avatar-preview" :style="{ background: avatarBg }">
-                <span v-if="!userStore.user?.avatar" class="avatar-text">
-                  {{ userStore.user?.username?.[0]?.toUpperCase() }}
-                </span>
-                <img v-else :src="userStore.user.avatar" alt="avatar" />
-              </div>
-              <button type="button" class="upload-btn">更换头像</button>
-            </div>
+            <label class="form-label">邮箱</label>
+            <input
+              :value="userStore.user?.email"
+              type="email"
+              class="form-input"
+              disabled
+            />
+            <span class="form-hint">邮箱不可修改</span>
           </div>
 
           <div class="form-group">
@@ -34,36 +32,37 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">用户名</label>
+            <label class="form-label">WCA ID <span class="optional">(可选)</span></label>
             <input
-              :value="userStore.user?.username"
+              v-model="form.wcaId"
               type="text"
               class="form-input"
-              disabled
+              placeholder="如：2024ZHAN01"
             />
-            <span class="form-hint">用户名不可修改</span>
           </div>
-        </div>
-      </section>
 
-      <!-- 账号绑定 -->
-      <section class="settings-section">
-        <h2 class="section-title">账号绑定</h2>
-        <div class="settings-card">
           <div class="form-group">
-            <label class="form-label">QQ 号</label>
-            <input
-              v-model="form.qq"
-              type="text"
-              class="form-input"
-              placeholder="输入 QQ 号"
-            />
-            <span class="form-hint">用于 Bot 端群内成绩播报和查询</span>
+            <label class="form-label">个人简介 <span class="optional">(可选)</span></label>
+            <textarea
+              v-model="form.bio"
+              class="form-textarea"
+              placeholder="介绍一下自己..."
+              rows="3"
+            ></textarea>
           </div>
         </div>
       </section>
 
-      <!-- 提交按钮 -->
+      <!-- Error & Success Messages -->
+      <div v-if="error" class="error-message">
+        {{ error }}
+      </div>
+
+      <div v-if="success" class="success-message">
+        保存成功！
+      </div>
+
+      <!-- Submit Button -->
       <div class="settings-actions">
         <button class="save-btn" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? '保存中...' : '保存修改' }}
@@ -74,27 +73,51 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '../stores/user'
 
 const userStore = useUserStore()
 
 const isSaving = ref(false)
+const error = ref('')
+const success = ref(false)
 
-// 固定背景色
-const avatarBg = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+const form = reactive({
+  nickname: '',
+  wcaId: '',
+  bio: ''
+})
 
-const form = ref({
-  nickname: userStore.user?.nickname || '',
-  qq: userStore.user?.qq || ''
+onMounted(() => {
+  if (userStore.user) {
+    form.nickname = userStore.user.nickname || ''
+    form.wcaId = userStore.user.wcaId || ''
+    form.bio = userStore.user.bio || ''
+  }
 })
 
 const handleSave = async () => {
+  error.value = ''
+  success.value = false
   isSaving.value = true
-  // 模拟保存
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  isSaving.value = false
-  alert('保存成功')
+
+  try {
+    await userStore.updateProfile({
+      nickname: form.nickname,
+      wcaId: form.wcaId,
+      bio: form.bio
+    })
+    success.value = true
+    
+    setTimeout(() => {
+      success.value = false
+    }, 3000)
+  } catch (err) {
+    console.error('Save error:', err)
+    error.value = err.message || '保存失败，请重试'
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>
 
@@ -156,16 +179,24 @@ const handleSave = async () => {
   color: var(--color-text);
 }
 
-.form-input {
+.optional {
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+
+.form-input,
+.form-textarea {
   padding: var(--space-sm) var(--space-md);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
   font-size: 1rem;
+  font-family: inherit;
 }
 
-.form-input:focus {
+.form-input:focus,
+.form-textarea:focus {
   outline: none;
   border-color: var(--color-primary);
 }
@@ -176,51 +207,32 @@ const handleSave = async () => {
   cursor: not-allowed;
 }
 
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
 .form-hint {
   color: var(--color-text-tertiary);
   font-size: 0.8125rem;
 }
 
-/* Avatar Upload */
-.avatar-upload {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-.avatar-preview {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.avatar-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-text {
-  color: white;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.upload-btn {
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
+/* Messages */
+.error-message {
+  padding: var(--space-md);
+  background: rgba(239, 68, 68, 0.1);
   border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-size: 0.875rem;
+  color: var(--color-error);
+  text-align: center;
 }
 
-.upload-btn:hover {
-  background: var(--color-border);
+.success-message {
+  padding: var(--space-md);
+  background: var(--color-success);
+  color: white;
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-weight: 500;
 }
 
 /* Actions */

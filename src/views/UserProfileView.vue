@@ -1,101 +1,113 @@
 <template>
   <div class="user-profile">
-    <!-- 用户信息头部 -->
-    <div class="profile-header">
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-state">
+      <span class="loading-icon">⏳</span>
+      <p>加载中...</p>
+    </div>
+
+    <!-- User Info Header -->
+    <div v-else-if="userData" class="profile-header">
       <div class="profile-avatar" :style="{ background: avatarBg }">
-        <img v-if="user.avatar" :src="user.avatar" :alt="user.nickname" />
-        <span v-else class="avatar-text">{{ user.nickname?.[0]?.toUpperCase() }}</span>
+        <span class="avatar-text">{{ userData.nickname?.[0]?.toUpperCase() }}</span>
       </div>
       <div class="profile-info">
-        <h1 class="profile-name">{{ user.nickname }}</h1>
-        <span class="profile-username">@{{ user.username }}</span>
-        <p v-if="user.bio" class="profile-bio">{{ user.bio }}</p>
+        <h1 class="profile-name">{{ userData.nickname }}</h1>
+        <p v-if="userData.bio" class="profile-bio">{{ userData.bio }}</p>
+        <p v-if="userData.wcaId" class="profile-wca">WCA ID: {{ userData.wcaId }}</p>
       </div>
     </div>
 
-    <!-- PB 墙 -->
-    <section class="pb-section">
+    <!-- PB Wall -->
+    <section v-if="!loading && personalBests.length > 0" class="pb-section">
       <h2 class="section-title">个人最佳 (PB)</h2>
       <div class="pb-grid">
         <div v-for="pb in personalBests" :key="pb.event" class="pb-card">
           <div class="pb-header">
-            <EventBadge :event="pb.event" show-label />
+            <span class="event-name">{{ getEventName(pb.event) }}</span>
           </div>
           <div class="pb-times">
-            <div class="pb-item">
+            <div v-if="pb.bestSingleSeconds !== null" class="pb-item">
               <span class="pb-label">单次</span>
-              <TimeDisplay :time="pb.bestSingle" />
+              <span class="pb-value">{{ formatTime(pb.bestSingleSeconds) }}</span>
             </div>
-            <div class="pb-item">
+            <div v-if="pb.bestAverageSeconds !== null" class="pb-item">
               <span class="pb-label">平均</span>
-              <TimeDisplay :time="pb.bestAverage" />
+              <span class="pb-value">{{ formatTime(pb.bestAverageSeconds) }}</span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 最近活动 -->
-    <section class="activity-section">
+    <!-- Recent Activity -->
+    <section v-if="!loading && recentRecords.length > 0" class="activity-section">
       <h2 class="section-title">最近提交</h2>
       <div class="activity-list">
-        <div v-for="record in recentRecords" :key="record.id" class="activity-item">
+        <div v-for="record in recentRecords" :key="record._id" class="activity-item">
           <div class="activity-left">
-            <EventBadge :event="record.event" />
+            <span class="event-badge">{{ getEventName(record.event) }}</span>
             <span class="activity-time">
-              <TimeDisplay :time="record.time" />
+              {{ formatTime(record.singleSeconds || record.averageSeconds) }}
             </span>
           </div>
           <div class="activity-right">
-            <span class="activity-date">{{ formatDate(record.date) }}</span>
-            <span v-if="record.isPB" class="pb-badge">PB</span>
+            <span class="activity-date">{{ formatDate(record.timestamp) }}</span>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- Empty State -->
+    <div v-if="!loading && !userData" class="empty-state">
+      <span class="empty-icon">❌</span>
+      <p>用户不存在</p>
+    </div>
+
+    <div v-if="!loading && userData && personalBests.length === 0" class="empty-state">
+      <span class="empty-icon">📊</span>
+      <p>暂无成绩记录</p>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import EventBadge from '../components/common/EventBadge.vue'
-import TimeDisplay from '../components/common/TimeDisplay.vue'
+import { useUserStore } from '../stores/user'
+import { useRecordsStore } from '../stores/records'
+import { userAPI } from '@/api'
 
 const route = useRoute()
+const userStore = useUserStore()
+const recordsStore = useRecordsStore()
 
-// 模拟用户数据
-const user = ref({
-  id: route.params.id,
-  username: 'speedcuber',
-  nickname: '小明',
-  avatar: '',
-  bio: '热爱魔方，享受每一次突破'
-})
+const loading = ref(true)
+const userData = ref(null)
+const personalBests = ref([])
+const recentRecords = ref([])
 
-// 固定背景色
+// Fixed background color
 const avatarBg = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
 
-// 模拟 PB 数据
-const personalBests = ref([
-  { event: '3x3', bestSingle: 6.54, bestAverage: 7.82 },
-  { event: '4x4', bestSingle: 28.32, bestAverage: 32.45 },
-  { event: '2x2', bestSingle: 1.89, bestAverage: 2.34 },
-  { event: '3x3OH', bestSingle: 12.45, bestAverage: 14.56 },
-  { event: '3x3BLD', bestSingle: 45.67, bestAverage: 58.23 },
-  { event: 'Pyraminx', bestSingle: 4.56, bestAverage: 5.67 }
-])
+// Event name mapping
+const eventNames = {
+  '333': '三阶', '222': '二阶', '444': '四阶', '555': '五阶',
+  '333oh': '三单', '333bf': '三盲', '333fm': '最少步',
+  'py': '金字塔', 'meg': '五魔', 'sk': '斜转',
+  'clock': '魔表', 'sq1': 'SQ1'
+}
 
-// 模拟最近记录
-const recentRecords = ref([
-  { id: 1, event: '3x3', time: 6.78, date: '2024-01-15', isPB: false },
-  { id: 2, event: '3x3', time: 6.54, date: '2024-01-15', isPB: true },
-  { id: 3, event: '4x4', time: 29.12, date: '2024-01-14', isPB: false },
-  { id: 4, event: '2x2', time: 1.95, date: '2024-01-14', isPB: false },
-  { id: 5, event: '3x3OH', time: 12.45, date: '2024-01-13', isPB: true }
-])
+function getEventName(eventCode) {
+  return eventNames[eventCode] || eventCode
+}
 
-const formatDate = (dateStr) => {
+function formatTime(seconds) {
+  return recordsStore.formatTime(seconds) || '--'
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
   const date = new Date(dateStr)
   const now = new Date()
   const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
@@ -105,6 +117,32 @@ const formatDate = (dateStr) => {
   if (diffDays < 7) return `${diffDays}天前`
   return `${date.getMonth() + 1}/${date.getDate()}`
 }
+
+onMounted(async () => {
+  loading.value = true
+  const userId = route.params.id
+
+  try {
+    // Fetch user data
+    const userResult = await userAPI.getById(userId)
+    if (userResult.code === 200 && userResult.data) {
+      userData.value = userResult.data
+    }
+
+    // Fetch user's best records
+    const bestResult = await recordsStore.fetchUserBest(userId)
+    personalBests.value = bestResult || []
+
+    // Fetch recent records
+    const historyResult = await recordsStore.fetchUserHistory(userId, { pageSize: 10 })
+    recentRecords.value = historyResult.data || []
+  } catch (err) {
+    console.error('Failed to load user profile:', err)
+    userData.value = null
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -112,6 +150,21 @@ const formatDate = (dateStr) => {
   display: flex;
   flex-direction: column;
   gap: var(--space-2xl);
+}
+
+/* Loading & Empty States */
+.loading-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+  color: var(--color-text-tertiary);
+}
+
+.loading-icon, .empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-md);
 }
 
 /* Profile Header */
@@ -136,12 +189,6 @@ const formatDate = (dateStr) => {
   overflow: hidden;
 }
 
-.profile-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .avatar-text {
   color: white;
   font-size: 2.5rem;
@@ -158,15 +205,16 @@ const formatDate = (dateStr) => {
   margin-bottom: var(--space-xs);
 }
 
-.profile-username {
-  color: var(--color-text-tertiary);
-  font-size: 1rem;
-}
-
 .profile-bio {
   margin-top: var(--space-md);
   color: var(--color-text-secondary);
   line-height: 1.6;
+}
+
+.profile-wca {
+  margin-top: var(--space-sm);
+  color: var(--color-text-tertiary);
+  font-size: 0.875rem;
 }
 
 /* Section */
@@ -199,6 +247,11 @@ const formatDate = (dateStr) => {
   margin-bottom: var(--space-md);
 }
 
+.event-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
 .pb-times {
   display: flex;
   flex-direction: column;
@@ -214,6 +267,12 @@ const formatDate = (dateStr) => {
 .pb-label {
   color: var(--color-text-tertiary);
   font-size: 0.875rem;
+}
+
+.pb-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 /* Activity List */
@@ -239,9 +298,18 @@ const formatDate = (dateStr) => {
   gap: var(--space-md);
 }
 
+.event-badge {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .activity-time {
   font-weight: 600;
   font-size: 1.125rem;
+  font-family: var(--font-mono);
 }
 
 .activity-right {
@@ -255,20 +323,15 @@ const formatDate = (dateStr) => {
   font-size: 0.875rem;
 }
 
-.pb-badge {
-  padding: 2px 8px;
-  background: var(--color-success);
-  color: white;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
 @media (max-width: 768px) {
   .profile-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
+  }
+
+  .pb-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

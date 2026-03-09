@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const routes = [
   {
@@ -14,7 +15,8 @@ const routes = [
   {
     path: '/record-history',
     name: 'RecordHistory',
-    component: () => import('../views/RecordHistoryView.vue')
+    component: () => import('../views/RecordHistoryView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/user/:id',
@@ -43,6 +45,18 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// Navigation guard for auth routes
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  
+  if (to.meta.requiresAuth && !userStore.isLoggedIn) {
+    // Redirect to auth page, but save the intended destination
+    next({ name: 'Auth', query: { redirect: to.fullPath } })
+  } else {
+    next()
+  }
 })
 
 export default router

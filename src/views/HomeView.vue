@@ -4,14 +4,13 @@
     <section class="hero">
       <div class="hero-content">
         <h1 class="hero-title">
-          我来到,
+          我来到，
           我看见<br />
           <span class="highlight">我记录</span>
           <span class="hero-subtitle">Veni, Vidi, Vici</span>
         </h1>
         <p class="hero-desc">
           "知识即为力量，记录即是见证"<br />
-
         </p>
         <div class="hero-actions">
           <router-link to="/leaderboard" class="btn btn-primary">
@@ -27,17 +26,17 @@
     <!-- Stats Bar -->
     <section class="stats-bar">
       <div class="stat-item">
-        <span class="stat-value">12,847</span>
+        <span class="stat-value">{{ stats.totalRecords || '0' }}</span>
         <span class="stat-label">总成绩数</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-item">
-        <span class="stat-value">1,234</span>
+        <span class="stat-value">{{ stats.totalUsers || '0' }}</span>
         <span class="stat-label">活跃用户</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-item">
-        <span class="stat-value">847</span>
+        <span class="stat-value">{{ stats.recordBreaks || '0' }}</span>
         <span class="stat-label">纪录打破</span>
       </div>
     </section>
@@ -52,7 +51,6 @@
           :to="`/leaderboard?event=${event.id}`"
           class="event-card"
         >
-          <span class="cubing-icon" :class="'event-' + getEventIconId(event.id)"></span>
           <span class="event-name">{{ event.name }}</span>
         </router-link>
       </div>
@@ -61,16 +59,20 @@
     <!-- Recent Records -->
     <section class="recent-section">
       <h2 class="section-title">最新破纪录</h2>
-      <div class="records-list">
-        <div v-for="record in recentRecords" :key="record.id" class="record-item">
-          <UserCard :user-id="record.userId" :username="record.username" :nickname="record.nickname" />
+      <div v-if="loading" class="loading">加载中...</div>
+      <div v-else-if="recentBreaks.length === 0" class="empty">暂无破纪录数据</div>
+      <div v-else class="records-list">
+        <div v-for="record in recentBreaks" :key="record._id" class="record-item">
+          <router-link :to="`/user/${record.userId}`" class="user-link">
+            {{ record.nickname }}
+          </router-link>
           <div class="record-info">
-            <EventBadge :event="record.event" />
+            <span class="event-badge">{{ record.event }}</span>
             <span class="record-time">
-              <TimeDisplay :time="record.time" />
+              {{ formatTime(record.singleSeconds || record.averageSeconds) }}
             </span>
           </div>
-          <span class="record-date">{{ formatDate(record.date) }}</span>
+          <span class="record-date">{{ formatDate(record.timestamp) }}</span>
         </div>
       </div>
     </section>
@@ -78,22 +80,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import UserCard from '../components/common/UserCard.vue'
-import EventBadge from '../components/common/EventBadge.vue'
-import TimeDisplay from '../components/common/TimeDisplay.vue'
-import { events, getEventIconId } from '../config/events'
+import { ref, computed, onMounted } from 'vue'
+import { useRecordsStore } from '../stores/records'
+import { events } from '../config/events'
 
-// 模拟数据
-const recentRecords = ref([
-  { id: 1, event: '3x3', userId: 1, username: 'speedcuber', nickname: '小明', time: 6.54, date: '2024-01-15' },
-  { id: 2, event: '4x4', userId: 2, username: 'cubemaster', nickname: '大神', time: 28.32, date: '2024-01-14' },
-  { id: 3, event: '3x3OH', userId: 3, username: 'onehand', nickname: '单手王', time: 12.45, date: '2024-01-14' },
-  { id: 4, event: '2x2', userId: 4, username: 'pocket', nickname: '小口袋', time: 1.89, date: '2024-01-13' },
-  { id: 5, event: '3x3BLD', userId: 5, username: 'blind', nickname: '盲拧侠', time: 45.67, date: '2024-01-12' }
-])
+const recordsStore = useRecordsStore()
+const recentBreaks = ref([])
+const loading = ref(false)
 
-const formatDate = (dateStr) => {
+const stats = computed(() => ({
+  totalRecords: recordsStore.records.length,
+  totalUsers: 0, // Would need a users store
+  recordBreaks: recentBreaks.value.length
+}))
+
+function formatTime(seconds) {
+  return recordsStore.formatTime(seconds) || '--'
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
   const date = new Date(dateStr)
   const now = new Date()
   const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
@@ -101,8 +107,23 @@ const formatDate = (dateStr) => {
   if (diffDays === 0) return '今天'
   if (diffDays === 1) return '昨天'
   if (diffDays < 7) return `${diffDays}天前`
-  return dateStr
+  return dateStr.split('T')[0]
 }
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    await Promise.all([
+      recordsStore.fetchRecords({ pageSize: 100 }),
+      recordsStore.fetchRecentBreaks({ limit: 5 })
+    ])
+    recentBreaks.value = recordsStore.recentBreaks
+  } catch (err) {
+    console.error('Failed to load home data:', err)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -262,7 +283,7 @@ const formatDate = (dateStr) => {
 /* Quick Nav */
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: var(--space-md);
 }
 
@@ -270,23 +291,21 @@ const formatDate = (dateStr) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-sm);
+  justify-content: center;
   padding: var(--space-xl) var(--space-md);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   transition: all var(--transition-normal);
   cursor: pointer;
+  text-decoration: none;
+  color: var(--color-text);
 }
 
 .event-card:hover {
   border-color: var(--color-primary);
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-}
-
-.event-card .cubing-icon {
-  font-size: 2rem;
 }
 
 .event-name {
@@ -318,11 +337,29 @@ const formatDate = (dateStr) => {
   background: var(--color-bg-tertiary);
 }
 
+.user-link {
+  font-weight: 500;
+  color: var(--color-text);
+  min-width: 100px;
+}
+
+.user-link:hover {
+  color: var(--color-primary);
+}
+
 .record-info {
   flex: 1;
   display: flex;
   align-items: center;
   gap: var(--space-lg);
+}
+
+.event-badge {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .record-time {
@@ -336,6 +373,12 @@ const formatDate = (dateStr) => {
   font-size: 0.875rem;
   min-width: 100px;
   text-align: right;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--color-text-secondary);
 }
 
 /* Responsive */
