@@ -17,57 +17,101 @@
         </select>
       </div>
 
-      <!-- 时间输入 -->
+      <!-- 单次成绩 -->
       <div class="form-group">
-        <label class="form-label">成绩</label>
+        <label class="form-label">单次成绩 <span class="optional">(可选)</span></label>
         <div class="time-input-wrapper">
           <input
-            v-model="form.time"
+            v-model="form.singleTime"
             type="text"
             class="time-input"
-            placeholder="输入成绩，如 12.34 或 1:23.45"
-            :class="{ 'has-error': timeError }"
-            @input="handleTimeInput"
-            @blur="validateTime"
+            placeholder="输入单次成绩，如 12.34 或 1:23.45"
+            :class="{ 'has-error': singleTimeError }"
+            @input="handleSingleTimeInput"
+            @blur="validateSingleTime"
           />
           <div class="time-presets">
-            <button type="button" class="preset-btn" :class="{ active: form.isDNF }" @click="toggleDNF">
+            <button type="button" class="preset-btn" :class="{ active: form.singleIsDNF }" @click="toggleSingleDNF">
               DNF
             </button>
-            <button type="button" class="preset-btn" :class="{ active: form.isDNS }" @click="toggleDNS">
+            <button type="button" class="preset-btn" :class="{ active: form.singleIsDNS }" @click="toggleSingleDNS">
               DNS
             </button>
           </div>
         </div>
-        <span v-if="timeError" class="form-error">{{ timeError }}</span>
+        <span v-if="singleTimeError" class="form-error">{{ singleTimeError }}</span>
         <span class="form-hint">支持输入纯秒数 (12.34) 或分秒格式 (1:23.45)</span>
       </div>
 
-      <!-- 附加信息 -->
+      <!-- 平均成绩 -->
       <div class="form-group">
-        <label class="form-label">使用魔方 <span class="optional">(可选)</span></label>
-        <input
-          v-model="form.cube"
-          type="text"
-          class="form-input"
-          placeholder="如：GAN 11 M Pro"
-        />
+        <label class="form-label">平均成绩 <span class="optional">(可选)</span></label>
+        <div class="time-input-wrapper">
+          <input
+            v-model="form.averageTime"
+            type="text"
+            class="time-input"
+            placeholder="输入平均成绩，如 10.56 或 58.90"
+            :class="{ 'has-error': averageTimeError }"
+            @input="handleAverageTimeInput"
+            @blur="validateAverageTime"
+          />
+          <div class="time-presets">
+            <button type="button" class="preset-btn" :class="{ active: form.averageIsDNF }" @click="toggleAverageDNF">
+              DNF
+            </button>
+            <button type="button" class="preset-btn" :class="{ active: form.averageIsDNS }" @click="toggleAverageDNS">
+              DNS
+            </button>
+          </div>
+        </div>
+        <span v-if="averageTimeError" class="form-error">{{ averageTimeError }}</span>
+        <span class="form-hint">单次或平均至少填写一项</span>
+      </div>
+
+      <!-- 附加信息 -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">使用魔方 <span class="optional">(可选)</span></label>
+          <input
+            v-model="form.cube"
+            type="text"
+            class="form-input"
+            placeholder="如：GAN 11 M Pro"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">解法 <span class="optional">(可选)</span></label>
+          <input
+            v-model="form.method"
+            type="text"
+            class="form-input"
+            placeholder="如：CFOP, Roux, ZZ"
+          />
+        </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">解法 <span class="optional">(可选)</span></label>
-        <input
-          v-model="form.method"
-          type="text"
-          class="form-input"
-          placeholder="如：CFOP, Roux, ZZ"
-        />
+        <label class="form-label">打乱公式 <span class="optional">(可选)</span></label>
+        <textarea
+          v-model="form.scramble"
+          class="form-textarea"
+          placeholder="如：R U R' U' L' L F F'"
+          rows="3"
+        ></textarea>
       </div>
 
       <!-- 预览 -->
-      <div v-if="previewTime !== null" class="preview-section">
-        <span class="preview-label">成绩预览：</span>
-        <span class="preview-value">{{ formatPreview(previewTime) }}</span>
+      <div v-if="hasPreview" class="preview-section">
+        <div v-if="previewSingle !== null" class="preview-item">
+          <span class="preview-label">单次预览：</span>
+          <span class="preview-value">{{ formatPreview(previewSingle, '单次') }}</span>
+        </div>
+        <div v-if="previewAverage !== null" class="preview-item">
+          <span class="preview-label">平均预览：</span>
+          <span class="preview-value">{{ formatPreview(previewAverage, '平均') }}</span>
+        </div>
       </div>
 
       <!-- 错误提示 -->
@@ -76,7 +120,7 @@
       </div>
 
       <!-- 提交按钮 -->
-      <button type="submit" class="submit-btn" :disabled="isSubmitting">
+      <button type="submit" class="submit-btn" :disabled="isSubmitting || !hasValidData">
         {{ isSubmitting ? '提交中...' : '提交成绩' }}
       </button>
 
@@ -99,182 +143,209 @@ const router = useRouter()
 const userStore = useUserStore()
 const recordsStore = useRecordsStore()
 
+// 表单数据
 const form = ref({
   event: '',
-  time: '',
-  isDNF: false,
-  isDNS: false,
+  singleTime: '',
+  averageTime: '',
+  singleIsDNF: false,
+  singleIsDNS: false,
+  averageIsDNF: false,
+  averageIsDNS: false,
   cube: '',
-  method: ''
+  method: '',
+  scramble: ''
 })
 
-const timeError = ref('')
-const submitError = ref('')
+// 状态
 const isSubmitting = ref(false)
+const submitError = ref('')
 const submitSuccess = ref(false)
+const singleTimeError = ref('')
+const averageTimeError = ref('')
+const previewSingle = ref(null)
+const previewAverage = ref(null)
 
-// Event mapping (frontend ID -> backend event code)
+// 事件映射
 const eventMapping = {
   '3x3': '333', '2x2': '222', '4x4': '444', '5x5': '555',
-  '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm',
+  '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm', '3x3SB': '333ft',
   'Pyraminx': 'py', 'Megaminx': 'meg', 'Skewb': 'sk',
   'Clock': 'clock', 'Sq1': 'sq1'
 }
 
-// Parse time input
-const parseTime = (input) => {
-  if (!input) return null
-
-  // Handle DNF/DNS
-  if (input.toUpperCase() === 'DNF') return null
-  if (input.toUpperCase() === 'DNS') return null
-
-  // Try parsing as number
-  const num = parseFloat(input)
-  if (!isNaN(num) && num > 0) return num
-
-  // Try parsing m:ss.xx or m:ss format
-  const parts = input.split(':')
-  if (parts.length === 2) {
-    const mins = parseInt(parts[0], 10)
-    const secs = parseFloat(parts[1])
-    if (!isNaN(mins) && !isNaN(secs)) {
-      return mins * 60 + secs
+// 验证时间格式
+function parseTime(timeStr) {
+  if (!timeStr || timeStr.trim() === '') return null
+  
+  const raw = timeStr.trim().toUpperCase()
+  if (raw === 'DNF' || raw === 'DNS') return null
+  
+  try {
+    const parts = raw.split(':')
+    if (parts.length === 3) {
+      const h = parseInt(parts[0], 10)
+      const m = parseInt(parts[1], 10)
+      const sec = parseFloat(parts[2])
+      return h * 3600 + m * 60 + sec
+    } else if (parts.length === 2) {
+      const m = parseInt(parts[0], 10)
+      const sec = parseFloat(parts[1])
+      return m * 60 + sec
+    } else {
+      return parseFloat(raw)
     }
+  } catch {
+    return null
   }
-
-  return null
 }
 
-// Preview time
-const previewTime = computed(() => {
-  if (form.value.isDNF) return 'DNF'
-  if (form.value.isDNS) return 'DNS'
-  return parseTime(form.value.time)
+// 单次成绩处理
+function handleSingleTimeInput() {
+  form.value.singleIsDNF = false
+  form.value.singleIsDNS = false
+  const seconds = parseTime(form.value.singleTime)
+  previewSingle.value = seconds
+}
+
+function validateSingleTime() {
+  if (!form.value.singleTime) {
+    singleTimeError.value = ''
+    return
+  }
+  
+  if (form.value.singleIsDNF || form.value.singleIsDNS) {
+    singleTimeError.value = ''
+    previewSingle.value = null
+    return
+  }
+  
+  const seconds = parseTime(form.value.singleTime)
+  if (seconds === null || isNaN(seconds)) {
+    singleTimeError.value = '无效的时间格式'
+  } else if (seconds < 0) {
+    singleTimeError.value = '时间不能为负数'
+  } else {
+    singleTimeError.value = ''
+    previewSingle.value = seconds
+  }
+}
+
+function toggleSingleDNF() {
+  form.value.singleIsDNF = !form.value.singleIsDNF
+  form.value.singleIsDNS = false
+  form.value.singleTime = form.value.singleIsDNF ? 'DNF' : ''
+  previewSingle.value = null
+}
+
+function toggleSingleDNS() {
+  form.value.singleIsDNS = !form.value.singleIsDNS
+  form.value.singleIsDNF = false
+  form.value.singleTime = form.value.singleIsDNS ? 'DNS' : ''
+  previewSingle.value = null
+}
+
+// 平均成绩处理
+function handleAverageTimeInput() {
+  form.value.averageIsDNF = false
+  form.value.averageIsDNS = false
+  const seconds = parseTime(form.value.averageTime)
+  previewAverage.value = seconds
+}
+
+function validateAverageTime() {
+  if (!form.value.averageTime) {
+    averageTimeError.value = ''
+    return
+  }
+  
+  if (form.value.averageIsDNF || form.value.averageIsDNS) {
+    averageTimeError.value = ''
+    previewAverage.value = null
+    return
+  }
+  
+  const seconds = parseTime(form.value.averageTime)
+  if (seconds === null || isNaN(seconds)) {
+    averageTimeError.value = '无效的时间格式'
+  } else if (seconds < 0) {
+    averageTimeError.value = '时间不能为负数'
+  } else {
+    averageTimeError.value = ''
+    previewAverage.value = seconds
+  }
+}
+
+function toggleAverageDNF() {
+  form.value.averageIsDNF = !form.value.averageIsDNF
+  form.value.averageIsDNS = false
+  form.value.averageTime = form.value.averageIsDNF ? 'DNF' : ''
+  previewAverage.value = null
+}
+
+function toggleAverageDNS() {
+  form.value.averageIsDNS = !form.value.averageIsDNS
+  form.value.averageIsDNF = false
+  form.value.averageTime = form.value.averageIsDNS ? 'DNS' : ''
+  previewAverage.value = null
+}
+
+// 检查是否有有效数据
+const hasValidData = computed(() => {
+  return form.value.event && (
+    form.value.singleTime || form.value.averageTime ||
+    form.value.singleIsDNF || form.value.singleIsDNS ||
+    form.value.averageIsDNF || form.value.averageIsDNS
+  )
 })
 
-function formatPreview(time) {
-  if (typeof time === 'string') return time
-  if (typeof time === 'number') return recordsStore.formatTime(time)
-  return '--'
+const hasPreview = computed(() => {
+  return previewSingle.value !== null || previewAverage.value !== null
+})
+
+// 格式化预览
+function formatPreview(seconds, type = '') {
+  if (seconds === null || seconds === undefined) return '--'
+  return recordsStore.formatTime(seconds)
 }
 
-const handleTimeInput = () => {
-  timeError.value = ''
+// 提交处理
+async function handleSubmit() {
   submitError.value = ''
-  // Clear DNF/DNS if user starts typing numbers
-  if (form.value.isDNF || form.value.isDNS) {
-    if (/^\d/.test(form.value.time) || /^\d/.test(form.value.time.replace(/:/, ''))) {
-      form.value.isDNF = false
-      form.value.isDNS = false
-    }
-  }
-}
-
-const validateTime = () => {
-  if (!form.value.time && !form.value.isDNF && !form.value.isDNS) {
-    timeError.value = ''
-    return
-  }
-
-  if (form.value.isDNF || form.value.isDNS) {
-    timeError.value = ''
-    return
-  }
-
-  const parsed = parseTime(form.value.time)
-  if (parsed === null) {
-    timeError.value = '请输入有效的成绩格式'
-  } else if (parsed <= 0) {
-    timeError.value = '成绩必须大于 0'
-  } else {
-    timeError.value = ''
-  }
-}
-
-const toggleDNF = () => {
-  form.value.isDNF = !form.value.isDNF
-  if (form.value.isDNF) {
-    form.value.isDNS = false
-    form.value.time = 'DNF'
-  } else {
-    form.value.time = ''
-  }
-  timeError.value = ''
-}
-
-const toggleDNS = () => {
-  form.value.isDNS = !form.value.isDNS
-  if (form.value.isDNS) {
-    form.value.isDNF = false
-    form.value.time = 'DNS'
-  } else {
-    form.value.time = ''
-  }
-  timeError.value = ''
-}
-
-const handleSubmit = async () => {
-  submitError.value = ''
-  timeError.value = ''
-
-  // Validate
+  submitSuccess.value = false
+  
   if (!form.value.event) {
-    alert('请选择项目')
+    submitError.value = '请选择项目'
     return
   }
-
-  if (!form.value.time && !form.value.isDNF && !form.value.isDNS) {
-    timeError.value = '请输入成绩'
+  
+  const singleSeconds = form.value.singleIsDNF || form.value.singleIsDNS ? null : parseTime(form.value.singleTime)
+  const averageSeconds = form.value.averageIsDNF || form.value.averageIsDNS ? null : parseTime(form.value.averageTime)
+  
+  if ((singleSeconds === null || isNaN(singleSeconds)) && (averageSeconds === null || isNaN(averageSeconds))) {
+    submitError.value = '单次或平均至少填写一项'
     return
   }
-
-  validateTime()
-  if (timeError.value) return
-
-  // Check if user is logged in
-  if (!userStore.isLoggedIn) {
-    submitError.value = '请先登录后再提交成绩'
-    return
-  }
-
+  
   isSubmitting.value = true
-
+  
   try {
-    // Map event ID to backend code
-    const backendEvent = eventMapping[form.value.event] || form.value.event
-    
-    // Parse time to seconds
-    const timeSeconds = parseTime(form.value.time)
-
     const recordData = {
-      event: backendEvent,
-      singleSeconds: timeSeconds,
+      event: eventMapping[form.value.event] || form.value.event.toLowerCase(),
+      singleSeconds: singleSeconds !== null && !isNaN(singleSeconds) ? singleSeconds : null,
+      averageSeconds: averageSeconds !== null && !isNaN(averageSeconds) ? averageSeconds : null,
       cube: form.value.cube || null,
-      method: form.value.method || null
+      method: form.value.method || null,
+      scramble: form.value.scramble || null
     }
-
+    
     await recordsStore.createRecord(recordData)
-
     submitSuccess.value = true
-
-    // Reset form
-    form.value = {
-      event: '',
-      time: '',
-      isDNF: false,
-      isDNS: false,
-      cube: '',
-      method: ''
-    }
-
-    // Redirect after success
+    
     setTimeout(() => {
-      submitSuccess.value = false
-      router.push('/record-history')
+      router.push('/players')
     }, 1500)
   } catch (err) {
-    console.error('Submit error:', err)
     submitError.value = err.message || '提交失败，请重试'
   } finally {
     isSubmitting.value = false
@@ -284,23 +355,28 @@ const handleSubmit = async () => {
 
 <style scoped>
 .submit-record {
-  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  max-width: 800px;
   margin: 0 auto;
 }
 
+/* Header */
 .page-header {
   text-align: center;
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
 }
 
 .page-header h1 {
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: var(--space-xs);
 }
 
 .page-desc {
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
+  font-size: 1rem;
 }
 
 /* Form */
@@ -308,90 +384,64 @@ const handleSubmit = async () => {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  background: var(--color-bg-secondary);
+  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
 }
 
 .form-label {
   font-weight: 500;
   color: var(--color-text);
+  font-size: 0.9375rem;
 }
 
 .optional {
   color: var(--color-text-tertiary);
   font-weight: 400;
+  font-size: 0.875rem;
 }
 
+.form-select,
 .form-input,
-.form-select {
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-secondary);
+.form-textarea {
+  padding: var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  background: var(--color-bg);
   color: var(--color-text);
-  font-size: 1rem;
-  transition: border-color var(--transition-fast);
-}
-
-.form-input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.form-select {
-  cursor: pointer;
-}
-
-/* Time Input */
-.time-input-wrapper {
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.time-input {
-  flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-family: var(--font-mono);
-  font-size: 1.125rem;
-}
-
-.time-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-.time-input.has-error {
-  border-color: var(--color-error);
-}
-
-.time-presets {
-  display: flex;
-  gap: var(--space-xs);
-}
-
-.preset-btn {
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  font-weight: 500;
+  font-size: 0.9375rem;
   transition: all var(--transition-fast);
 }
 
-.preset-btn.active {
-  background: var(--color-error);
+.form-select:focus,
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.form-textarea {
+  resize: vertical;
+  font-family: var(--font-mono);
+}
+
+.form-select.has-error,
+.form-input.has-error {
   border-color: var(--color-error);
-  color: white;
 }
 
 .form-error {
@@ -404,31 +454,106 @@ const handleSubmit = async () => {
   font-size: 0.8125rem;
 }
 
+/* Time Input */
+.time-input-wrapper {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.time-input {
+  flex: 1;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  font-family: var(--font-mono);
+}
+
+.time-presets {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.preset-btn {
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.preset-btn:hover {
+  border-color: var(--color-primary);
+}
+
+.preset-btn.active {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: white;
+}
+
 /* Preview */
 .preview-section {
   display: flex;
-  align-items: center;
-  gap: var(--space-md);
+  flex-direction: column;
+  gap: var(--space-sm);
   padding: var(--space-md);
   background: var(--color-bg-tertiary);
   border-radius: var(--radius-md);
 }
 
+.preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .preview-label {
   color: var(--color-text-secondary);
+  font-size: 0.875rem;
 }
 
 .preview-value {
   font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--color-primary);
+  font-size: 1.125rem;
 }
 
-/* Error & Success Messages */
+/* Submit Button */
+.submit-btn {
+  padding: var(--space-md) var(--space-xl);
+  background: var(--color-text);
+  color: var(--color-bg);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Messages */
 .error-message {
   padding: var(--space-md);
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--color-error-light);
+  border: 1px solid var(--color-error);
   border-radius: var(--radius-md);
   color: var(--color-error);
   text-align: center;
@@ -436,44 +561,25 @@ const handleSubmit = async () => {
 
 .success-message {
   padding: var(--space-md);
-  background: var(--color-success);
-  color: white;
+  background: var(--color-success-light);
+  border: 1px solid var(--color-success);
   border-radius: var(--radius-md);
+  color: var(--color-success);
   text-align: center;
-  font-weight: 500;
 }
 
-/* Submit Button */
-.submit-btn {
-  padding: var(--space-md) var(--space-lg);
-  background: var(--color-text);
-  color: var(--color-bg);
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  font-size: 1rem;
-  transition: all var(--transition-fast);
-}
-
-.submit-btn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
+/* Responsive */
 @media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
   .time-input-wrapper {
     flex-direction: column;
   }
-
+  
   .time-presets {
-    justify-content: stretch;
-  }
-
-  .preset-btn {
-    flex: 1;
+    justify-content: flex-end;
   }
 }
 </style>

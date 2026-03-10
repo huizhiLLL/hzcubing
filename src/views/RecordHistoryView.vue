@@ -1,22 +1,9 @@
 <template>
-  <div class="record-history">
-    <!-- Event Selector -->
-    <div class="event-selector">
-      <button
-        v-for="event in events"
-        :key="event.id"
-        class="event-tab"
-        :class="{ active: currentEvent === event.id }"
-        @click="selectEvent(event.id)"
-      >
-        <span class="event-name">{{ event.name }}</span>
-      </button>
-    </div>
-
-    <!-- Timeline Header -->
-    <div class="timeline-header">
-      <h2>{{ currentEventName }} 记录历程</h2>
-      <p class="timeline-subtitle">见证每一次纪录的诞生</p>
+  <div class="players">
+    <!-- Header -->
+    <div class="page-header">
+      <h2>选手总览</h2>
+      <p class="page-subtitle">所有注册用户及其最好成绩</p>
     </div>
 
     <!-- Loading State -->
@@ -25,122 +12,148 @@
       <p>加载中...</p>
     </div>
 
-    <!-- Timeline -->
-    <div v-else-if="records.length > 0" class="timeline">
-      <div
-        v-for="(record, index) in records"
-        :key="record._id"
-        class="timeline-item"
-        :class="{ 'latest': index === 0 }"
-      >
-        <div class="timeline-marker">
-          <div class="marker-dot"></div>
-          <div v-if="index < records.length - 1" class="marker-line"></div>
-        </div>
-        <div class="timeline-content">
-          <div class="record-card">
-            <div class="record-header">
-              <router-link :to="`/user/${record.userId}`" class="user-link">
-                {{ record.nickname }}
-              </router-link>
-              <span class="record-date">{{ formatDate(record.timestamp) }}</span>
-            </div>
-            <div class="record-time">
-              <span class="time-label">成绩</span>
-              <span class="time-value">
-                {{ formatTime(record.singleSeconds || record.averageSeconds) }}
+    <!-- Players Summary Table -->
+    <div v-else-if="playerSummary.length > 0" class="player-table">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-rank">排名</th>
+            <th class="col-player">选手</th>
+            <th class="col-email">邮箱</th>
+            <th class="col-records">记录数</th>
+            <th class="col-events">参与项目</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(player, index) in playerSummary" :key="player.userId">
+            <td class="col-rank">
+              <span class="rank-num" :class="['rank-' + (index + 1)]">
+                {{ index + 1 }}
               </span>
-            </div>
-          </div>
-        </div>
-      </div>
+            </td>
+            <td class="col-player">
+              <router-link :to="`/user/${player.userId}`" class="player-link">
+                {{ player.nickname }}
+              </router-link>
+            </td>
+            <td class="col-email">
+              <span class="email">{{ player.email }}</span>
+            </td>
+            <td class="col-records">
+              <span class="record-count">{{ player.recordCount }}</span>
+            </td>
+            <td class="col-events">
+              <div class="event-tags">
+                <span v-for="event in player.events.slice(0, 5)" :key="event" class="event-tag">
+                  {{ event }}
+                </span>
+                <span v-if="player.events.length > 5" class="event-more">
+                  +{{ player.events.length - 5 }}
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Empty State -->
     <div v-else class="empty-state">
-      <span class="empty-icon">📜</span>
-      <p>暂无{{ currentEventName }}记录</p>
+      <span class="empty-icon">👥</span>
+      <p>暂无选手数据</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { userAPI } from '@/api'
 import { useRecordsStore } from '../stores/records'
-import { events } from '../config/events'
 
-const route = useRoute()
 const recordsStore = useRecordsStore()
-
-const currentEvent = ref('3x3')
+const users = ref([])
 const loading = ref(false)
-const records = ref([])
 
-// Event mapping
-const eventMapping = {
-  '3x3': '333', '2x2': '222', '4x4': '444', '5x5': '555',
-  '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm',
-  'Pyraminx': 'py', 'Megaminx': 'meg', 'Skewb': 'sk',
-  'Clock': 'clock', 'Sq1': 'sq1'
-}
-
-const currentEventName = computed(() => {
-  return events.find(e => e.id === currentEvent.value)?.name || currentEvent.value
+// Group records by user and calculate summary
+const playerSummary = computed(() => {
+  const allRecords = recordsStore.records
+  
+  // Create user map with their data
+  const userMap = new Map()
+  
+  // First, add all users
+  users.value.forEach(user => {
+    userMap.set(user.id || user._id, {
+      userId: user.id || user._id,
+      nickname: user.nickname,
+      email: user.email,
+      recordCount: 0,
+      events: []
+    })
+  })
+  
+  // Then, count records and events for each user
+  allRecords.forEach(record => {
+    const userId = record.userId
+    if (userMap.has(userId)) {
+      const user = userMap.get(userId)
+      user.recordCount++
+      
+      if (!user.events.includes(record.event)) {
+        user.events.push(record.event)
+      }
+    }
+  })
+  
+  // Convert to array and sort by record count
+  return Array.from(userMap.values())
+    .sort((a, b) => b.recordCount - a.recordCount)
 })
 
-function formatTime(seconds) {
-  return recordsStore.formatTime(seconds) || '--'
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) return '今天'
-  if (diffDays === 1) return '昨天'
-  if (diffDays < 7) return `${diffDays}天前`
-  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
-}
-
-async function loadRecords() {
+async function loadData() {
   loading.value = true
   try {
-    const backendEvent = eventMapping[currentEvent.value] || currentEvent.value
-    const allRecords = await recordsStore.fetchUserRecords('all', { pageSize: 500 })
+    // Fetch all users
+    const usersResult = await userAPI.getAll({ pageSize: 100 })
+    if (usersResult.code === 200) {
+      users.value = usersResult.data || []
+    }
     
-    // Filter by event
-    records.value = allRecords.filter(r => r.event === backendEvent)
+    // Fetch all records
+    await recordsStore.fetchRecords({ pageSize: 2000 })
   } catch (err) {
-    console.error('Failed to load records:', err)
-    records.value = []
+    console.error('Failed to load data:', err)
+    users.value = []
   } finally {
     loading.value = false
   }
 }
 
-function selectEvent(eventId) {
-  currentEvent.value = eventId
-}
-
-watch(currentEvent, loadRecords)
-
 onMounted(() => {
-  // Check URL for event parameter
-  if (route.query.event && events.find(e => e.id === route.query.event)) {
-    currentEvent.value = route.query.event
-  }
-  loadRecords()
+  loadData()
 })
 </script>
 
 <style scoped>
-.record-history {
+.players {
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
+}
+
+/* Header */
+.page-header {
+  margin-bottom: var(--space-md);
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.page-subtitle {
+  color: var(--color-text-tertiary);
 }
 
 /* Loading & Empty States */
@@ -158,166 +171,169 @@ onMounted(() => {
   margin-bottom: var(--space-md);
 }
 
-/* Event Selector */
-.event-selector {
-  display: flex;
-  gap: var(--space-xs);
-  flex-wrap: wrap;
-}
-
-.event-tab {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  font-size: 0.9375rem;
-  transition: all var(--transition-fast);
-}
-
-.event-tab:hover {
-  border-color: var(--color-primary);
-}
-
-.event-tab.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: white;
-}
-
-/* Timeline Header */
-.timeline-header {
-  margin-bottom: var(--space-md);
-}
-
-.timeline-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: var(--space-xs);
-}
-
-.timeline-subtitle {
-  color: var(--color-text-tertiary);
-}
-
-/* Timeline */
-.timeline {
-  position: relative;
-  padding-left: var(--space-xl);
-}
-
-.timeline-item {
-  position: relative;
-}
-
-.timeline-marker {
-  position: absolute;
-  left: calc(-1 * var(--space-xl) + 6px);
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.marker-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--color-border);
-  border: 2px solid var(--color-bg);
-  z-index: 1;
-}
-
-.timeline-item.latest .marker-dot {
-  background: var(--color-primary);
-  box-shadow: 0 0 0 4px var(--color-primary-light);
-}
-
-.marker-line {
-  width: 2px;
-  flex: 1;
-  background: var(--color-border);
-  margin-top: var(--space-sm);
-  min-height: 40px;
-}
-
-.timeline-content {
-  padding-bottom: var(--space-xl);
-}
-
-.record-card {
+/* Player Table */
+.player-table {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-lg);
+  overflow: hidden;
+  width: 100%;
 }
 
-.timeline-item.latest .record-card {
-  border-color: var(--color-primary);
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-bg-secondary) 100%);
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.record-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
+th, td {
+  padding: var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
-.user-link {
+th {
+  background: var(--color-bg-tertiary);
   font-weight: 600;
-  color: var(--color-text);
-  text-decoration: none;
+  font-size: 0.8775rem;
+  color: var(--color-text-secondary);
 }
 
-.user-link:hover {
-  color: var(--color-primary);
+tr:last-child td {
+  border-bottom: none;
 }
 
-.record-date {
+tr:hover td {
+  background: var(--color-bg-tertiary);
+}
+
+.col-rank {
+  width: 80px;
+}
+
+.col-email {
   color: var(--color-text-tertiary);
   font-size: 0.875rem;
 }
 
-.record-time {
-  display: flex;
-  flex-direction: column;
+.col-records {
+  width: 100px;
+}
+
+.col-events {
+  width: 300px;
+}
+
+.rank-num {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-bg-tertiary);
+  font-weight: 600;
+  font-size: 0.9375rem;
 }
 
-.time-label {
-  font-size: 0.75rem;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.rank-num.rank-1 {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: white;
 }
 
-.time-value {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 700;
+.rank-num.rank-2 {
+  background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
+  color: white;
+}
+
+.rank-num.rank-3 {
+  background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+  color: white;
+}
+
+.player-link {
+  color: var(--color-text);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.player-link:hover {
   color: var(--color-primary);
 }
 
-@media (max-width: 768px) {
-  .event-selector {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 2px;
-    -webkit-overflow-scrolling: touch;
-  }
+.record-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--space-sm);
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
 
-  .event-selector::-webkit-scrollbar {
+.event-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.event-tag {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.event-more {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-primary-light);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  color: var(--color-primary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .col-email {
     display: none;
   }
+  
+  .col-events {
+    width: 200px;
+  }
+}
 
-  .event-tab {
-    flex-shrink: 0;
-    padding: var(--space-sm);
+@media (max-width: 768px) {
+  .player-table {
+    border-radius: var(--radius-md);
+  }
+
+  th, td {
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .col-rank {
+    width: 40px;
+  }
+
+  .rank-num {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8125rem;
+  }
+
+  .col-events {
+    display: none;
+  }
+  
+  .col-records {
+    width: 80px;
+    text-align: right;
+    padding-right: var(--space-md);
   }
 }
 </style>
