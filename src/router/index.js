@@ -20,8 +20,7 @@ const routes = [
   {
     path: '/players',
     name: 'Players',
-    component: () => import('../views/RecordHistoryView.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('../views/RecordHistoryView.vue')
   },
   {
     path: '/user/:id',

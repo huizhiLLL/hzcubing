@@ -112,11 +112,11 @@ const navItems = [
   { path: '/', label: '首页', icon: homeIcon },
   { path: '/leaderboard', label: '排行榜', icon: leaderboardIcon },
   { path: '/gr', label: 'GR', icon: grIcon },
-  { path: '/players', label: '选手', icon: recordIcon, requiresAuth: true },
-  { path: '/submit', label: '提交成绩', icon: submitIcon, requiresAuth: true }
+  { path: '/players', label: '选手', icon: recordIcon },
+  { path: '/submit', label: '提交成绩', icon: submitIcon }
 ]
 
-const visibleNavItems = computed(() => navItems.filter(item => !item.requiresAuth || userStore.isLoggedIn))
+const visibleNavItems = computed(() => navItems)
 
 const isActive = (path) => {
   if (path === '/') return route.path === '/'
