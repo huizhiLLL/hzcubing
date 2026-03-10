@@ -48,6 +48,16 @@
             </span>
             <span v-if="!isCollapsed" class="nav-label">{{ userStore.user?.nickname || userStore.user?.email }}</span>
           </router-link>
+          <router-link
+            v-if="['admin', 'super_admin'].includes(userStore.user?.role)"
+            to="/admin/meme-events"
+            class="nav-item"
+            :class="{ active: isActive('/admin/meme-events') }"
+            @click="closeMobileMenu"
+          >
+            <span class="nav-icon" v-html="adminIcon"></span>
+            <span v-if="!isCollapsed" class="nav-label">整活项目管理</span>
+          </router-link>
           <button class="nav-item" @click="handleLogout">
             <span class="nav-icon" v-html="logoutIcon"></span>
             <span v-if="!isCollapsed" class="nav-label">退出登录</span>
@@ -114,11 +124,10 @@ const navItems = [
   { path: '/leaderboard', label: '排行榜', icon: leaderboardIcon },
   { path: '/gr', label: 'GR', icon: grIcon },
   { path: '/players', label: '选手', icon: recordIcon },
-  { path: '/submit', label: '提交成绩', icon: submitIcon },
-  { path: '/admin/meme-events', label: '整活项目管理', icon: adminIcon, adminOnly: true }
+  { path: '/submit', label: '提交成绩', icon: submitIcon }
 ]
 
-const visibleNavItems = computed(() => navItems.filter(item => !item.adminOnly || ['admin', 'super_admin'].includes(userStore.user?.role)))
+const visibleNavItems = computed(() => navItems)
 
 const isActive = (path) => {
   if (path === '/') return route.path === '/'
