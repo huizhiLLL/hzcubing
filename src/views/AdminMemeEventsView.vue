@@ -99,7 +99,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useEventsStore } from '@/stores/events'
 import { useUserStore } from '@/stores/user'
 
@@ -120,7 +120,11 @@ const formError = ref('')
 const formSuccess = ref('')
 
 const canManage = computed(() => ['admin', 'super_admin'].includes(userStore.user?.role))
-const memeEvents = computed(() => eventsStore.memeEvents || [])
+const memeEvents = computed(() => [...(eventsStore.memeEvents || [])].sort((a, b) => {
+  const timeA = new Date(a.createdAt || a.updatedAt || 0).getTime()
+  const timeB = new Date(b.createdAt || b.updatedAt || 0).getTime()
+  return timeB - timeA
+}))
 
 function resetForm() {
   form.eventName = ''
@@ -132,7 +136,7 @@ function resetForm() {
   formSuccess.value = ''
 }
 
-function startEdit(event) {
+async function startEdit(event) {
   form.eventName = event.name || ''
   form.eventCode = event.id || ''
   form.description = event.description || ''
@@ -140,6 +144,9 @@ function startEdit(event) {
   editingCode.value = event.id
   formError.value = ''
   formSuccess.value = ''
+
+  await nextTick()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function formatDate(value) {
