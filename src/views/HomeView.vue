@@ -57,9 +57,10 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRecordsStore } from '../stores/records'
-import { events } from '../config/events'
+import { getEventsByCategory } from '../config/events'
 
 const recordsStore = useRecordsStore()
+const events = getEventsByCategory('official').slice(0, 12)
 
 const stats = computed(() => ({
   totalRecords: recordsStore.records.length,

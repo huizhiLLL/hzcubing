@@ -48,7 +48,9 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
         wcaId: user.wcaId,
         avatar: user.avatar,
         role: user.role,
-        status: user.status
+        status: user.status,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       }
     })
   } catch (error) {
@@ -94,7 +96,9 @@ router.put('/profile', protect, profileValidation, async (req, res, next) => {
         wcaId: user.wcaId,
         avatar: user.avatar,
         role: user.role,
-        status: user.status
+        status: user.status,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       }
     })
   } catch (error) {

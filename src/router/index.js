@@ -13,6 +13,11 @@ const routes = [
     component: () => import('../views/LeaderboardView.vue')
   },
   {
+    path: '/gr',
+    name: 'GR',
+    component: () => import('../views/GRView.vue')
+  },
+  {
     path: '/players',
     name: 'Players',
     component: () => import('../views/RecordHistoryView.vue'),
@@ -20,8 +25,18 @@ const routes = [
   },
   {
     path: '/user/:id',
+    redirect: to => ({ name: 'UserProfile', params: { id: to.params.id } })
+  },
+  {
+    path: '/profile/:id',
     name: 'UserProfile',
     component: () => import('../views/UserProfileView.vue')
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../views/ProfileHomeView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/submit',
@@ -47,12 +62,10 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard for auth routes
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  
+
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    // Redirect to auth page, but save the intended destination
     next({ name: 'Auth', query: { redirect: to.fullPath } })
   } else {
     next()

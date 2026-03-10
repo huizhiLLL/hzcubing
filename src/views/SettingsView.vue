@@ -1,12 +1,16 @@
 <template>
   <div class="settings">
     <div class="page-header">
-      <h1>个人设置</h1>
-      <p class="page-desc">管理你的账号信息</p>
+      <div>
+        <h1>个人设置</h1>
+        <p class="page-desc">管理你的昵称、WCA ID 和个人简介</p>
+      </div>
+      <router-link v-if="profileLink" :to="profileLink" class="profile-link">
+        返回个人主页
+      </router-link>
     </div>
 
     <div class="settings-sections">
-      <!-- Basic Info -->
       <section class="settings-section">
         <h2 class="section-title">基本信息</h2>
         <div class="settings-card">
@@ -47,13 +51,12 @@
               v-model="form.bio"
               class="form-textarea"
               placeholder="介绍一下自己..."
-              rows="3"
+              rows="4"
             ></textarea>
           </div>
         </div>
       </section>
 
-      <!-- Error & Success Messages -->
       <div v-if="error" class="error-message">
         {{ error }}
       </div>
@@ -62,7 +65,6 @@
         保存成功！
       </div>
 
-      <!-- Submit Button -->
       <div class="settings-actions">
         <button class="save-btn" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? '保存中...' : '保存修改' }}
@@ -73,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useUserStore } from '../stores/user'
 
 const userStore = useUserStore()
@@ -88,13 +90,19 @@ const form = reactive({
   bio: ''
 })
 
-onMounted(() => {
-  if (userStore.user) {
-    form.nickname = userStore.user.nickname || ''
-    form.wcaId = userStore.user.wcaId || ''
-    form.bio = userStore.user.bio || ''
-  }
+const profileLink = computed(() => {
+  const id = userStore.user?.id || userStore.user?._id
+  return id ? `/profile/${id}` : ''
 })
+
+function syncForm() {
+  form.nickname = userStore.user?.nickname || ''
+  form.wcaId = userStore.user?.wcaId || ''
+  form.bio = userStore.user?.bio || ''
+}
+
+onMounted(syncForm)
+watch(() => userStore.user, syncForm, { deep: true })
 
 const handleSave = async () => {
   error.value = ''
@@ -108,7 +116,6 @@ const handleSave = async () => {
       bio: form.bio
     })
     success.value = true
-    
     setTimeout(() => {
       success.value = false
     }, 3000)
@@ -123,11 +130,15 @@ const handleSave = async () => {
 
 <style scoped>
 .settings {
-  max-width: 600px;
+  max-width: 760px;
   margin: 0 auto;
 }
 
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
   margin-bottom: var(--space-xl);
 }
 
@@ -139,6 +150,17 @@ const handleSave = async () => {
 
 .page-desc {
   color: var(--color-text-secondary);
+}
+
+.profile-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  font-weight: 600;
 }
 
 .settings-sections {
@@ -155,14 +177,14 @@ const handleSave = async () => {
 
 .section-title {
   font-size: 1.125rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .settings-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
-  padding: var(--space-lg);
+  padding: var(--space-xl);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -175,8 +197,7 @@ const handleSave = async () => {
 }
 
 .form-label {
-  font-weight: 500;
-  color: var(--color-text);
+  font-weight: 600;
 }
 
 .optional {
@@ -204,12 +225,11 @@ const handleSave = async () => {
 .form-input:disabled {
   background: var(--color-bg-tertiary);
   color: var(--color-text-tertiary);
-  cursor: not-allowed;
 }
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 96px;
 }
 
 .form-hint {
@@ -217,27 +237,27 @@ const handleSave = async () => {
   font-size: 0.8125rem;
 }
 
-/* Messages */
-.error-message {
+.error-message,
+.success-message {
   padding: var(--space-md);
-  background: rgba(239, 68, 68, 0.1);
   border-radius: var(--radius-md);
-  color: var(--color-error);
   text-align: center;
+  font-weight: 600;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-error);
 }
 
 .success-message {
-  padding: var(--space-md);
-  background: var(--color-success);
-  color: white;
-  border-radius: var(--radius-md);
-  text-align: center;
-  font-weight: 500;
+  background: rgba(34, 197, 94, 0.16);
+  color: #15803d;
 }
 
-/* Actions */
 .settings-actions {
-  padding-top: var(--space-md);
+  display: flex;
+  justify-content: flex-end;
 }
 
 .save-btn {
@@ -245,16 +265,26 @@ const handleSave = async () => {
   background: var(--color-text);
   color: var(--color-bg);
   border-radius: var(--radius-md);
-  font-weight: 600;
-  transition: opacity var(--transition-fast);
-}
-
-.save-btn:hover:not(:disabled) {
-  opacity: 0.9;
+  font-weight: 700;
 }
 
 .save-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+  }
+
+  .settings-actions {
+    justify-content: stretch;
+  }
+
+  .save-btn,
+  .profile-link {
+    width: 100%;
+  }
 }
 </style>

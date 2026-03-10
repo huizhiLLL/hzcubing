@@ -11,7 +11,7 @@
         <label class="form-label">项目</label>
         <select v-model="form.event" class="form-select" required>
           <option value="" disabled>请选择项目</option>
-          <option v-for="event in events" :key="event.id" :value="event.id">
+          <option v-for="event in submitEvents" :key="event.id" :value="event.id">
             {{ event.name }}
           </option>
         </select>
@@ -166,13 +166,7 @@ const averageTimeError = ref('')
 const previewSingle = ref(null)
 const previewAverage = ref(null)
 
-// 事件映射
-const eventMapping = {
-  '3x3': '333', '2x2': '222', '4x4': '444', '5x5': '555',
-  '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm', '3x3SB': '333ft',
-  'Pyraminx': 'py', 'Megaminx': 'meg', 'Skewb': 'sk',
-  'Clock': 'clock', 'Sq1': 'sq1'
-}
+const submitEvents = events
 
 // 验证时间格式
 function parseTime(timeStr) {
@@ -331,7 +325,7 @@ async function handleSubmit() {
   
   try {
     const recordData = {
-      event: eventMapping[form.value.event] || form.value.event.toLowerCase(),
+      event: form.value.event,
       singleSeconds: singleSeconds !== null && !isNaN(singleSeconds) ? singleSeconds : null,
       averageSeconds: averageSeconds !== null && !isNaN(averageSeconds) ? averageSeconds : null,
       cube: form.value.cube || null,

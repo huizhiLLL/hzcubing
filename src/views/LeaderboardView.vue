@@ -1,10 +1,9 @@
 <template>
   <div class="leaderboard">
-    <!-- 筛选控制台 -->
     <div class="filter-panel">
       <div class="event-selector">
         <button
-          v-for="event in events"
+          v-for="event in officialEvents"
           :key="event.id"
           class="event-tab"
           :class="{ active: currentEvent === event.id }"
@@ -32,14 +31,12 @@
       </div>
     </div>
 
-    <!-- Loading State -->
     <div v-if="loading" class="loading-state">
       <span class="loading-icon">⏳</span>
       <p>加载中...</p>
     </div>
 
-    <!-- Top 3 卡片（只要有数据就显示） -->
-    <div v-if="sortedRecords.length > 0" class="top-three">
+    <div v-else-if="sortedRecords.length > 0" class="top-three">
       <div
         v-for="(player, index) in topThree"
         :key="player._id || index"
@@ -57,13 +54,11 @@
       </div>
     </div>
 
-    <!-- 空状态 -->
     <div v-else class="empty-state">
       <span class="empty-icon">📊</span>
       <p>暂无{{ currentEventName }}数据</p>
     </div>
 
-    <!-- 排名表格（始终显示所有排名） -->
     <div v-if="sortedRecords.length > 0" class="rank-table">
       <table>
         <thead>
@@ -96,64 +91,49 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useRecordsStore } from '../stores/records'
-import { events } from '../config/events'
+import { getEventsByCategory, getEventName } from '../config/events'
 
 const route = useRoute()
+const router = useRouter()
 const recordsStore = useRecordsStore()
 
-const currentEvent = ref('3x3')
+const officialEvents = getEventsByCategory('official')
+const currentEvent = ref(officialEvents[0]?.id || '333')
 const type = ref('single')
 const loading = ref(false)
 const medals = ['🥇', '🥈', '🥉']
 
-const currentEventName = computed(() => {
-  const event = events.find(e => e.id === currentEvent.value)
-  return event?.name || currentEvent.value
-})
+const currentEventName = computed(() => getEventName(currentEvent.value))
 
-// Get all records for current event
 const eventRecords = computed(() => {
-  // Map frontend event IDs to backend event IDs
-  const eventMapping = {
-    '3x3': '333', '2x2': '222', '4x4': '444', '5x5': '555',
-    '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm', '3x3SB': '333ft',
-    'Pyraminx': 'py', 'Megaminx': 'meg', 'Skewb': 'sk',
-    'Clock': 'clock', 'Sq1': 'sq1'
-  }
-  const mappedEvent = eventMapping[currentEvent.value] || currentEvent.value.toLowerCase()
-  
-  return recordsStore.records.filter(r => r.event === mappedEvent)
+  return recordsStore.records.filter(record => record.event === currentEvent.value)
 })
 
-// Get best record for each player
 const sortedRecords = computed(() => {
   const timeField = type.value === 'single' ? 'singleSeconds' : 'averageSeconds'
-  
-  // Group by user and get best record for each
   const userBestMap = new Map()
-  
+
   eventRecords.value
-    .filter(r => r[timeField] !== null && r[timeField] !== undefined)
+    .filter(record => record[timeField] !== null && record[timeField] !== undefined)
     .forEach(record => {
-      const userId = record.userId
+      const userId = String(record.userId)
       if (!userBestMap.has(userId)) {
         userBestMap.set(userId, record)
-      } else {
-        const existing = userBestMap.get(userId)
-        // Keep the better (lower) time
-        if (record[timeField] < existing[timeField]) {
-          userBestMap.set(userId, record)
-        }
+        return
+      }
+
+      const existing = userBestMap.get(userId)
+      if (record[timeField] < existing[timeField]) {
+        userBestMap.set(userId, record)
       }
     })
-  
-  // Convert to array and sort
+
   return Array.from(userBestMap.values())
     .sort((a, b) => a[timeField] - b[timeField])
-    .slice(0, 100) // Limit to top 100
+    .slice(0, 100)
 })
 
 const topThree = computed(() => sortedRecords.value.slice(0, 3))
@@ -174,25 +154,23 @@ function formatDate(dateStr) {
 
 function selectEvent(eventId) {
   currentEvent.value = eventId
-  // Update URL
-  route.query.event = eventId
+  router.replace({ query: { ...route.query, event: eventId } })
 }
 
 watch(() => route.query.event, (newEvent) => {
-  if (newEvent && events.find(e => e.id === newEvent)) {
+  if (newEvent && officialEvents.some(event => event.id === newEvent)) {
     currentEvent.value = newEvent
   }
 })
 
 onMounted(async () => {
-  // Check URL for event parameter
-  if (route.query.event && events.find(e => e.id === route.query.event)) {
+  if (route.query.event && officialEvents.some(event => event.id === route.query.event)) {
     currentEvent.value = route.query.event
   }
 
   loading.value = true
   try {
-    await recordsStore.fetchRecords({ pageSize: 500 })
+    await recordsStore.fetchRecords({ pageSize: 2000 })
   } catch (err) {
     console.error('Failed to load records:', err)
   } finally {
@@ -208,7 +186,6 @@ onMounted(async () => {
   gap: var(--space-lg);
 }
 
-/* Filter Panel */
 .filter-panel {
   display: flex;
   justify-content: space-between;
@@ -266,8 +243,8 @@ onMounted(async () => {
   color: var(--color-bg);
 }
 
-/* Loading & Empty States */
-.loading-state, .empty-state {
+.loading-state,
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -276,12 +253,12 @@ onMounted(async () => {
   color: var(--color-text-tertiary);
 }
 
-.loading-icon, .empty-icon {
+.loading-icon,
+.empty-icon {
   font-size: 3rem;
   margin-bottom: var(--space-md);
 }
 
-/* Top Three */
 .top-three {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -318,23 +295,22 @@ onMounted(async () => {
 
 .medal {
   position: absolute;
-  top: var(--space-sm);
-  right: var(--space-sm);
+  top: -12px;
   font-size: 1.5rem;
 }
 
-.user-link {
+.user-link,
+.player-link {
   font-weight: 600;
   color: var(--color-text);
-  text-decoration: none;
 }
 
-.user-link:hover {
+.user-link:hover,
+.player-link:hover {
   color: var(--color-primary);
 }
 
 .top-time {
-  margin-top: var(--space-sm);
   font-family: var(--font-mono);
   font-size: 1.5rem;
   font-weight: 700;
@@ -342,172 +318,63 @@ onMounted(async () => {
 
 .top-date {
   color: var(--color-text-tertiary);
-  font-size: 0.875rem;
 }
 
-/* Table */
 .rank-table {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  width: 100%;
 }
 
-table {
+.rank-table table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
 }
 
-th, td {
+.rank-table th,
+.rank-table td {
   padding: var(--space-md);
   text-align: left;
   border-bottom: 1px solid var(--color-border-light);
 }
 
-th {
+.rank-table th {
   background: var(--color-bg-tertiary);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8775rem;
   color: var(--color-text-secondary);
 }
 
-tr:last-child td {
+.rank-table tr:last-child td {
   border-bottom: none;
 }
 
-tr:hover td {
+.rank-table tr:hover td {
   background: var(--color-bg-tertiary);
-}
-
-.col-rank {
-  width: 80px;
-}
-
-.col-time {
-  width: 150px;
-}
-
-.col-date {
-  width: 100px;
-  color: var(--color-text-tertiary);
 }
 
 .rank-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  min-width: 32px;
   height: 32px;
   border-radius: 50%;
   background: var(--color-bg-tertiary);
-  font-weight: 600;
-  font-size: 0.9375rem;
+  font-weight: 700;
 }
 
-.player-link {
-  color: var(--color-text);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.player-link:hover {
-  color: var(--color-primary);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .top-three {
     grid-template-columns: 1fr;
-    gap: var(--space-sm);
   }
+}
 
-  .top-card {
-    flex-direction: row;
-    padding: var(--space-sm) var(--space-md);
-    gap: var(--space-md);
-    text-align: left;
-    align-items: center;
-  }
-
-  .top-card .medal {
-    position: static;
-    font-size: 1.25rem;
-    width: 24px;
-    text-align: center;
-    flex-shrink: 0;
-  }
-
-  .top-card .top-time {
-    margin-top: 0;
-    margin-left: auto;
-    flex-shrink: 0;
-    font-size: 1.25rem;
-  }
-
-  .top-card .top-date {
-    display: none;
-  }
-
-  .filter-panel {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-sm);
-  }
-
-  .event-selector {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 2px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .event-selector::-webkit-scrollbar {
-    display: none;
-  }
-
-  .event-tab {
-    flex-shrink: 0;
-    padding: var(--space-sm);
-  }
-
-  .type-toggle {
-    align-self: flex-start;
-    width: 100%;
-  }
-  
-  .type-btn {
-    flex: 1;
-    text-align: center;
-  }
-
-  .rank-table {
-    border-radius: var(--radius-md);
-  }
-
-  th, td {
+@media (max-width: 768px) {
+  .rank-table th,
+  .rank-table td {
     padding: var(--space-sm) var(--space-xs);
-  }
-
-  .col-rank {
-    width: 40px;
-  }
-
-  .rank-num {
-    width: 24px;
-    height: 24px;
-    font-size: 0.8125rem;
-  }
-
-  .col-date {
-    display: none;
-  }
-  
-  .col-time {
-    width: 90px;
-    text-align: right;
-    padding-right: var(--space-md);
   }
 }
 </style>

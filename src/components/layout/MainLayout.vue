@@ -1,13 +1,11 @@
 <template>
   <div class="layout" :class="{ 'sidebar-collapsed': isCollapsed }">
-    <!-- 移动端遮罩 -->
     <div
       v-if="isMobileMenuOpen"
       class="mobile-overlay"
       @click="closeMobileMenu"
     ></div>
 
-    <!-- 侧边栏 -->
     <aside class="sidebar" :class="{ 'mobile-open': isMobileMenuOpen }">
       <div class="sidebar-header">
         <router-link to="/" class="logo" @click="handleLogoClick">
@@ -24,11 +22,11 @@
 
       <nav class="sidebar-nav">
         <router-link
-          v-for="item in navItems"
+          v-for="item in visibleNavItems"
           :key="item.path"
           :to="item.path"
           class="nav-item"
-          :class="{ 'active': isActive(item.path) }"
+          :class="{ active: isActive(item.path) }"
           @click="closeMobileMenu"
         >
           <span class="nav-icon" v-html="item.icon"></span>
@@ -37,18 +35,16 @@
       </nav>
 
       <div class="sidebar-footer">
-        <!-- 主题切换 -->
         <button class="nav-item" @click="toggleTheme">
           <span class="nav-icon" v-html="isDark ? sunIcon : moonIcon"></span>
           <span v-if="!isCollapsed" class="nav-label">{{ isDark ? '浅色模式' : '深色模式' }}</span>
         </button>
 
-        <!-- 用户状态 -->
         <template v-if="userStore.isLoggedIn">
-          <router-link to="/settings" class="nav-item" @click="closeMobileMenu">
-            <span class="nav-icon user-avatar">
+          <router-link :to="profilePath" class="nav-item" @click="closeMobileMenu">
+            <span class="nav-icon user-avatar" :style="{ background: avatarBackground }">
               <img v-if="userStore.user?.avatar" :src="userStore.user.avatar" alt="avatar" />
-              <span v-else>{{ (userStore.user?.nickname || userStore.user?.email || 'U')[0].toUpperCase() }}</span>
+              <span v-else>{{ avatarInitial }}</span>
             </span>
             <span v-if="!isCollapsed" class="nav-label">{{ userStore.user?.nickname || userStore.user?.email }}</span>
           </router-link>
@@ -64,9 +60,7 @@
       </div>
     </aside>
 
-    <!-- 主内容区 -->
     <main class="main-content">
-      <!-- 移动端顶部栏 -->
       <header class="mobile-header">
         <button class="menu-btn" @click="toggleMobileMenu">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -84,10 +78,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useThemeStore } from '../../stores/theme'
 import { useUserStore } from '../../stores/user'
+import { getAvatarGradient, getInitial } from '@/utils/avatar'
 
 const router = useRouter()
 const route = useRoute()
@@ -99,30 +94,29 @@ const isMobileMenuOpen = ref(false)
 const windowWidth = ref(window.innerWidth)
 
 const isDark = computed(() => themeStore.isDark)
+const profilePath = computed(() => '/profile')
+const avatarInitial = computed(() => getInitial(userStore.user?.nickname || userStore.user?.email))
+const avatarBackground = computed(() => getAvatarGradient(userStore.user?.nickname || userStore.user?.email))
 
-// 图标
 const homeIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>'
 const leaderboardIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21V11M16 21V7M12 21V3"/></svg>'
 const recordIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>'
+const grIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M7 16l3-6 4 3 3-7"/></svg>'
 const submitIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
 const moonIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
 const sunIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
 const loginIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>'
 const logoutIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
-const algdbIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-  <text x="6" y="10" font-size="10" text-anchor="middle" font-family="Arial" font-weight="770" stroke="none" fill="currentColor">R</text>
-  <text x="18" y="10" font-size="10" text-anchor="middle" font-family="Arial" font-weight="770" stroke="none" fill="currentColor">F'</text>
-  <text x="6" y="22" font-size="10" text-anchor="middle" font-family="Arial" font-weight="770" stroke="none" fill="currentColor">U'</text>
-  <text x="18" y="22" font-size="10" text-anchor="middle" font-family="Arial" font-weight="770" stroke="none" fill="currentColor">D</text>
-</svg>`;
 
 const navItems = [
   { path: '/', label: '首页', icon: homeIcon },
   { path: '/leaderboard', label: '排行榜', icon: leaderboardIcon },
-  { path: '/players', label: '选手', icon: recordIcon },
-  // { path: '/algdb', label: '公式库', icon: algdbIcon },
+  { path: '/gr', label: 'GR', icon: grIcon },
+  { path: '/players', label: '选手', icon: recordIcon, requiresAuth: true },
   { path: '/submit', label: '提交成绩', icon: submitIcon, requiresAuth: true }
 ]
+
+const visibleNavItems = computed(() => navItems.filter(item => !item.requiresAuth || userStore.isLoggedIn))
 
 const isActive = (path) => {
   if (path === '/') return route.path === '/'
@@ -179,7 +173,6 @@ onUnmounted(() => {
   min-height: 100vh;
 }
 
-/* 侧边栏 */
 .sidebar {
   position: fixed;
   left: 0;
@@ -247,7 +240,6 @@ onUnmounted(() => {
   display: none;
 }
 
-/* 导航 */
 .sidebar-nav {
   flex: 1;
   padding: var(--space-md) var(--space-sm);
@@ -310,7 +302,6 @@ onUnmounted(() => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--color-primary);
   color: white;
   font-size: 0.75rem;
   display: flex;
@@ -325,7 +316,6 @@ onUnmounted(() => {
   object-fit: cover;
 }
 
-/* 主内容区 */
 .main-content {
   flex: 1;
   margin-left: 240px;
@@ -343,7 +333,6 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
-/* 移动端 */
 .mobile-header {
   display: none;
   position: fixed;
@@ -386,10 +375,7 @@ onUnmounted(() => {
     transform: translateX(0);
   }
 
-  .main-content {
-    margin-left: 0;
-  }
-
+  .main-content,
   .sidebar-collapsed .main-content {
     margin-left: 0;
   }
