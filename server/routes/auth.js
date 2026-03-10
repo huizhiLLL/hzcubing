@@ -253,6 +253,64 @@ router.post('/bind-qq', protect, async (req, res, next) => {
   }
 })
 
+// @route   POST /api/auth/bind-user-by-nickname
+// @desc    Bind QQ ID to a user by nickname (for AstrBot plugin)
+// @access  Public
+router.post('/bind-user-by-nickname', async (req, res, next) => {
+  try {
+    const { qqId, nickname } = req.body
+
+    if (!qqId || qqId.trim() === '') {
+      return res.status(400).json({
+        code: 400,
+        message: 'QQ ID is required'
+      })
+    }
+
+    if (!nickname || nickname.trim() === '') {
+      return res.status(400).json({
+        code: 400,
+        message: 'Nickname is required'
+      })
+    }
+
+    const normalizedQQ = qqId.trim()
+    const normalizedNickname = nickname.trim()
+
+    const targetUser = await User.findOne({ nickname: normalizedNickname })
+
+    if (!targetUser) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found'
+      })
+    }
+
+    const existingQQUser = await User.findOne({ qqId: normalizedQQ })
+    if (existingQQUser && existingQQUser._id.toString() !== targetUser._id.toString()) {
+      return res.status(400).json({
+        code: 400,
+        message: 'QQ ID already bound to another account'
+      })
+    }
+
+    targetUser.qqId = normalizedQQ
+    await targetUser.save()
+
+    res.json({
+      code: 200,
+      message: 'User bound successfully',
+      data: {
+        userId: targetUser._id,
+        nickname: targetUser.nickname,
+        qqId: targetUser.qqId
+      }
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
 // @route   GET /api/auth/find-user-by-qq
 // @desc    Find user by QQ ID (for AstrBot plugin)
 // @access  Public
