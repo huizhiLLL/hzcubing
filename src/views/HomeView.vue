@@ -34,11 +34,6 @@
         <span class="stat-value">{{ stats.totalUsers || '0' }}</span>
         <span class="stat-label">活跃用户</span>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <span class="stat-value">{{ stats.recordBreaks || '0' }}</span>
-        <span class="stat-label">纪录打破</span>
-      </div>
     </section>
 
     <!-- Quick Nav -->
@@ -56,72 +51,37 @@
       </div>
     </section>
 
-    <!-- Recent Records -->
-    <section class="recent-section">
-      <h2 class="section-title">最新破纪录</h2>
-      <div v-if="loading" class="loading">加载中...</div>
-      <div v-else-if="recentBreaks.length === 0" class="empty">暂无破纪录数据</div>
-      <div v-else class="records-list">
-        <div v-for="record in recentBreaks" :key="record._id" class="record-item">
-          <router-link :to="`/user/${record.userId}`" class="user-link">
-            {{ record.nickname }}
-          </router-link>
-          <div class="record-info">
-            <span class="event-badge">{{ record.event }}</span>
-            <span class="record-time">
-              {{ formatTime(record.singleSeconds || record.averageSeconds) }}
-            </span>
-          </div>
-          <span class="record-date">{{ formatDate(record.timestamp) }}</span>
-        </div>
-      </div>
-    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRecordsStore } from '../stores/records'
 import { events } from '../config/events'
 
 const recordsStore = useRecordsStore()
-const recentBreaks = ref([])
-const loading = ref(false)
 
 const stats = computed(() => ({
   totalRecords: recordsStore.records.length,
-  totalUsers: 0, // Would need a users store
-  recordBreaks: recentBreaks.value.length
+  totalUsers: uniqueUsers.value
 }))
+
+// Count unique users
+const uniqueUsers = computed(() => {
+  const userIds = new Set(recordsStore.records.map(r => r.userId))
+  return userIds.size
+})
 
 function formatTime(seconds) {
   return recordsStore.formatTime(seconds) || '--'
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) return '今天'
-  if (diffDays === 1) return '昨天'
-  if (diffDays < 7) return `${diffDays}天前`
-  return dateStr.split('T')[0]
-}
-
 onMounted(async () => {
-  loading.value = true
   try {
-    await Promise.all([
-      recordsStore.fetchRecords({ pageSize: 100 }),
-      recordsStore.fetchRecentBreaks({ limit: 5 })
-    ])
-    recentBreaks.value = recordsStore.recentBreaks
+    // Fetch all records for accurate stats
+    await recordsStore.fetchRecords({ pageSize: 2000 })
   } catch (err) {
-    console.error('Failed to load home data:', err)
-  } finally {
-    loading.value = false
+    console.error('Failed to load records:', err)
   }
 })
 </script>

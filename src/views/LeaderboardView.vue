@@ -38,8 +38,8 @@
       <p>加载中...</p>
     </div>
 
-    <!-- Top 3 卡片 -->
-    <div v-else-if="topThree.length > 0" class="top-three">
+    <!-- Top 3 卡片（只要有数据就显示） -->
+    <div v-if="sortedRecords.length > 0" class="top-three">
       <div
         v-for="(player, index) in topThree"
         :key="player._id || index"
@@ -57,13 +57,14 @@
       </div>
     </div>
 
-    <!-- 排名表格 -->
-    <div v-else-if="sortedRecords.length === 0" class="empty-state">
+    <!-- 空状态 -->
+    <div v-else class="empty-state">
       <span class="empty-icon">📊</span>
       <p>暂无{{ currentEventName }}数据</p>
     </div>
 
-    <div v-else class="rank-table">
+    <!-- 排名表格（始终显示所有排名） -->
+    <div v-if="sortedRecords.length > 0" class="rank-table">
       <table>
         <thead>
           <tr>
@@ -115,27 +116,44 @@ const currentEventName = computed(() => {
 
 // Get all records for current event
 const eventRecords = computed(() => {
-  return recordsStore.records.filter(r => {
-    // Map event IDs (e.g., '3x3' -> '333')
-    const eventMapping = {
-      '3x3': '333', '2x2': '222', '4x4': '444', '5x5': '555',
-      '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm',
-      'Pyraminx': 'py', 'Megaminx': 'meg', 'Skewb': 'sk',
-      'Clock': 'clock', 'Sq1': 'sq1'
-    }
-    const mappedEvent = eventMapping[currentEvent.value] || currentEvent.value
-    return r.event === mappedEvent
-  })
+  // Map frontend event IDs to backend event IDs
+  const eventMapping = {
+    '3x3': '333', '2x2': '222', '4x4': '444', '5x5': '555',
+    '3x3OH': '333oh', '3x3BLD': '333bf', '3x3FM': '333fm', '3x3SB': '333ft',
+    'Pyraminx': 'py', 'Megaminx': 'meg', 'Skewb': 'sk',
+    'Clock': 'clock', 'Sq1': 'sq1'
+  }
+  const mappedEvent = eventMapping[currentEvent.value] || currentEvent.value.toLowerCase()
+  
+  return recordsStore.records.filter(r => r.event === mappedEvent)
 })
 
-// Sort records based on type
+// Get best record for each player
 const sortedRecords = computed(() => {
   const timeField = type.value === 'single' ? 'singleSeconds' : 'averageSeconds'
   
-  return [...eventRecords.value]
+  // Group by user and get best record for each
+  const userBestMap = new Map()
+  
+  eventRecords.value
     .filter(r => r[timeField] !== null && r[timeField] !== undefined)
+    .forEach(record => {
+      const userId = record.userId
+      if (!userBestMap.has(userId)) {
+        userBestMap.set(userId, record)
+      } else {
+        const existing = userBestMap.get(userId)
+        // Keep the better (lower) time
+        if (record[timeField] < existing[timeField]) {
+          userBestMap.set(userId, record)
+        }
+      }
+    })
+  
+  // Convert to array and sort
+  return Array.from(userBestMap.values())
     .sort((a, b) => a[timeField] - b[timeField])
-    .slice(0, 50) // Limit to top 50
+    .slice(0, 100) // Limit to top 100
 })
 
 const topThree = computed(() => sortedRecords.value.slice(0, 3))
