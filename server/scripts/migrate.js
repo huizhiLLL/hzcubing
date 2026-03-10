@@ -133,10 +133,12 @@ async function migrate() {
 
     for await (const oldUser of usersCursor) {
       try {
-        // Skip if email already exists (in case of re-runs)
-        const existingUser = await User.findOne({ email: oldUser.email })
+        // Check if email already exists (in case of re-runs)
+        let existingUser = await User.findOne({ email: oldUser.email })
         if (existingUser) {
           console.log(`   ⏭️  Skipped (exists): ${oldUser.email}`)
+          // Still map old ID to new ID for record migration!
+          userMap.set(oldUser._id.toString(), existingUser._id.toString())
           skippedUsers++
           continue
         }
