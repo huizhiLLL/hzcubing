@@ -38,6 +38,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  qqId: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true, // 允许 null 值唯一
+    default: null
+  },
   role: {
     type: String,
     enum: ['user', 'admin', 'super_admin'],
