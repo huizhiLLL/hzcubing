@@ -82,13 +82,11 @@
       </section>
 
       <div v-if="personalBests.length === 0 && recentRecords.length === 0" class="empty-state">
-        <span class="empty-icon">📊</span>
         <p>暂无成绩记录</p>
       </div>
     </template>
 
     <div v-else class="empty-state">
-      <span class="empty-icon">❌</span>
       <p>用户不存在</p>
     </div>
   </div>
@@ -225,11 +223,7 @@ onMounted(async () => {
   color: var(--color-text-tertiary);
 }
 
-.loading-icon,
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: var(--space-md);
-}
+/* loading-icon / empty-icon removed */
 
 .profile-header {
   display: flex;

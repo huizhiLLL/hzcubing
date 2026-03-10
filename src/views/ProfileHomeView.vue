@@ -1,7 +1,6 @@
 <template>
   <div class="profile-home">
     <div v-if="!userStore.user" class="empty-state">
-      <span class="empty-icon">🔐</span>
       <p>请先登录后查看个人主页</p>
       <router-link to="/auth" class="primary-link">去登录</router-link>
     </div>
@@ -45,9 +44,7 @@ watchEffect(() => {
   color: var(--color-text-secondary);
 }
 
-.empty-icon {
-  font-size: 3rem;
-}
+/* empty-icon removed */
 
 .primary-link {
   display: inline-flex;
