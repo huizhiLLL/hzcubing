@@ -8,7 +8,6 @@
     </div>
 
     <div v-if="loading" class="loading-state">
-      <span class="loading-icon">⏳</span>
       <p>加载中...</p>
     </div>
 

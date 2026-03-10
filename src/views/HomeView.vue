@@ -26,12 +26,12 @@
     <!-- Stats Bar -->
     <section class="stats-bar">
       <div class="stat-item">
-        <span class="stat-value">{{ stats.totalRecords || '0' }}</span>
+        <span class="stat-value">{{ animatedStats.totalRecords }}</span>
         <span class="stat-label">总成绩数</span>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-item">
-        <span class="stat-value">{{ stats.totalUsers || '0' }}</span>
+        <span class="stat-value">{{ animatedStats.totalUsers }}</span>
         <span class="stat-label">活跃用户</span>
       </div>
     </section>
@@ -55,12 +55,20 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, watch } from 'vue'
 import { useRecordsStore } from '../stores/records'
 import { getEventsByCategory } from '../config/events'
 
 const recordsStore = useRecordsStore()
 const events = getEventsByCategory('official').slice(0, 12)
+const animatedStats = reactive({
+  totalRecords: 0,
+  totalUsers: 0
+})
+const animationFrameIds = {
+  totalRecords: null,
+  totalUsers: null
+}
 
 const stats = computed(() => ({
   totalRecords: recordsStore.records.length,
@@ -73,9 +81,40 @@ const uniqueUsers = computed(() => {
   return userIds.size
 })
 
-function formatTime(seconds) {
-  return recordsStore.formatTime(seconds) || '--'
+function animateValue(key, target) {
+  if (animationFrameIds[key]) {
+    cancelAnimationFrame(animationFrameIds[key])
+  }
+
+  const start = animatedStats[key]
+  const duration = 900
+  const startTime = performance.now()
+
+  const step = (currentTime) => {
+    const progress = Math.min((currentTime - startTime) / duration, 1)
+    const easedProgress = 1 - Math.pow(1 - progress, 3)
+
+    animatedStats[key] = Math.round(start + (target - start) * easedProgress)
+
+    if (progress < 1) {
+      animationFrameIds[key] = requestAnimationFrame(step)
+    } else {
+      animatedStats[key] = target
+      animationFrameIds[key] = null
+    }
+  }
+
+  animationFrameIds[key] = requestAnimationFrame(step)
 }
+
+watch(
+  stats,
+  (nextStats) => {
+    animateValue('totalRecords', nextStats.totalRecords)
+    animateValue('totalUsers', nextStats.totalUsers)
+  },
+  { immediate: true }
+)
 
 onMounted(async () => {
   try {
@@ -84,6 +123,12 @@ onMounted(async () => {
   } catch (err) {
     console.error('Failed to load records:', err)
   }
+})
+
+onBeforeUnmount(() => {
+  Object.values(animationFrameIds).forEach((id) => {
+    if (id) cancelAnimationFrame(id)
+  })
 })
 </script>
 
