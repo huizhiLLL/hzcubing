@@ -20,12 +20,14 @@ const recordSchema = new mongoose.Schema({
   singleSeconds: {
     type: Number,
     default: null,
-    min: 0
+    min: 0,
+    set: truncateToTwoDecimals
   },
   averageSeconds: {
     type: Number,
     default: null,
-    min: 0
+    min: 0,
+    set: truncateToTwoDecimals
   },
   cube: {
     type: String,
@@ -66,20 +68,30 @@ recordSchema.virtual('averageFormatted').get(function() {
   return formatTime(this.averageSeconds)
 })
 
-function formatTime(seconds) {
-  if (seconds === null || seconds === undefined) return null
-  if (typeof seconds !== 'number' || isNaN(seconds)) return null
+function truncateToTwoDecimals(value) {
+  if (value === null || value === undefined) return null
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return null
+  return Math.trunc(numeric * 100) / 100
+}
 
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
+function formatTime(seconds) {
+  const normalized = truncateToTwoDecimals(seconds)
+  if (normalized === null) return null
+
+  const h = Math.floor(normalized / 3600)
+  const m = Math.floor((normalized % 3600) / 60)
+  const s = normalized % 60
+  const wholeSeconds = Math.floor(s)
+  const centiseconds = Math.floor((s - wholeSeconds) * 100)
+  const secondText = `${wholeSeconds}.${centiseconds.toString().padStart(2, '0')}`.padStart(5, '0')
 
   if (h > 0) {
-    return `${h}:${m.toString().padStart(2, '0')}:${s.toFixed(2).padStart(5, '0')}`
+    return `${h}:${m.toString().padStart(2, '0')}:${secondText}`
   } else if (m > 0) {
-    return `${m}:${s.toFixed(2).padStart(5, '0')}`
+    return `${m}:${secondText}`
   } else {
-    return s.toFixed(2)
+    return `${wholeSeconds}.${centiseconds.toString().padStart(2, '0')}`
   }
 }
 

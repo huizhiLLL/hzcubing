@@ -11,20 +11,29 @@ export const useRecordsStore = defineStore('records', () => {
   const isLoading = ref(false)
   const error = ref(null)
 
+  function truncateToTwoDecimals(value) {
+    if (value === null || value === undefined || isNaN(value)) return null
+    return Math.trunc(Number(value) * 100) / 100
+  }
+
   // Format time from seconds
   function formatTime(seconds) {
-    if (seconds === null || seconds === undefined || isNaN(seconds)) return null
-    
-    const h = Math.floor(seconds / 3600)
-    const m = Math.floor((seconds % 3600) / 60)
-    const s = seconds % 60
-    
+    const normalized = truncateToTwoDecimals(seconds)
+    if (normalized === null) return null
+
+    const h = Math.floor(normalized / 3600)
+    const m = Math.floor((normalized % 3600) / 60)
+    const s = normalized % 60
+    const wholeSeconds = Math.floor(s)
+    const centiseconds = Math.floor((s - wholeSeconds) * 100)
+    const secondText = `${wholeSeconds}.${centiseconds.toString().padStart(2, '0')}`.padStart(5, '0')
+
     if (h > 0) {
-      return `${h}:${m.toString().padStart(2, '0')}:${s.toFixed(2).padStart(5, '0')}`
+      return `${h}:${m.toString().padStart(2, '0')}:${secondText}`
     } else if (m > 0) {
-      return `${m}:${s.toFixed(2).padStart(5, '0')}`
+      return `${m}:${secondText}`
     } else {
-      return s.toFixed(2)
+      return `${wholeSeconds}.${centiseconds.toString().padStart(2, '0')}`
     }
   }
 
