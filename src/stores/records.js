@@ -21,11 +21,11 @@ export const useRecordsStore = defineStore('records', () => {
     const normalized = truncateToTwoDecimals(seconds)
     if (normalized === null) return null
 
-    const h = Math.floor(normalized / 3600)
-    const m = Math.floor((normalized % 3600) / 60)
-    const s = normalized % 60
-    const wholeSeconds = Math.floor(s)
-    const centiseconds = Math.floor((s - wholeSeconds) * 100)
+    const totalCentiseconds = Math.trunc(normalized * 100)
+    const h = Math.floor(totalCentiseconds / 360000)
+    const m = Math.floor((totalCentiseconds % 360000) / 6000)
+    const wholeSeconds = Math.floor((totalCentiseconds % 6000) / 100)
+    const centiseconds = totalCentiseconds % 100
     const secondText = `${wholeSeconds}.${centiseconds.toString().padStart(2, '0')}`.padStart(5, '0')
 
     if (h > 0) {
