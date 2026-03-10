@@ -9,6 +9,7 @@
     "dev": "node --watch index.js",
     "migrate": "node scripts/migrate.js",
     "migrate-simple": "node scripts/migrate-simple.js",
+    "migrate-qq-ids": "node scripts/migrate-qq-ids.js",
     "create-test-user": "node scripts/create-test-user.js",
     "fix-passwords": "node scripts/fix-passwords.js",
     "test-api": "node scripts/test-api.js"

@@ -27,7 +27,11 @@ const registerValidation = [
   body('nickname')
     .trim()
     .notEmpty().withMessage('Nickname is required')
-    .isLength({ max: 50 }).withMessage('Nickname must be less than 50 characters')
+    .isLength({ max: 50 }).withMessage('Nickname must be less than 50 characters'),
+  body('qqId')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 20 }).withMessage('QQ ID must be 1-20 characters')
 ]
 
 const loginValidation = [
@@ -54,7 +58,7 @@ router.post('/register', registerValidation, async (req, res, next) => {
       })
     }
 
-    const { email, password, nickname, bio } = req.body
+    const { email, password, nickname, bio, qqId } = req.body
 
     // Check if user already exists
     const existingUser = await User.findOne({ email })
@@ -65,12 +69,24 @@ router.post('/register', registerValidation, async (req, res, next) => {
       })
     }
 
+    // Check if QQ ID is already bound
+    if (qqId) {
+      const existingQQ = await User.findOne({ qqId })
+      if (existingQQ) {
+        return res.status(400).json({
+          code: 400,
+          message: 'QQ ID already bound to another account'
+        })
+      }
+    }
+
     // Create user
     const user = new User({
       email,
       password,
       nickname,
-      bio: bio || ''
+      bio: bio || '',
+      qqId: qqId || null
     })
 
     await user.save()
@@ -191,6 +207,152 @@ router.get('/me', protect, async (req, res, next) => {
         status: req.user.status,
         createdAt: req.user.createdAt,
         updatedAt: req.user.updatedAt
+      }
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// @route   POST /api/auth/bind-qq
+// @desc    Bind QQ ID to current user
+// @access  Private
+router.post('/bind-qq', protect, async (req, res, next) => {
+  try {
+    const { qqId } = req.body
+    
+    if (!qqId || qqId.trim() === '') {
+      return res.status(400).json({
+        code: 400,
+        message: 'QQ ID is required'
+      })
+    }
+    
+    // Check if QQ ID is already bound to another user
+    const existingUser = await User.findOne({ qqId })
+    if (existingUser && existingUser._id.toString() !== req.user._id.toString()) {
+      return res.status(400).json({
+        code: 400,
+        message: 'QQ ID already bound to another account'
+      })
+    }
+    
+    // Update user
+    req.user.qqId = qqId.trim()
+    await req.user.save()
+    
+    res.json({
+      code: 200,
+      message: 'QQ ID bound successfully',
+      data: {
+        qqId: req.user.qqId
+      }
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// @route   GET /api/auth/find-user-by-qq
+// @desc    Find user by QQ ID (for AstrBot plugin)
+// @access  Public
+router.get('/find-user-by-qq', async (req, res, next) => {
+  try {
+    const { qqId } = req.query
+    
+    if (!qqId) {
+      return res.status(400).json({
+        code: 400,
+        message: 'QQ ID is required'
+      })
+    }
+    
+    const user = await User.findOne({ qqId }).select('-password')
+    
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found'
+      })
+    }
+    
+    res.json({
+      code: 200,
+      message: 'Success',
+      data: {
+        id: user._id,
+        nickname: user.nickname,
+        email: user.email,
+        qqId: user.qqId
+      }
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// @route   POST /api/auth/submit-record-by-qq
+// @desc    Submit record by QQ ID (for AstrBot plugin, no auth required)
+// @access  Public
+router.post('/submit-record-by-qq', async (req, res, next) => {
+  try {
+    const { qqId, event, singleSeconds, averageSeconds, cube, method, scramble } = req.body
+    
+    if (!qqId) {
+      return res.status(400).json({
+        code: 400,
+        message: 'QQ ID is required'
+      })
+    }
+    
+    if (!event) {
+      return res.status(400).json({
+        code: 400,
+        message: 'Event is required'
+      })
+    }
+    
+    // Find user by QQ ID
+    const user = await User.findOne({ qqId })
+    
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found, please register first'
+      })
+    }
+    
+    // Create record
+    const Record = (await import('../models/Record.js')).default
+    const record = new Record({
+      userId: user._id,
+      nickname: user.nickname,
+      event,
+      singleSeconds: singleSeconds !== null && singleSeconds !== undefined ? Number(singleSeconds) : null,
+      averageSeconds: averageSeconds !== null && averageSeconds !== undefined ? Number(averageSeconds) : null,
+      cube: cube || null,
+      method: method || null,
+      scramble: scramble || null
+    })
+    
+    await record.save()
+    
+    // Check if this is a new GR
+    const isSingleGR = singleSeconds !== null && singleSeconds !== undefined
+    const isAverageGR = averageSeconds !== null && averageSeconds !== undefined
+    
+    res.json({
+      code: 200,
+      message: 'Record submitted successfully',
+      data: {
+        _id: record._id,
+        userId: user._id,
+        nickname: user.nickname,
+        event: record.event,
+        singleSeconds: record.singleSeconds,
+        averageSeconds: record.averageSeconds,
+        isSingleGR,
+        isAverageGR
       }
     })
   } catch (error) {
