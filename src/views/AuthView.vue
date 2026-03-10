@@ -41,6 +41,16 @@
         </div>
 
         <div v-if="!isLogin" class="form-group">
+          <label class="form-label">QQ号 <span class="optional-tag">(选填)</span></label>
+          <input
+            v-model="form.qqId"
+            type="text"
+            class="form-input"
+            placeholder="输入QQ号（可选）"
+          />
+        </div>
+
+        <div v-if="!isLogin" class="form-group">
           <label class="form-label">确认密码</label>
           <input
             v-model="form.confirmPassword"
@@ -84,6 +94,7 @@ const form = ref({
   email: '',
   password: '',
   nickname: '',
+  qqId: '',
   confirmPassword: ''
 })
 
@@ -114,7 +125,8 @@ const handleSubmit = async () => {
       await userStore.register({
         email: form.value.email,
         password: form.value.password,
-        nickname: form.value.nickname
+        nickname: form.value.nickname,
+        qqId: form.value.qqId || undefined
       })
     }
     
@@ -177,6 +189,12 @@ const handleSubmit = async () => {
 .form-label {
   font-weight: 500;
   color: var(--color-text);
+}
+
+.optional-tag {
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
 }
 
 .form-input {
