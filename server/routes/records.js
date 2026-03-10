@@ -60,7 +60,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
   try {
     const { event, page = 1, pageSize = 50 } = req.query
     const pageNum = Math.max(1, parseInt(page))
-    const pageSizeNum = Math.min(200, Math.max(1, parseInt(pageSize)))
+    const pageSizeNum = Math.min(2000, Math.max(1, parseInt(pageSize)))
     const skip = (pageNum - 1) * pageSizeNum
 
     const query = event ? { event } : {}
