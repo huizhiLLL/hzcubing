@@ -373,12 +373,49 @@ onMounted(async () => {
   }
 
   .event-selector {
-    overflow-x: auto;
-    padding-bottom: 0.25rem;
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .event-overflow {
     width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-panel {
+    align-items: stretch;
+  }
+
+  .event-tab {
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+  }
+
+  .type-toggle {
+    align-self: flex-start;
+    border-radius: var(--radius-md);
+  }
+
+  .type-btn {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .rank-table {
+    border-radius: var(--radius-lg);
+    overflow-x: auto;
+  }
+
+  .rank-table th,
+  .rank-table td {
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .rank-num {
+    min-width: 28px;
+    height: 28px;
   }
 }
 </style>
