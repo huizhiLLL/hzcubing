@@ -75,7 +75,10 @@ export const recordAPI = {
 }
 
 export const memeEventAPI = {
-  getAll: () => api.get('/meme-events')
+  getAll: () => api.get('/meme-events'),
+  getMine: () => api.get('/meme-events/mine'),
+  create: (data) => api.post('/meme-events', data),
+  update: (eventCode, data) => api.put(`/meme-events/${eventCode}`, data)
 }
 
 export default {

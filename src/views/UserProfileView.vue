@@ -61,6 +61,26 @@
         </div>
       </section>
 
+      <section v-if="createdMemeEvents.length > 0" class="activity-section">
+        <div class="section-heading">
+          <h2 class="section-title">创建的整活项目</h2>
+          <span class="section-subtitle">这个人搞出来的项目</span>
+        </div>
+
+        <div class="activity-list">
+          <article v-for="event in createdMemeEvents" :key="event.id" class="activity-item">
+            <div class="activity-left event-item-left">
+              <span class="event-badge">{{ event.name }}</span>
+              <div class="activity-times">
+                <span class="activity-time muted code-text">{{ event.id }}</span>
+                <span v-if="event.description" class="activity-time muted">{{ event.description }}</span>
+              </div>
+            </div>
+            <span class="activity-date">{{ event.isActive ? '启用中' : '已停用' }}</span>
+          </article>
+        </div>
+      </section>
+
       <section v-if="recentRecords.length > 0" class="activity-section">
         <div class="section-heading">
           <h2 class="section-title">最近提交</h2>
@@ -81,7 +101,7 @@
         </div>
       </section>
 
-      <div v-if="personalBests.length === 0 && recentRecords.length === 0" class="empty-state">
+      <div v-if="personalBests.length === 0 && recentRecords.length === 0 && createdMemeEvents.length === 0" class="empty-state">
         <p>暂无成绩记录</p>
       </div>
     </template>
@@ -110,6 +130,7 @@ const loading = ref(true)
 const userData = ref(null)
 const personalBests = ref([])
 const recentRecords = ref([])
+const createdMemeEvents = ref([])
 
 const isCurrentUser = computed(() => {
   const currentId = userStore.user?.id || userStore.user?._id
@@ -164,6 +185,7 @@ async function loadProfile() {
   userData.value = null
   personalBests.value = []
   recentRecords.value = []
+  createdMemeEvents.value = []
 
   try {
     const userId = route.params.id || userStore.user?.id || userStore.user?._id
@@ -187,6 +209,7 @@ async function loadProfile() {
 
     personalBests.value = bestResult || []
     recentRecords.value = historyResult.data || []
+    createdMemeEvents.value = (eventsStore.memeEvents || []).filter(event => event.createdBy === String(userId))
   } catch (err) {
     console.error('Failed to load user profile:', err)
     userData.value = null
@@ -412,6 +435,10 @@ onMounted(async () => {
   min-width: 0;
 }
 
+.event-item-left {
+  align-items: flex-start;
+}
+
 .activity-times {
   display: flex;
   flex-wrap: wrap;
@@ -435,6 +462,10 @@ onMounted(async () => {
 .activity-time.muted,
 .activity-date {
   color: var(--color-text-secondary);
+}
+
+.code-text {
+  font-family: var(--font-mono);
 }
 
 @media (max-width: 768px) {

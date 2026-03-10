@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { memeEventAPI } from '@/api'
+import { useUserStore } from './user'
 import {
   OFFICIAL_EVENTS,
   FUN_EVENTS,
@@ -13,7 +14,9 @@ import {
 } from '@/config/events'
 
 export const useEventsStore = defineStore('events', () => {
+  const userStore = useUserStore()
   const memeEvents = ref([])
+  const myMemeEvents = ref([])
   const isLoading = ref(false)
   const loaded = ref(false)
   const error = ref(null)
@@ -65,6 +68,61 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
+  async function fetchMyMemeEvents() {
+    if (!userStore.isLoggedIn) {
+      myMemeEvents.value = []
+      return []
+    }
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const result = await memeEventAPI.getMine()
+      myMemeEvents.value = result.data || []
+      return myMemeEvents.value
+    } catch (err) {
+      error.value = err.message || 'Failed to fetch your meme events'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function createMemeEvent(payload) {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const result = await memeEventAPI.create(payload)
+      loaded.value = false
+      await Promise.all([fetchMemeEvents(true), fetchMyMemeEvents()])
+      return result.data
+    } catch (err) {
+      error.value = err.message || 'Failed to create meme event'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function updateMemeEvent(eventCode, payload) {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const result = await memeEventAPI.update(eventCode, payload)
+      loaded.value = false
+      await Promise.all([fetchMemeEvents(true), fetchMyMemeEvents()])
+      return result.data
+    } catch (err) {
+      error.value = err.message || 'Failed to update meme event'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   function getEventName(eventId) {
     return eventNameMap.value[eventId] || getStaticEventName(eventId) || eventId
   }
@@ -93,12 +151,16 @@ export const useEventsStore = defineStore('events', () => {
     categories,
     eventGroups,
     memeEvents,
+    myMemeEvents,
     allEvents,
     groupedEvents,
     isLoading,
     loaded,
     error,
     fetchMemeEvents,
+    fetchMyMemeEvents,
+    createMemeEvent,
+    updateMemeEvent,
     getEventName,
     getEventIconId,
     getEventsByCategory,
