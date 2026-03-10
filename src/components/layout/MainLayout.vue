@@ -48,9 +48,9 @@
           <router-link to="/settings" class="nav-item" @click="closeMobileMenu">
             <span class="nav-icon user-avatar">
               <img v-if="userStore.user?.avatar" :src="userStore.user.avatar" alt="avatar" />
-              <span v-else>{{ userStore.user?.username?.[0]?.toUpperCase() }}</span>
+              <span v-else>{{ (userStore.user?.nickname || userStore.user?.email || 'U')[0].toUpperCase() }}</span>
             </span>
-            <span v-if="!isCollapsed" class="nav-label">{{ userStore.user?.username }}</span>
+            <span v-if="!isCollapsed" class="nav-label">{{ userStore.user?.nickname || userStore.user?.email }}</span>
           </router-link>
           <button class="nav-item" @click="handleLogout">
             <span class="nav-icon" v-html="logoutIcon"></span>
@@ -119,7 +119,7 @@ const algdbIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" s
 const navItems = [
   { path: '/', label: '首页', icon: homeIcon },
   { path: '/leaderboard', label: '排行榜', icon: leaderboardIcon },
-  { path: '/record-history', label: '记录', icon: recordIcon },
+  { path: '/players', label: '选手', icon: recordIcon },
   { path: '/algdb', label: '公式库', icon: algdbIcon },
   { path: '/submit', label: '提交成绩', icon: submitIcon, requiresAuth: true }
 ]

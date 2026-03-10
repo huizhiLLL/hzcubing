@@ -13,8 +13,8 @@ const routes = [
     component: () => import('../views/LeaderboardView.vue')
   },
   {
-    path: '/record-history',
-    name: 'RecordHistory',
+    path: '/players',
+    name: 'Players',
     component: () => import('../views/RecordHistoryView.vue'),
     meta: { requiresAuth: true }
   },
