@@ -34,3 +34,7 @@ dist-ssr
 server/.env*
 !server/.env.example
 server/node_modules
+
+.claude/
+.vscode/
+docs/
