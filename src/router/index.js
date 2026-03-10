@@ -50,6 +50,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/admin/meme-events',
+    name: 'AdminMemeEvents',
+    component: () => import('../views/AdminMemeEventsView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/auth',
     name: 'Auth',
     component: () => import('../views/AuthView.vue')
@@ -63,12 +69,19 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
+  const isAdmin = ['admin', 'super_admin'].includes(userStore.user?.role)
 
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     next({ name: 'Auth', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.requiresAdmin && !isAdmin) {
+    next({ name: 'Home' })
+    return
+  }
+
+  next()
 })
 
 export default router

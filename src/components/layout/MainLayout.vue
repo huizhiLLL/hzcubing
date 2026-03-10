@@ -103,6 +103,7 @@ const leaderboardIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="n
 const recordIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>'
 const grIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M7 16l3-6 4 3 3-7"/></svg>'
 const submitIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+const adminIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/><path d="M9.5 12.5l1.5 1.5 3.5-3.5"/></svg>'
 const moonIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
 const sunIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
 const loginIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>'
@@ -113,10 +114,11 @@ const navItems = [
   { path: '/leaderboard', label: '排行榜', icon: leaderboardIcon },
   { path: '/gr', label: 'GR', icon: grIcon },
   { path: '/players', label: '选手', icon: recordIcon },
-  { path: '/submit', label: '提交成绩', icon: submitIcon }
+  { path: '/submit', label: '提交成绩', icon: submitIcon },
+  { path: '/admin/meme-events', label: '整活项目管理', icon: adminIcon, adminOnly: true }
 ]
 
-const visibleNavItems = computed(() => navItems)
+const visibleNavItems = computed(() => navItems.filter(item => !item.adminOnly || ['admin', 'super_admin'].includes(userStore.user?.role)))
 
 const isActive = (path) => {
   if (path === '/') return route.path === '/'
