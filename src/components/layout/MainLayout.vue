@@ -120,7 +120,7 @@ const navItems = [
   { path: '/', label: '首页', icon: homeIcon },
   { path: '/leaderboard', label: '排行榜', icon: leaderboardIcon },
   { path: '/players', label: '选手', icon: recordIcon },
-  { path: '/algdb', label: '公式库', icon: algdbIcon },
+  // { path: '/algdb', label: '公式库', icon: algdbIcon },
   { path: '/submit', label: '提交成绩', icon: submitIcon, requiresAuth: true }
 ]
 
