@@ -29,3 +29,8 @@ dist-ssr
 !.dev.vars.example
 .env*
 !.env.example
+
+# Server config
+server/.env*
+!server/.env.example
+server/node_modules
