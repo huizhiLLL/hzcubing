@@ -6,6 +6,7 @@ import { connectDB } from './config/database.js'
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/users.js'
 import recordRoutes from './routes/records.js'
+import memeEventRoutes from './routes/memeEvents.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 dotenv.config()
@@ -42,6 +43,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/records', recordRoutes)
+app.use('/api/meme-events', memeEventRoutes)
 
 // Error handling middleware
 app.use(errorHandler)

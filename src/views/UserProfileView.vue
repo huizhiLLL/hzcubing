@@ -99,13 +99,14 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { useRecordsStore } from '../stores/records'
+import { useEventsStore } from '../stores/events'
 import { userAPI } from '@/api'
-import { events, getEventName } from '@/config/events'
 import { getAvatarGradient, getInitial } from '@/utils/avatar'
 
 const route = useRoute()
 const userStore = useUserStore()
 const recordsStore = useRecordsStore()
+const eventsStore = useEventsStore()
 
 const loading = ref(true)
 const userData = ref(null)
@@ -127,7 +128,7 @@ const memberSince = computed(() => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 })
 
-const eventOrder = computed(() => events.map(event => event.id))
+const eventOrder = computed(() => eventsStore.allEvents.map(event => event.id))
 
 const sortedPersonalBests = computed(() => {
   return [...personalBests.value].sort((a, b) => {
@@ -139,6 +140,10 @@ const sortedPersonalBests = computed(() => {
     return indexA - indexB
   })
 })
+
+function getEventName(eventId) {
+  return eventsStore.getEventName(eventId)
+}
 
 function formatTime(seconds) {
   return recordsStore.formatTime(seconds) || '--'
@@ -193,7 +198,14 @@ async function loadProfile() {
 }
 
 watch(() => route.params.id, loadProfile)
-onMounted(loadProfile)
+onMounted(async () => {
+  try {
+    await eventsStore.fetchMemeEvents()
+  } catch (error) {
+    console.error('Failed to load meme events for profile:', error)
+  }
+  loadProfile()
+})
 </script>
 
 <style scoped>

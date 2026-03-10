@@ -1,33 +1,30 @@
 <template>
   <div class="leaderboard">
     <div class="filter-panel">
-      <div class="event-selector">
-        <button
-          v-for="event in officialEvents"
-          :key="event.id"
-          class="event-tab"
-          :class="{ active: currentEvent === event.id }"
-          @click="selectEvent(event.id)"
-        >
-          <span class="event-name">{{ event.name }}</span>
-        </button>
+      <div class="event-selector-wrap">
+        <div class="event-selector">
+          <button
+            v-for="event in visibleEvents"
+            :key="event.id"
+            class="event-tab"
+            :class="{ active: currentEvent === event.id }"
+            @click="selectEvent(event.id)"
+          >
+            <span class="event-name">{{ event.name }}</span>
+          </button>
+        </div>
+        <div v-if="overflowEventOptions.length" class="event-overflow">
+          <AppSelect
+            :model-value="overflowSelection"
+            :options="overflowSelectOptions"
+            @update:model-value="handleOverflowSelect"
+          />
+        </div>
       </div>
 
       <div class="type-toggle">
-        <button
-          class="type-btn"
-          :class="{ active: type === 'single' }"
-          @click="type = 'single'"
-        >
-          单次
-        </button>
-        <button
-          class="type-btn"
-          :class="{ active: type === 'average' }"
-          @click="type = 'average'"
-        >
-          平均
-        </button>
+        <button class="type-btn" :class="{ active: type === 'single' }" @click="type = 'single'">单次</button>
+        <button class="type-btn" :class="{ active: type === 'average' }" @click="type = 'average'">平均</button>
       </div>
     </div>
 
@@ -36,25 +33,17 @@
     </div>
 
     <div v-else-if="sortedRecords.length > 0" class="top-three">
-      <div
-        v-for="(player, index) in topThree"
-        :key="player._id || index"
-        class="top-card"
-        :class="['rank-' + (index + 1)]"
-      >
+      <div v-for="(player, index) in topThree" :key="player._id || index" class="top-card" :class="['rank-' + (index + 1)]">
         <div class="medal">{{ medals[index] }}</div>
         <router-link :to="`/user/${player.userId}`" class="user-link">
           {{ player.nickname }}
         </router-link>
-        <div class="top-time">
-          {{ formatTime(getTimeValue(player)) }}
-        </div>
+        <div class="top-time">{{ formatTime(getTimeValue(player)) }}</div>
         <span class="top-date">{{ formatDate(player.timestamp) }}</span>
       </div>
     </div>
 
     <div v-else class="empty-state">
-      <span class="empty-icon">📊</span>
       <p>暂无{{ currentEventName }}数据</p>
     </div>
 
@@ -70,17 +59,13 @@
         </thead>
         <tbody>
           <tr v-for="(player, index) in sortedRecords" :key="player._id || index">
-            <td class="col-rank">
-              <span class="rank-num">{{ index + 1 }}</span>
-            </td>
+            <td class="col-rank"><span class="rank-num">{{ index + 1 }}</span></td>
             <td class="col-player">
               <router-link :to="`/user/${player.userId}`" class="player-link">
                 {{ player.nickname }}
               </router-link>
             </td>
-            <td class="col-time">
-              {{ formatTime(getTimeValue(player)) }}
-            </td>
+            <td class="col-time">{{ formatTime(getTimeValue(player)) }}</td>
             <td class="col-date">{{ formatDate(player.timestamp) }}</td>
           </tr>
         </tbody>
@@ -92,24 +77,32 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppSelect from '@/components/common/AppSelect.vue'
 import { useRecordsStore } from '../stores/records'
-import { getEventsByCategory, getEventName } from '../config/events'
+import { useEventsStore } from '../stores/events'
 
 const route = useRoute()
 const router = useRouter()
 const recordsStore = useRecordsStore()
+const eventsStore = useEventsStore()
 
-const officialEvents = getEventsByCategory('official')
-const currentEvent = ref(officialEvents[0]?.id || '333')
+const currentEvent = ref('333')
 const type = ref('single')
 const loading = ref(false)
 const medals = ['🥇', '🥈', '🥉']
+const maxVisibleTabs = 8
 
-const currentEventName = computed(() => getEventName(currentEvent.value))
+const allEvents = computed(() => eventsStore.allEvents)
+const visibleEvents = computed(() => allEvents.value.slice(0, maxVisibleTabs))
+const overflowEventOptions = computed(() => allEvents.value.slice(maxVisibleTabs))
+const overflowSelection = computed(() => overflowEventOptions.value.some(event => event.id === currentEvent.value) ? currentEvent.value : '')
+const overflowSelectOptions = computed(() => [
+  { label: '更多项目', value: '', disabled: true },
+  ...overflowEventOptions.value.map(event => ({ label: event.name, value: event.id }))
+])
+const currentEventName = computed(() => eventsStore.getEventName(currentEvent.value))
 
-const eventRecords = computed(() => {
-  return recordsStore.records.filter(record => record.event === currentEvent.value)
-})
+const eventRecords = computed(() => recordsStore.records.filter(record => record.event === currentEvent.value))
 
 const sortedRecords = computed(() => {
   const timeField = type.value === 'single' ? 'singleSeconds' : 'averageSeconds'
@@ -156,20 +149,31 @@ function selectEvent(eventId) {
   router.replace({ query: { ...route.query, event: eventId } })
 }
 
+function handleOverflowSelect(eventId) {
+  if (!eventId) return
+  selectEvent(eventId)
+}
+
 watch(() => route.query.event, (newEvent) => {
-  if (newEvent && officialEvents.some(event => event.id === newEvent)) {
+  if (newEvent && allEvents.value.some(event => event.id === newEvent)) {
     currentEvent.value = newEvent
   }
 })
 
 onMounted(async () => {
-  if (route.query.event && officialEvents.some(event => event.id === route.query.event)) {
-    currentEvent.value = route.query.event
-  }
-
   loading.value = true
   try {
-    await recordsStore.fetchRecords({ pageSize: 2000 })
+    await Promise.all([
+      recordsStore.fetchRecords({ pageSize: 2000 }),
+      eventsStore.fetchMemeEvents()
+    ])
+
+    const initialEvent = route.query.event
+    if (initialEvent && allEvents.value.some(event => event.id === initialEvent)) {
+      currentEvent.value = initialEvent
+    } else {
+      currentEvent.value = allEvents.value[0]?.id || '333'
+    }
   } catch (err) {
     console.error('Failed to load records:', err)
   } finally {
@@ -188,32 +192,48 @@ onMounted(async () => {
 .filter-panel {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.event-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: min(100%, 640px);
 }
 
 .event-selector {
   display: flex;
   gap: var(--space-xs);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.event-overflow {
+  width: 180px;
+  flex-shrink: 0;
 }
 
 .event-tab {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
+  justify-content: center;
+  padding: 0.72rem 0.95rem;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
-  font-size: 0.9375rem;
+  font-size: 0.92rem;
+  white-space: nowrap;
   transition: all var(--transition-fast);
 }
 
 .event-tab:hover {
   border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .event-tab.active {
@@ -226,12 +246,12 @@ onMounted(async () => {
   display: flex;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
 .type-btn {
-  padding: var(--space-sm) var(--space-md);
+  padding: 0.72rem 1rem;
   color: var(--color-text-secondary);
   font-weight: 500;
   transition: all var(--transition-fast);
@@ -250,12 +270,6 @@ onMounted(async () => {
   justify-content: center;
   padding: var(--space-2xl);
   color: var(--color-text-tertiary);
-}
-
-.loading-icon,
-.empty-icon {
-  font-size: 3rem;
-  margin-bottom: var(--space-md);
 }
 
 .top-three {
@@ -304,11 +318,6 @@ onMounted(async () => {
   color: var(--color-text);
 }
 
-.user-link:hover,
-.player-link:hover {
-  color: var(--color-primary);
-}
-
 .top-time {
   font-family: var(--font-mono);
   font-size: 1.5rem;
@@ -320,10 +329,10 @@ onMounted(async () => {
 }
 
 .rank-table {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
   overflow: hidden;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
 }
 
 .rank-table table {
@@ -333,15 +342,14 @@ onMounted(async () => {
 
 .rank-table th,
 .rank-table td {
-  padding: var(--space-md);
+  padding: 0.9rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--color-border-light);
 }
 
 .rank-table th {
   background: var(--color-bg-tertiary);
-  font-weight: 600;
-  font-size: 0.8775rem;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
 
@@ -349,31 +357,28 @@ onMounted(async () => {
   border-bottom: none;
 }
 
-.rank-table tr:hover td {
-  background: var(--color-bg-tertiary);
-}
-
 .rank-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--color-bg-tertiary);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {
   .top-three {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 768px) {
-  .rank-table th,
-  .rank-table td {
-    padding: var(--space-sm) var(--space-xs);
+  .event-selector-wrap {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .event-selector {
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .event-overflow {
+    width: 100%;
   }
 }
 </style>

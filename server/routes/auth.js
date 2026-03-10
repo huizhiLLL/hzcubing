@@ -354,7 +354,7 @@ router.get('/find-user-by-qq', async (req, res, next) => {
 // @access  Public
 router.post('/submit-record-by-qq', async (req, res, next) => {
   try {
-    const { qqId, event, singleSeconds, averageSeconds, cube, method, scramble } = req.body
+    const { qqId, event, singleSeconds, averageSeconds, cube, method } = req.body
     
     if (!qqId) {
       return res.status(400).json({
@@ -389,8 +389,7 @@ router.post('/submit-record-by-qq', async (req, res, next) => {
       singleSeconds: singleSeconds !== null && singleSeconds !== undefined ? Number(singleSeconds) : null,
       averageSeconds: averageSeconds !== null && averageSeconds !== undefined ? Number(averageSeconds) : null,
       cube: cube || null,
-      method: method || null,
-      scramble: scramble || null
+      method: method || null
     })
     
     await record.save()

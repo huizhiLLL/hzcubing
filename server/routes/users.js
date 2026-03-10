@@ -117,7 +117,8 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const skip = (pageNum - 1) * pageSizeNum
 
     const users = await User.find({ status: 'active' })
-      .select('nickname avatar role')
+      .select('nickname avatar role email createdAt')
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSizeNum)
 

@@ -74,8 +74,13 @@ export const recordAPI = {
   delete: (id) => api.delete(`/records/${id}`)
 }
 
+export const memeEventAPI = {
+  getAll: () => api.get('/meme-events')
+}
+
 export default {
   auth: authAPI,
   user: userAPI,
-  record: recordAPI
+  record: recordAPI,
+  memeEvent: memeEventAPI
 }

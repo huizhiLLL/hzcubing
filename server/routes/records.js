@@ -354,7 +354,7 @@ router.post('/', protect, recordValidation, async (req, res, next) => {
       })
     }
 
-    const { event, singleSeconds, averageSeconds, cube, method, scramble, timestamp } = req.body
+    const { event, singleSeconds, averageSeconds, cube, method, timestamp } = req.body
 
     // Validate that at least one time is provided
     if (singleSeconds == null && averageSeconds == null) {
@@ -372,7 +372,6 @@ router.post('/', protect, recordValidation, async (req, res, next) => {
       averageSeconds: averageSeconds ?? null,
       cube: cube || null,
       method: method || null,
-      scramble: scramble || null,
       timestamp: timestamp ? new Date(timestamp) : new Date()
     })
 
@@ -412,14 +411,13 @@ router.put('/:id', protect, async (req, res, next) => {
       })
     }
 
-    const { event, singleSeconds, averageSeconds, cube, method, scramble } = req.body
+    const { event, singleSeconds, averageSeconds, cube, method } = req.body
 
     if (event) record.event = event
     if (singleSeconds !== undefined) record.singleSeconds = singleSeconds
     if (averageSeconds !== undefined) record.averageSeconds = averageSeconds
     if (cube !== undefined) record.cube = cube
     if (method !== undefined) record.method = method
-    if (scramble !== undefined) record.scramble = scramble
 
     await record.save()
 

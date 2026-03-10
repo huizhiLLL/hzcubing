@@ -1,4 +1,4 @@
-const OFFICIAL_EVENTS = [
+export const OFFICIAL_EVENTS = [
   { id: '333', name: '三阶速拧', category: 'official', iconId: '333' },
   { id: '222', name: '二阶速拧', category: 'official', iconId: '222' },
   { id: '333oh', name: '三阶单手', category: 'official', iconId: '333oh' },
@@ -19,7 +19,7 @@ const OFFICIAL_EVENTS = [
   { id: 'fto', name: 'FTO', category: 'official', iconId: 'fto' }
 ]
 
-const FUN_EVENTS = [
+export const FUN_EVENTS = [
   { id: '二阶镜面', name: '二阶镜面', category: 'fun' },
   { id: '三阶镜面', name: '三阶镜面', category: 'fun' },
   { id: '四阶镜面', name: '四阶镜面', category: 'fun' },
@@ -40,21 +40,6 @@ const FUN_EVENTS = [
   { id: '十一阶速拧', name: '十一阶速拧', category: 'fun' }
 ]
 
-const MEME_EVENTS = [
-  { id: 'FTO单手', name: 'FTO单手', category: 'meme' },
-  { id: '二阶单手', name: '二阶单手', category: 'meme' },
-  { id: '四阶单手', name: '四阶单手', category: 'meme' },
-  { id: '魔表单手', name: '魔表单手', category: 'meme' },
-  { id: '3-5阶魔方连拧', name: '3-5阶魔方连拧', category: 'meme' },
-  { id: '250ml牛奶', name: '250ml牛奶', category: 'meme' },
-  { id: 'FTO BO5', name: 'FTO BO5', category: 'meme' },
-  { id: '二阶盲拧', name: '二阶盲拧', category: 'meme' },
-  { id: '默写群管真名（alpt除外）', name: '默写群管真名（alpt除外）', category: 'meme' },
-  { id: '打出群管真名（alpt除外）', name: '打出群管真名（alpt除外）', category: 'meme' },
-  { id: '二三阶连拧', name: '二三阶连拧', category: 'meme' },
-  { id: '默写Jb perm', name: '默写Jb perm', category: 'meme' }
-]
-
 export const categories = [
   { label: '官方项目', value: 'official' },
   { label: '趣味项目', value: 'fun' },
@@ -72,27 +57,26 @@ export const eventGroups = {
   },
   meme: {
     label: '整活项目',
-    options: MEME_EVENTS.map(({ id, name }) => ({ label: name, value: id }))
+    options: []
   }
 }
 
-export const events = [...OFFICIAL_EVENTS, ...FUN_EVENTS, ...MEME_EVENTS]
+export const STATIC_EVENTS = [...OFFICIAL_EVENTS, ...FUN_EVENTS]
+export const staticEventNameMap = Object.fromEntries(STATIC_EVENTS.map(event => [event.id, event.name]))
 
-export const eventNameMap = Object.fromEntries(events.map(event => [event.id, event.name]))
+export const getStaticEventName = (eventId) => staticEventNameMap[eventId] || eventId
 
-export const getEventName = (eventId) => eventNameMap[eventId] || eventId
-
-export const getEventIconId = (eventId) => {
-  const event = events.find(item => item.id === eventId)
+export const getStaticEventIconId = (eventId) => {
+  const event = STATIC_EVENTS.find(item => item.id === eventId)
   return event?.iconId || eventId
 }
 
-export const getEventsByCategory = (category) => {
-  if (!category || category === 'all') return events
-  return events.filter(event => event.category === category)
+export const getStaticEventsByCategory = (category) => {
+  if (!category || category === 'all') return STATIC_EVENTS
+  return STATIC_EVENTS.filter(event => event.category === category)
 }
 
-export const getGroupedEvents = ({ includeAll = false } = {}) => {
+export const getStaticGroupedEvents = ({ includeAll = false } = {}) => {
   return Object.entries(eventGroups).map(([key, group]) => ({
     label: group.label,
     value: key,

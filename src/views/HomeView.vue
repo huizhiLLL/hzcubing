@@ -1,6 +1,5 @@
 <template>
   <div class="home">
-    <!-- Hero Section -->
     <section class="hero">
       <div class="hero-content">
         <h1 class="hero-title">
@@ -23,7 +22,6 @@
       </div>
     </section>
 
-    <!-- Stats Bar -->
     <section class="stats-bar">
       <div class="stat-item">
         <span class="stat-value">{{ animatedStats.totalRecords }}</span>
@@ -36,31 +34,39 @@
       </div>
     </section>
 
-    <!-- Quick Nav -->
     <section class="quick-nav">
-      <h2 class="section-title">探索项目</h2>
-      <div class="event-grid">
-        <router-link
-          v-for="event in events"
-          :key="event.id"
-          :to="`/leaderboard?event=${event.id}`"
-          class="event-card"
-        >
-          <span class="event-name">{{ event.name }}</span>
-        </router-link>
+      <div class="section-heading">
+        <h2 class="section-title">探索项目</h2>
+        <p class="section-subtitle">官方、趣味、整活项目都在这里</p>
+      </div>
+
+      <div v-for="group in groupedEventCards" :key="group.value" class="event-group">
+        <div class="group-header">
+          <h3>{{ group.label }}</h3>
+          <span>{{ group.events.length }} 项</span>
+        </div>
+        <div class="event-grid">
+          <router-link
+            v-for="event in group.events"
+            :key="event.id"
+            :to="`/leaderboard?event=${encodeURIComponent(event.id)}`"
+            class="event-card"
+          >
+            <span class="event-name">{{ event.name }}</span>
+          </router-link>
+        </div>
       </div>
     </section>
-
   </div>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, watch } from 'vue'
 import { useRecordsStore } from '../stores/records'
-import { getEventsByCategory } from '../config/events'
+import { useEventsStore } from '../stores/events'
 
 const recordsStore = useRecordsStore()
-const events = getEventsByCategory('official').slice(0, 12)
+const eventsStore = useEventsStore()
 const animatedStats = reactive({
   totalRecords: 0,
   totalUsers: 0
@@ -75,11 +81,28 @@ const stats = computed(() => ({
   totalUsers: uniqueUsers.value
 }))
 
-// Count unique users
 const uniqueUsers = computed(() => {
   const userIds = new Set(recordsStore.records.map(r => r.userId))
   return userIds.size
 })
+
+const groupedEventCards = computed(() => [
+  {
+    label: '官方项目',
+    value: 'official',
+    events: eventsStore.getEventsByCategory('official')
+  },
+  {
+    label: '趣味项目',
+    value: 'fun',
+    events: eventsStore.getEventsByCategory('fun')
+  },
+  {
+    label: '整活项目',
+    value: 'meme',
+    events: eventsStore.getEventsByCategory('meme')
+  }
+].filter(group => group.events.length > 0))
 
 function animateValue(key, target) {
   if (animationFrameIds[key]) {
@@ -118,10 +141,12 @@ watch(
 
 onMounted(async () => {
   try {
-    // Fetch all records for accurate stats
-    await recordsStore.fetchRecords({ pageSize: 2000 })
+    await Promise.all([
+      recordsStore.fetchRecords({ pageSize: 2000 }),
+      eventsStore.fetchMemeEvents()
+    ])
   } catch (err) {
-    console.error('Failed to load records:', err)
+    console.error('Failed to load home data:', err)
   }
 })
 
@@ -139,7 +164,6 @@ onBeforeUnmount(() => {
   gap: var(--space-2xl);
 }
 
-/* Hero Section */
 .hero {
   display: flex;
   flex-direction: column;
@@ -238,7 +262,6 @@ onBeforeUnmount(() => {
   color: var(--color-primary);
 }
 
-/* Stats Bar */
 .stats-bar {
   display: flex;
   justify-content: center;
@@ -277,148 +300,96 @@ onBeforeUnmount(() => {
   background: var(--color-border);
 }
 
-/* Section Title */
+.quick-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
 .section-title {
   font-family: var(--font-heading);
   font-size: 2rem;
   font-weight: 600;
-  margin-bottom: var(--space-xl);
   color: var(--color-text);
 }
 
-/* Quick Nav */
+.section-subtitle {
+  color: var(--color-text-tertiary);
+}
+
+.event-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.group-header span {
+  font-size: 0.875rem;
+  color: var(--color-text-tertiary);
+}
+
 .event-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: var(--space-md);
 }
 
 .event-card {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-xl) var(--space-md);
+  min-height: 88px;
+  padding: var(--space-lg) var(--space-md);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   transition: all var(--transition-normal);
-  cursor: pointer;
-  text-decoration: none;
-  color: var(--color-text);
+  text-align: center;
 }
 
 .event-card:hover {
   border-color: var(--color-primary);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  color: var(--color-primary);
+  transform: translateY(-2px);
 }
 
 .event-name {
-  font-weight: 500;
-  color: var(--color-text);
-  font-size: 0.9375rem;
-}
-
-/* Recent Records */
-.records-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.record-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-lg);
-  padding: var(--space-md) var(--space-lg);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
-}
-
-.record-item:hover {
-  border-color: var(--color-primary-light);
-  background: var(--color-bg-tertiary);
-}
-
-.user-link {
-  font-weight: 500;
-  color: var(--color-text);
-  min-width: 100px;
-}
-
-.user-link:hover {
-  color: var(--color-primary);
-}
-
-.record-info {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--space-lg);
-}
-
-.event-badge {
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--color-bg);
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.record-time {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 1.125rem;
-}
-
-.record-date {
-  color: var(--color-text-tertiary);
-  font-size: 0.875rem;
-  min-width: 100px;
-  text-align: right;
-}
-
-.loading, .empty {
-  text-align: center;
-  padding: var(--space-xl);
-  color: var(--color-text-secondary);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .hero {
-    min-height: auto;
-    gap: var(--space-2xl);
-  }
-
-  .hero-content {
-    max-width: 100%;
-  }
-
-  .hero-title {
-    font-size: 3rem;
-  }
-
-  .hero-desc {
-    font-size: 1.125rem;
-  }
-
-  .hero-actions {
-    justify-content: center;
-  }
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 @media (max-width: 768px) {
   .hero-title {
-    font-size: 2.5rem;
+    font-size: 2.75rem;
   }
 
+  .hero-subtitle {
+    display: block;
+    margin-left: 0;
+    margin-top: var(--space-sm);
+    font-size: 1.2rem;
+  }
+
+  .hero-actions,
   .stats-bar {
     flex-direction: column;
-    gap: var(--space-lg);
   }
 
   .stat-divider {
@@ -426,40 +397,8 @@ onBeforeUnmount(() => {
     height: 1px;
   }
 
-  .stat-value {
-    font-size: 2rem;
-  }
-
-  .record-item {
-    flex-wrap: wrap;
-  }
-
-  .record-date {
-    width: 100%;
-    text-align: left;
-    margin-top: var(--space-xs);
-  }
-
   .event-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .hero-title {
-    font-size: 2rem;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-  }
-
-  .btn {
-    width: 100%;
-  }
-
-  .event-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
