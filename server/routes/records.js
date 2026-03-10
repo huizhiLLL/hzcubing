@@ -46,10 +46,10 @@ const recordValidation = [
     .trim()
     .notEmpty().withMessage('Event is required'),
   body('singleSeconds')
-    .optional()
+    .optional({ nullable: true })
     .isFloat({ min: 0 }).withMessage('Single time must be a positive number'),
   body('averageSeconds')
-    .optional()
+    .optional({ nullable: true })
     .isFloat({ min: 0 }).withMessage('Average time must be a positive number')
 ]
 
