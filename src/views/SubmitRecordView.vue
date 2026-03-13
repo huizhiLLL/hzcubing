@@ -1,89 +1,116 @@
 <template>
   <div class="submit-record">
     <div class="page-header">
-      <h1>提交成绩</h1>
-      <p class="page-desc">记录你的每一次练习与比赛</p>
+      <h2>提交成绩</h2>
+      <p class="page-subtitle">录入一条新的成绩</p>
     </div>
 
     <form class="submit-form" @submit.prevent="handleSubmit">
-      <div class="form-group">
-        <label class="form-label">项目</label>
-        <AppSelect v-model="form.event" :options="submitEventOptions" />
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">单次成绩 <span class="optional">(可选)</span></label>
-        <input
-          v-model="form.singleTime"
-          type="text"
-          class="time-input"
-          placeholder="输入单次成绩，如 12.34 或 1:23.45"
-          :class="{ 'has-error': singleTimeError }"
-          @input="handleSingleTimeInput"
-          @blur="validateSingleTime"
-        />
-        <span v-if="singleTimeError" class="form-error">{{ singleTimeError }}</span>
-        <span class="form-hint">支持输入纯秒数 (12.34) 或分秒格式 (1:23.45)</span>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">平均成绩 <span class="optional">(可选)</span></label>
-        <input
-          v-model="form.averageTime"
-          type="text"
-          class="time-input"
-          placeholder="输入平均成绩，如 10.56 或 58.90"
-          :class="{ 'has-error': averageTimeError }"
-          @input="handleAverageTimeInput"
-          @blur="validateAverageTime"
-        />
-        <span v-if="averageTimeError" class="form-error">{{ averageTimeError }}</span>
-        <span class="form-hint">单次或平均至少填写一项</span>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">使用魔方 <span class="optional">(可选)</span></label>
-          <input
-            v-model="form.cube"
-            type="text"
-            class="form-input"
-            placeholder="如：GAN 11 M Pro"
-          />
+      <section class="form-section">
+        <div class="section-heading">
+          <h2 class="section-title">项目</h2>
         </div>
 
         <div class="form-group">
-          <label class="form-label">解法 <span class="optional">(可选)</span></label>
+          <label class="form-label"></label>
+          <AppSelect v-model="form.event" :options="submitEventOptions" />
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <h2 class="section-title">成绩</h2>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">单次 <span class="optional">(可选)</span></label>
           <input
-            v-model="form.method"
+            v-model="form.singleTime"
             type="text"
-            class="form-input"
-            placeholder="如：CFOP, Roux, ZZ"
+            class="time-input"
+            placeholder="输入单次成绩，如 12.34 或 1:23.45"
+            :class="{ 'has-error': singleTimeError }"
+            @input="handleSingleTimeInput"
+            @blur="validateSingleTime"
           />
+          <span v-if="singleTimeError" class="form-error">{{ singleTimeError }}</span>
         </div>
-      </div>
 
-      <div v-if="hasPreview" class="preview-section">
-        <div v-if="previewSingle !== null" class="preview-item">
-          <span class="preview-label">单次预览：</span>
-          <span class="preview-value">{{ formatPreview(previewSingle) }}</span>
+        <div class="form-group">
+          <label class="form-label">成绩 <span class="optional">(可选)</span></label>
+          <input
+            v-model="form.averageTime"
+            type="text"
+            class="time-input"
+            placeholder="输入平均成绩，如 10.56 或 58.90"
+            :class="{ 'has-error': averageTimeError }"
+            @input="handleAverageTimeInput"
+            @blur="validateAverageTime"
+          />
+          <span v-if="averageTimeError" class="form-error">{{ averageTimeError }}</span>
+          <span class="form-hint">单次或平均至少填写一项。</span>
         </div>
-        <div v-if="previewAverage !== null" class="preview-item">
-          <span class="preview-label">平均预览：</span>
-          <span class="preview-value">{{ formatPreview(previewAverage) }}</span>
+      </section>
+
+      <section class="form-section">
+        <div class="section-heading">
+          <h2 class="section-title">补充信息<span class="optional"> (可选)</span></h2>
         </div>
-      </div>
 
-      <div v-if="submitError" class="error-message">
-        {{ submitError }}
-      </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">使用魔方 </label>
+            <input
+              v-model="form.cube"
+              type="text"
+              class="form-input"
+              placeholder="如：RS3M V5"
+            />
+          </div>
 
-      <button type="submit" class="submit-btn" :disabled="isSubmitting || !hasValidData">
-        {{ isSubmitting ? '提交中...' : '提交成绩' }}
-      </button>
+          <div class="form-group">
+            <label class="form-label">解法 </label>
+            <input
+              v-model="form.method"
+              type="text"
+              class="form-input"
+              placeholder="如：CFOP, Roux, ZZ"
+            />
+          </div>
+        </div>
+      </section>
 
-      <div v-if="submitSuccess" class="success-message">
-        成绩提交成功！
+      <section v-if="hasPreview || submitError || submitSuccess" class="feedback-section">
+        <div v-if="hasPreview" class="preview-section">
+          <div class="section-heading preview-heading">
+            <h2 class="section-title">成绩预览</h2>
+          </div>
+
+          <div class="preview-grid">
+            <div v-if="previewSingle !== null" class="preview-item">
+              <span class="preview-label">单次预览</span>
+              <span class="preview-value">{{ formatPreview(previewSingle) }}</span>
+            </div>
+            <div v-if="previewAverage !== null" class="preview-item">
+              <span class="preview-label">平均预览</span>
+              <span class="preview-value">{{ formatPreview(previewAverage) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="submitError" class="error-message">
+          {{ submitError }}
+        </div>
+
+        <div v-if="submitSuccess" class="success-message">
+          成绩提交成功！
+        </div>
+      </section>
+
+      <div class="submit-actions">
+        <button type="submit" class="submit-btn" :disabled="isSubmitting || !hasValidData">
+          {{ isSubmitting ? '提交中...' : '提交成绩' }}
+        </button>
       </div>
     </form>
   </div>
@@ -254,40 +281,58 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
-  max-width: 760px;
+  max-width: 880px;
   margin: 0 auto;
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: var(--space-lg);
-}
-
-.page-header h1 {
-  font-size: 2rem;
+.page-header h2 {
+  font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: var(--space-xs);
 }
 
-.page-desc {
+.page-subtitle {
   color: var(--color-text-tertiary);
-  font-size: 1rem;
 }
 
 .submit-form {
   display: flex;
   flex-direction: column;
+  gap: 18px;
+  padding: 1.1rem;
+  background: color-mix(in srgb, var(--color-bg-secondary) 78%, transparent);
+  border-radius: 28px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
+}
+
+.form-section,
+.feedback-section {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-lg);
-  background: var(--color-bg-secondary);
-  padding: var(--space-xl);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border);
+  padding: 1.35rem 1.4rem;
+  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
+  border-radius: 22px;
+}
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.section-title {
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: 0.45rem;
 }
 
 .form-row {
@@ -297,7 +342,7 @@ onMounted(async () => {
 }
 
 .form-label {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text);
   font-size: 0.9375rem;
 }
@@ -311,13 +356,16 @@ onMounted(async () => {
 .form-input,
 .time-input {
   width: 100%;
-  padding: 0.95rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg);
+  padding: 1rem 1.05rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--color-bg) 70%, var(--color-bg-secondary));
   color: var(--color-text);
   font-size: 0.9375rem;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .time-input {
@@ -328,7 +376,8 @@ onMounted(async () => {
 .time-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 14%, transparent);
+  background: var(--color-bg-secondary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
 .has-error {
@@ -338,94 +387,137 @@ onMounted(async () => {
 .form-error {
   color: var(--color-error);
   font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .form-hint {
   color: var(--color-text-tertiary);
   font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .preview-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  background: var(--color-bg);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
+  gap: var(--space-md);
+}
+
+.preview-heading {
+  margin-bottom: 0.1rem;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
 }
 
 .preview-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-md);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--color-bg) 68%, var(--color-bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
 }
 
 .preview-label {
   color: var(--color-text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
 }
 
 .preview-value {
   font-family: var(--font-mono);
   font-weight: 600;
   color: var(--color-primary);
-  font-size: 1.05rem;
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
 }
 
 .error-message,
 .success-message {
-  padding: var(--space-md);
-  border-radius: var(--radius-lg);
-  text-align: center;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  text-align: left;
   font-size: 0.9375rem;
+  line-height: 1.6;
+  border: 1px solid transparent;
 }
 
 .error-message {
-  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  background: color-mix(in srgb, var(--color-error) 9%, transparent);
   color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 16%, transparent);
 }
 
 .success-message {
   background: color-mix(in srgb, var(--color-success) 10%, transparent);
   color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 18%, transparent);
+}
+
+.submit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+  padding: 0.35rem 0.35rem 0.1rem;
 }
 
 .submit-btn {
-  padding: 1rem 1.25rem;
+  min-width: 176px;
+  padding: 1rem 1.4rem;
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   background: var(--color-text);
   color: var(--color-bg);
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: transform var(--transition-fast), opacity var(--transition-fast), background var(--transition-fast);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  transition:
+    transform var(--transition-fast),
+    opacity var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   background: var(--color-primary);
+  box-shadow: 0 18px 34px color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {
+  .submit-record {
+    gap: var(--space-lg);
+  }
+
   .submit-form {
-    padding: var(--space-lg);
+    padding: 0.9rem;
   }
 
   .form-row {
     grid-template-columns: 1fr;
   }
 
-  .preview-item {
-    align-items: flex-start;
+  .submit-actions {
     flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .submit-btn {
+    width: 100%;
   }
 }
 </style>

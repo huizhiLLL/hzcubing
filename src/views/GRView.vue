@@ -2,8 +2,8 @@
   <div class="gr-page">
     <div class="page-header">
       <div>
-        <h1>GR 纪录墙</h1>
-        <p class="page-desc">全站各项目的最佳单次与最佳平均</p>
+        <h2>GR 纪录</h2>
+        <p class="page-subtitle">全站各项目的最佳成绩</p>
       </div>
     </div>
 
@@ -32,7 +32,6 @@
               <td>
                 <div class="event-cell">
                   <span class="event-name">{{ row.eventName }}</span>
-                  <span class="event-code">{{ row.event }}</span>
                 </div>
               </td>
               <td>
@@ -137,14 +136,14 @@ onMounted(loadGR)
   gap: var(--space-lg);
 }
 
-.page-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
   margin-bottom: var(--space-xs);
 }
 
-.page-desc {
-  color: var(--color-text-secondary);
+.page-subtitle {
+  color: var(--color-text-tertiary);
 }
 
 .loading-state,

@@ -1,9 +1,9 @@
 <template>
   <div class="settings">
     <div class="page-header">
-      <div>
+      <div class="page-header-copy">
+        <span class="page-eyebrow">个人资料</span>
         <h1>个人设置</h1>
-        <p class="page-desc">管理你的昵称、WCA ID 和个人简介</p>
       </div>
       <router-link v-if="profileLink" :to="profileLink" class="profile-link">
         返回个人主页
@@ -11,29 +11,30 @@
     </div>
 
     <div class="settings-sections">
-      <section class="settings-section">
-        <h2 class="section-title">基本信息</h2>
-        <div class="settings-card">
-          <div class="form-group">
-            <label class="form-label">邮箱</label>
-            <input :value="userStore.user?.email" type="email" class="form-input" disabled />
-            <span class="form-hint">邮箱不可修改</span>
-          </div>
+      <section class="settings-card">
+        <div class="section-heading">
+          <h2 class="section-title">基本信息</h2>
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">昵称</label>
-            <input v-model="form.nickname" type="text" class="form-input" placeholder="输入昵称" />
-          </div>
+        <div class="form-group">
+          <label class="form-label">邮箱</label>
+          <input :value="userStore.user?.email" type="email" class="form-input" disabled />
+          <span class="form-hint">邮箱不可修改</span>
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">WCA ID <span class="optional">(可选)</span></label>
-            <input v-model="form.wcaId" type="text" class="form-input" placeholder="如：2024ZHAN01" />
-          </div>
+        <div class="form-group">
+          <label class="form-label">昵称</label>
+          <input v-model="form.nickname" type="text" class="form-input" placeholder="输入昵称" />
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">个人简介 <span class="optional">(可选)</span></label>
-            <textarea v-model="form.bio" class="form-textarea" placeholder="介绍一下自己..." rows="4"></textarea>
-          </div>
+        <div class="form-group">
+          <label class="form-label">WCA ID <span class="optional">(可选)</span></label>
+          <input v-model="form.wcaId" type="text" class="form-input" placeholder="如：2024ZHAN01" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">个人简介 <span class="optional">(可选)</span></label>
+          <textarea v-model="form.bio" class="form-textarea" placeholder="介绍一下自己..." rows="4"></textarea>
         </div>
       </section>
 
@@ -105,7 +106,7 @@ const handleSave = async () => {
 
 <style scoped>
 .settings {
-  max-width: 760px;
+  max-width: 880px;
   margin: 0 auto;
 }
 
@@ -113,152 +114,214 @@ const handleSave = async () => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--space-md);
+  gap: var(--space-lg);
   margin-bottom: var(--space-xl);
 }
 
+.page-header-copy {
+  max-width: 620px;
+}
+
+.page-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-primary-light) 68%, transparent);
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
 .page-header h1 {
-  font-size: 2rem;
+  font-size: clamp(2rem, 3vw, 2.6rem);
   font-weight: 700;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.03em;
 }
 
 .page-desc {
   color: var(--color-text-secondary);
+  line-height: 1.75;
 }
 
 .profile-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-sm) var(--space-lg);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  min-height: 48px;
+  padding: 0.85rem 1.1rem;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  color: var(--color-text);
   font-weight: 600;
+  white-space: nowrap;
+  transition: border-color var(--transition-fast), transform var(--transition-fast), color var(--transition-fast);
+}
+
+.profile-link:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 32%, var(--color-border));
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .settings-sections {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
-}
-
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
-
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 700;
+  gap: 18px;
 }
 
 .settings-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
-  padding: var(--space-xl);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  padding: 1.35rem 1.4rem;
+  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
+  border-radius: 22px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
+}
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.section-title {
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 0.45rem;
 }
 
 .form-label {
   font-weight: 600;
+  color: var(--color-text);
+  font-size: 0.9375rem;
 }
 
 .optional {
   color: var(--color-text-tertiary);
   font-weight: 400;
+  font-size: 0.875rem;
 }
 
 .form-input,
 .form-textarea {
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  width: 100%;
+  padding: 1rem 1.05rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--color-bg) 70%, var(--color-bg-secondary));
   color: var(--color-text);
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-family: inherit;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
   border-color: var(--color-primary);
+  background: var(--color-bg-secondary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
 .form-input:disabled {
-  background: var(--color-bg-tertiary);
+  background: color-mix(in srgb, var(--color-bg-tertiary) 72%, transparent);
   color: var(--color-text-tertiary);
 }
 
 .form-textarea {
   resize: vertical;
-  min-height: 96px;
+  min-height: 120px;
 }
 
 .form-hint {
   color: var(--color-text-tertiary);
   font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .error-message,
 .success-message {
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  text-align: center;
-  font-weight: 600;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  text-align: left;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  border: 1px solid transparent;
 }
 
 .error-message {
-  background: rgba(239, 68, 68, 0.12);
+  background: color-mix(in srgb, var(--color-error) 9%, transparent);
   color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 16%, transparent);
 }
 
 .success-message {
-  background: rgba(34, 197, 94, 0.16);
-  color: #15803d;
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 18%, transparent);
 }
 
 .settings-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--space-md);
 }
 
 .save-btn {
-  padding: var(--space-sm) var(--space-xl);
+  min-width: 168px;
+  padding: 1rem 1.4rem;
+  border-radius: 18px;
   background: var(--color-text);
   color: var(--color-bg);
-  border-radius: var(--radius-md);
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  transition:
+    transform var(--transition-fast),
+    opacity var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.save-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--color-primary);
+  box-shadow: 0 18px 34px color-mix(in srgb, var(--color-primary) 28%, transparent);
 }
 
 .save-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-  }
-
+  .page-header,
   .settings-actions {
-    justify-content: stretch;
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .save-btn,
-  .profile-link {
+  .profile-link,
+  .save-btn {
     width: 100%;
   }
 }

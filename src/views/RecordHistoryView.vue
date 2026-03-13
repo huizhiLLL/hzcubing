@@ -2,7 +2,7 @@
   <div class="players">
     <div class="page-header">
       <h2>选手总览</h2>
-      <p class="page-subtitle">按加入时间从新到老排列</p>
+      <p class="page-subtitle">按加入时间排序</p>
     </div>
 
     <div v-if="loading" class="loading-state">
@@ -20,8 +20,6 @@
           </div>
           <span class="record-count">{{ player.recordCount }} 条</span>
         </div>
-
-        <p class="email">{{ player.email || '未公开邮箱' }}</p>
 
         <div class="meta-row">
           <span class="meta-label">参与项目</span>

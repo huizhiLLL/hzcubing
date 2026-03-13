@@ -81,7 +81,9 @@
       </header>
 
       <div class="page-content">
-        <router-view />
+        <div class="content-shell">
+          <router-view />
+        </div>
       </div>
     </main>
   </div>
@@ -180,55 +182,81 @@ onUnmounted(() => {
 
 <style scoped>
 .layout {
-  display: flex;
   min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary) 10%, transparent) 0, transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-secondary) 88%, transparent), transparent 30%);
+  --sidebar-width: 268px;
+  --sidebar-collapsed-width: 88px;
+  --layout-gutter: 24px;
+  --content-max-width: 1280px;
 }
 
 .sidebar {
   position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 240px;
-  background: var(--color-bg-secondary);
-  border-right: 1px solid var(--color-border);
+  left: var(--layout-gutter);
+  top: var(--layout-gutter);
+  bottom: var(--layout-gutter);
+  width: var(--sidebar-width);
+  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 30px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
   display: flex;
   flex-direction: column;
-  transition: width var(--transition-normal), transform var(--transition-normal);
+  transition:
+    width 240ms ease,
+    transform 240ms ease,
+    box-shadow 240ms ease,
+    border-color 240ms ease;
   z-index: 100;
+  overflow: hidden;
 }
 
 .sidebar-collapsed .sidebar {
-  width: 72px;
+  width: var(--sidebar-collapsed-width);
 }
 
 .sidebar-header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: space-between;
-  padding: var(--space-md);
-  border-bottom: 1px solid var(--color-border);
-  height: 64px;
+  gap: var(--space-md);
+  padding: 20px 18px 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  min-height: 112px;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 12px;
   color: var(--color-text);
   font-weight: 600;
   font-size: 1.125rem;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 20px;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.logo:hover {
+  background: color-mix(in srgb, var(--color-bg-tertiary) 80%, transparent);
 }
 
 .logo-text {
   font-weight: 700;
   letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .nav-logo {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .sidebar-collapsed .logo-text {
@@ -236,68 +264,108 @@ onUnmounted(() => {
 }
 
 .collapse-btn {
-  padding: var(--space-xs);
-  color: var(--color-text-tertiary);
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  width: 40px;
+  height: 40px;
+  color: var(--color-text-secondary);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-bg-tertiary) 84%, transparent);
+  transition:
+    transform var(--transition-fast),
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .collapse-btn:hover {
-  background: var(--color-bg-tertiary);
+  background: color-mix(in srgb, var(--color-primary-light) 70%, transparent);
   color: var(--color-text);
+  transform: translateX(1px);
+}
+
+.sidebar-collapsed .sidebar-header {
+  align-items: center;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.sidebar-collapsed .logo {
+  justify-content: center;
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .sidebar-collapsed .collapse-btn {
-  display: none;
+  align-self: center;
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: var(--space-md) var(--space-sm);
+  padding: 18px 12px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: 8px;
   overflow-y: auto;
 }
 
 .sidebar-footer {
-  padding: var(--space-md) var(--space-sm);
-  border-top: 1px solid var(--color-border);
+  padding: 16px 12px 18px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: 8px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 14px;
   color: var(--color-text-secondary);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  border-radius: 18px;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
   font-size: 0.9375rem;
   font-family: 'Outfit', sans-serif;
   font-weight: 500;
 }
 
 .nav-item:hover {
-  background: var(--color-bg-tertiary);
+  background: color-mix(in srgb, var(--color-bg-tertiary) 82%, transparent);
+  border-color: color-mix(in srgb, var(--color-border) 65%, transparent);
   color: var(--color-text);
+  transform: translateX(2px);
 }
 
 .nav-item.active {
-  background: var(--color-primary-light);
+  background: color-mix(in srgb, var(--color-primary-light) 78%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
   color: var(--color-primary);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 60%, transparent);
 }
 
 .nav-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
+}
+
+.nav-label {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-collapsed .nav-label {
@@ -306,12 +374,18 @@ onUnmounted(() => {
 
 .sidebar-collapsed .nav-item {
   justify-content: center;
-  padding: var(--space-sm);
+  min-height: 54px;
+  padding: 12px;
+  border-radius: 20px;
+}
+
+.sidebar-collapsed .nav-item:hover {
+  transform: translateY(-1px);
 }
 
 .user-avatar {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   color: white;
   font-size: 0.75rem;
@@ -328,31 +402,39 @@ onUnmounted(() => {
 }
 
 .main-content {
-  flex: 1;
-  margin-left: 240px;
   min-height: 100vh;
-  transition: margin-left var(--transition-normal);
+  margin-left: calc(var(--sidebar-width) + var(--layout-gutter) * 2);
+  padding: var(--layout-gutter);
+  min-height: 100vh;
+  transition: margin-left 240ms ease;
 }
 
 .sidebar-collapsed .main-content {
-  margin-left: 72px;
+  margin-left: calc(var(--sidebar-collapsed-width) + var(--layout-gutter) * 2);
 }
 
 .page-content {
-  padding: var(--space-lg);
-  max-width: 1200px;
+  width: min(100%, var(--content-max-width));
   margin: 0 auto;
+  padding: 6px 0;
+}
+
+.content-shell {
+  min-height: calc(100vh - var(--layout-gutter) * 2 - 12px);
 }
 
 .mobile-header {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 56px;
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  height: 60px;
+  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
   padding: 0 var(--space-md);
   align-items: center;
   gap: var(--space-md);
@@ -373,13 +455,22 @@ onUnmounted(() => {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.34);
+  backdrop-filter: blur(6px);
   z-index: 99;
 }
 
 @media (max-width: 768px) {
+  .layout {
+    --layout-gutter: 12px;
+  }
+
   .sidebar {
-    transform: translateX(-100%);
+    left: 12px;
+    top: 12px;
+    bottom: 12px;
+    width: min(320px, calc(100vw - 24px));
+    transform: translateX(calc(-100% - 16px));
   }
 
   .sidebar.mobile-open {
@@ -389,11 +480,12 @@ onUnmounted(() => {
   .main-content,
   .sidebar-collapsed .main-content {
     margin-left: 0;
+    padding: 12px;
   }
 
   .page-content {
-    padding: var(--space-md);
-    padding-top: calc(56px + var(--space-md));
+    width: 100%;
+    padding-top: calc(60px + 24px);
   }
 
   .mobile-header {

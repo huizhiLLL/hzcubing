@@ -2,8 +2,8 @@
   <div class="meme-events-admin">
     <div class="page-header">
       <div>
-        <h1>整活项目管理</h1>
-        <p class="page-desc">管理当前数据库中的全部整活项目，支持新增、编辑、启停和删除</p>
+        <h2>整活项目管理</h2>
+        <p class="page-subtitle">管理当前数据库中的全部整活项目</p>
       </div>
       <span class="stats-pill">共 {{ memeEvents.length }} 个项目</span>
     </div>
@@ -259,13 +259,13 @@ onMounted(loadEvents)
   gap: var(--space-md);
 }
 
-.page-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
   margin-bottom: var(--space-xs);
 }
 
-.page-desc,
+.page-subtitle,
 .form-hint,
 .event-code,
 .event-desc,
