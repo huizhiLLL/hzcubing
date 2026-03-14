@@ -380,23 +380,43 @@ router.post('/submit-record-by-qq', async (req, res, next) => {
       })
     }
     
-    // Create record
     const Record = (await import('../models/Record.js')).default
+
+    const normalizedSingleSeconds = singleSeconds !== null && singleSeconds !== undefined ? Number(singleSeconds) : null
+    const normalizedAverageSeconds = averageSeconds !== null && averageSeconds !== undefined ? Number(averageSeconds) : null
+
+    const [previousSingleBestRecord, previousAverageBestRecord] = await Promise.all([
+      normalizedSingleSeconds !== null && Number.isFinite(normalizedSingleSeconds)
+        ? Record.findOne({ event, singleSeconds: { $ne: null } })
+          .sort({ singleSeconds: 1, timestamp: 1, _id: 1 })
+          .lean()
+        : null,
+      normalizedAverageSeconds !== null && Number.isFinite(normalizedAverageSeconds)
+        ? Record.findOne({ event, averageSeconds: { $ne: null } })
+          .sort({ averageSeconds: 1, timestamp: 1, _id: 1 })
+          .lean()
+        : null
+    ])
+    
+    // Create record
     const record = new Record({
       userId: user._id,
       nickname: user.nickname,
       event,
-      singleSeconds: singleSeconds !== null && singleSeconds !== undefined ? Number(singleSeconds) : null,
-      averageSeconds: averageSeconds !== null && averageSeconds !== undefined ? Number(averageSeconds) : null,
+      singleSeconds: normalizedSingleSeconds,
+      averageSeconds: normalizedAverageSeconds,
       cube: cube || null,
       method: method || null
     })
     
     await record.save()
     
-    // Check if this is a new GR
-    const isSingleGR = singleSeconds !== null && singleSeconds !== undefined
-    const isAverageGR = averageSeconds !== null && averageSeconds !== undefined
+    const isSingleGR = record.singleSeconds !== null && (
+      !previousSingleBestRecord || record.singleSeconds < previousSingleBestRecord.singleSeconds
+    )
+    const isAverageGR = record.averageSeconds !== null && (
+      !previousAverageBestRecord || record.averageSeconds < previousAverageBestRecord.averageSeconds
+    )
     
     res.json({
       code: 200,
@@ -409,7 +429,19 @@ router.post('/submit-record-by-qq', async (req, res, next) => {
         singleSeconds: record.singleSeconds,
         averageSeconds: record.averageSeconds,
         isSingleGR,
-        isAverageGR
+        isAverageGR,
+        previousSingleBest: previousSingleBestRecord ? {
+          userId: previousSingleBestRecord.userId,
+          nickname: previousSingleBestRecord.nickname,
+          seconds: previousSingleBestRecord.singleSeconds,
+          timestamp: previousSingleBestRecord.timestamp
+        } : null,
+        previousAverageBest: previousAverageBestRecord ? {
+          userId: previousAverageBestRecord.userId,
+          nickname: previousAverageBestRecord.nickname,
+          seconds: previousAverageBestRecord.averageSeconds,
+          timestamp: previousAverageBestRecord.timestamp
+        } : null
       }
     })
   } catch (error) {
