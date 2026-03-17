@@ -1,20 +1,19 @@
 <template>
   <div class="auth-page">
     <div class="auth-shell">
-      <div class="auth-intro">
-        <span class="page-eyebrow">{{ isLogin ? '欢迎回来' : '创建账号' }}</span>
-        <h1>{{ isLogin ? '登录账号' : '注册账号' }}</h1>
-        <p class="auth-desc">
-          {{ isLogin ? '继续访问你的成绩、个人资料与排行榜记录。' : '创建一个账号，开始记录你的练习与比赛成绩。' }}
-        </p>
-      </div>
+      <AppPageHeader
+        class="auth-intro"
+        :eyebrow="isLogin ? '欢迎回来' : '创建账号'"
+        :title="isLogin ? '登录账号' : '注册账号'"
+        :subtitle="isLogin ? '继续访问你的成绩、个人资料与排行榜记录。' : '创建一个账号，开始记录你的练习与比赛成绩。'"
+        title-tag="h1"
+      />
 
-      <div class="auth-card">
-        <div class="section-heading">
-          <h2 class="section-title">{{ isLogin ? '账号信息' : '注册信息' }}</h2>
-          <p class="section-desc">{{ isLogin ? '输入邮箱与密码即可继续。' : '填写基础资料，几步内完成注册。' }}</p>
-        </div>
-
+      <AppSectionCard
+        class="auth-card"
+        :title="isLogin ? '账号信息' : '注册信息'"
+        :subtitle="isLogin ? '输入邮箱与密码即可继续。' : '填写基础资料，几步内完成注册。'"
+      >
         <form class="auth-form" @submit.prevent="handleSubmit">
           <div class="form-group">
             <label class="form-label">邮箱</label>
@@ -70,14 +69,14 @@
             />
           </div>
 
-          <div v-if="error" class="error-message">{{ error }}</div>
+          <AppStatusBlock v-if="error" variant="error" layout="banner" :message="error" />
 
-          <div class="auth-actions">
+          <AppFormActions align="between" class="auth-actions">
             <p class="submit-note">{{ isLogin ? '登录后将返回你刚才想访问的页面。' : '注册成功后会自动进入站点首页。' }}</p>
             <button type="submit" class="submit-btn" :disabled="isSubmitting">
               {{ isSubmitting ? '处理中...' : (isLogin ? '登录' : '注册') }}
             </button>
-          </div>
+          </AppFormActions>
         </form>
 
         <div class="auth-footer">
@@ -85,7 +84,7 @@
             {{ isLogin ? '没有账号？点击注册' : '已有账号？点击登录' }}
           </button>
         </div>
-      </div>
+      </AppSectionCard>
     </div>
   </div>
 </template>
@@ -93,6 +92,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import AppFormActions from '@/components/common/AppFormActions.vue'
+import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSectionCard from '@/components/common/AppSectionCard.vue'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()
@@ -171,68 +174,8 @@ const handleSubmit = async () => {
 }
 
 .auth-intro {
-  display: flex;
-  flex-direction: column;
   justify-content: center;
   padding: 1.5rem 0.5rem;
-}
-
-.page-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  margin-bottom: 0.9rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-primary-light) 68%, transparent);
-  color: var(--color-primary);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-
-.auth-intro h1 {
-  font-size: clamp(2rem, 3vw, 2.8rem);
-  font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: -0.03em;
-  margin-bottom: 0.8rem;
-}
-
-.auth-desc {
-  max-width: 420px;
-  color: var(--color-text-secondary);
-  line-height: 1.75;
-}
-
-.auth-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  padding: 1.35rem 1.4rem;
-  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
-  border-radius: 22px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
-}
-
-.section-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.section-title {
-  font-size: 1.06rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.section-desc {
-  color: var(--color-text-tertiary);
-  font-size: 0.9rem;
-  line-height: 1.6;
 }
 
 .auth-form {
@@ -280,22 +223,7 @@ const handleSubmit = async () => {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
-.error-message {
-  padding: 1rem 1.05rem;
-  border-radius: 18px;
-  text-align: left;
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  background: color-mix(in srgb, var(--color-error) 9%, transparent);
-  color: var(--color-error);
-  border: 1px solid color-mix(in srgb, var(--color-error) 16%, transparent);
-}
-
 .auth-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
   margin-top: 0.35rem;
 }
 
@@ -358,11 +286,6 @@ const handleSubmit = async () => {
 
   .auth-intro {
     padding: 0;
-  }
-
-  .auth-actions {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   .submit-note,

@@ -1,9 +1,8 @@
 <template>
   <div class="profile-home">
-    <div v-if="!userStore.user" class="empty-state">
-      <p>请先登录后查看个人主页</p>
+    <AppStatusBlock v-if="!userStore.user" variant="empty" message="请先登录后查看个人主页">
       <router-link to="/auth" class="primary-link">去登录</router-link>
-    </div>
+    </AppStatusBlock>
 
     <UserProfileView v-else :key="profileRouteKey" />
   </div>
@@ -12,6 +11,7 @@
 <script setup>
 import { computed, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useUserStore } from '../stores/user'
 import UserProfileView from './UserProfileView.vue'
 
@@ -33,18 +33,6 @@ watchEffect(() => {
 .profile-home {
   min-height: 100%;
 }
-
-.empty-state {
-  min-height: 280px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-md);
-  color: var(--color-text-secondary);
-}
-
-/* empty-icon removed */
 
 .primary-link {
   display: inline-flex;

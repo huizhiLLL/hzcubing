@@ -40,21 +40,53 @@
         <p class="section-subtitle">官方、趣味、整活项目都在这里</p>
       </div>
 
-      <div v-for="group in groupedEventCards" :key="group.value" class="event-group">
+      <div class="event-salon">
+        <article
+          v-for="group in groupedEventCards"
+          :key="group.value"
+          class="event-group"
+          :class="`group-${group.value}`"
+        >
         <div class="group-header">
-          <h3>{{ group.label }}</h3>
-          <span>{{ group.events.length }} 项</span>
+            <div>
+              <p class="group-kicker">{{ group.kicker }}</p>
+              <h3>{{ group.label }}</h3>
+            </div>
+            <span>{{ group.events.length }} 项</span>
         </div>
-        <div class="event-grid">
-          <router-link
-            v-for="event in group.events"
-            :key="event.id"
-            :to="`/leaderboard?event=${encodeURIComponent(event.id)}`"
-            class="event-card"
-          >
-            <span class="event-name">{{ event.name }}</span>
-          </router-link>
-        </div>
+
+          <div class="group-stage">
+            <router-link
+              v-if="group.featured"
+              :to="`/leaderboard?event=${encodeURIComponent(group.featured.id)}`"
+              class="event-card featured-card"
+            >
+              <span class="event-name featured-name">{{ group.featured.name }}</span>
+            </router-link>
+
+            <div class="support-grid">
+              <router-link
+                v-for="event in group.supporting"
+                :key="event.id"
+                :to="`/leaderboard?event=${encodeURIComponent(event.id)}`"
+                class="event-card support-card"
+              >
+                <span class="event-name">{{ event.name }}</span>
+              </router-link>
+            </div>
+
+            <div v-if="group.trailing.length" class="tag-cloud">
+              <router-link
+                v-for="event in group.trailing"
+                :key="event.id"
+                :to="`/leaderboard?event=${encodeURIComponent(event.id)}`"
+                class="event-pill"
+              >
+                {{ event.name }}
+              </router-link>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
   </div>
@@ -89,20 +121,28 @@ const uniqueUsers = computed(() => {
 const groupedEventCards = computed(() => [
   {
     label: '官方项目',
+    kicker: 'Classic',
     value: 'official',
     events: eventsStore.getEventsByCategory('official')
   },
   {
     label: '趣味项目',
+    kicker: 'Playground',
     value: 'fun',
     events: eventsStore.getEventsByCategory('fun')
   },
   {
     label: '整活项目',
+    kicker: 'Offbeat',
     value: 'meme',
     events: eventsStore.getEventsByCategory('meme')
   }
-].filter(group => group.events.length > 0))
+].filter(group => group.events.length > 0).map(group => ({
+  ...group,
+  featured: group.events[0] || null,
+  supporting: group.events.slice(1, 5),
+  trailing: group.events.slice(5)
+})))
 
 function animateValue(key, target) {
   if (animationFrameIds[key]) {
@@ -323,51 +363,192 @@ onBeforeUnmount(() => {
   color: var(--color-text-tertiary);
 }
 
+.event-salon {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
 .event-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: 1rem;
+  min-height: 100%;
+  padding: 1.15rem;
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--group-accent) 13%, transparent) 0, transparent 36%),
+    color-mix(in srgb, var(--color-bg-secondary) 94%, transparent);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.group-official {
+  --group-accent: #14B8A6;
+}
+
+.group-fun {
+  --group-accent: #F59E0B;
+}
+
+.group-meme {
+  --group-accent: #EF4444;
 }
 
 .group-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.group-kicker {
+  margin-bottom: 0.25rem;
+  color: var(--group-accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .group-header h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .group-header span {
-  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 32px;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg) 72%, var(--color-bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--group-accent) 16%, var(--color-border));
   color: var(--color-text-tertiary);
+  font-size: 0.8rem;
 }
 
-.event-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: var(--space-md);
+.group-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
 }
 
 .event-card {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 88px;
-  padding: var(--space-lg) var(--space-md);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  transition: all var(--transition-normal);
+  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  transition:
+    transform var(--transition-normal),
+    border-color var(--transition-normal),
+    color var(--transition-normal),
+    box-shadow var(--transition-normal);
   text-align: center;
+  color: var(--color-text);
 }
 
 .event-card:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--group-accent) 34%, var(--color-border));
+  color: var(--group-accent);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 28px color-mix(in srgb, var(--group-accent) 10%, transparent);
+}
+
+.featured-card {
+  min-height: 178px;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 1.25rem;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 28%, transparent), transparent 52%),
+    linear-gradient(135deg, color-mix(in srgb, var(--group-accent) 16%, transparent), color-mix(in srgb, var(--color-bg-secondary) 94%, transparent));
+  position: relative;
+  overflow: hidden;
+}
+
+.featured-card::after {
+  content: '';
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  top: -24px;
+  right: -30px;
+  border-radius: 32px;
+  transform: rotate(18deg);
+  background: color-mix(in srgb, var(--group-accent) 14%, transparent);
+}
+
+.card-label {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--group-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.featured-name {
+  position: relative;
+  z-index: 1;
+  text-align: left;
+  font-size: 1.45rem;
+  line-height: 1.15;
+  max-width: 80%;
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.support-card {
+  min-height: 96px;
+  padding: 0.95rem 0.85rem;
+  border-radius: 20px;
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.event-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg) 74%, var(--color-bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.event-pill:hover {
   transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--group-accent) 30%, var(--color-border));
+  color: var(--group-accent);
+  background: color-mix(in srgb, var(--group-accent) 8%, var(--color-bg-secondary));
 }
 
 .event-name {
@@ -392,13 +573,23 @@ onBeforeUnmount(() => {
     flex-direction: column;
   }
 
+  .event-salon {
+    grid-template-columns: 1fr;
+  }
+
   .stat-divider {
     width: 60px;
     height: 1px;
   }
 
-  .event-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .support-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .event-salon {
+    grid-template-columns: 1fr;
   }
 }
 </style>

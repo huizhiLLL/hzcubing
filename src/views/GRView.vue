@@ -7,13 +7,9 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <p>加载中...</p>
-    </div>
+    <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
-    <div v-else-if="rows.length === 0" class="empty-state">
-      <p>暂无纪录数据</p>
-    </div>
+    <AppStatusBlock v-else-if="rows.length === 0" variant="empty" message="暂无纪录数据" />
 
     <template v-else>
       <div class="desktop-table">
@@ -83,6 +79,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
 
@@ -143,15 +140,6 @@ onMounted(loadGR)
 }
 
 .page-subtitle {
-  color: var(--color-text-tertiary);
-}
-
-.loading-state,
-.empty-state {
-  min-height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: var(--color-text-tertiary);
 }
 

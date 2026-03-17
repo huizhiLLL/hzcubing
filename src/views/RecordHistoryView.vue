@@ -5,9 +5,7 @@
       <p class="page-subtitle">按加入时间排序</p>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <p>加载中...</p>
-    </div>
+    <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
     <div v-else-if="playerSummary.length > 0" class="player-grid">
       <article v-for="player in playerSummary" :key="player.userId" class="player-card">
@@ -35,14 +33,13 @@
       </article>
     </div>
 
-    <div v-else class="empty-state">
-      <p>暂无选手数据</p>
-    </div>
+    <AppStatusBlock v-else class="page-status" variant="empty" message="暂无选手数据" />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { userAPI } from '@/api'
 import { useRecordsStore } from '../stores/records'
 
@@ -117,15 +114,6 @@ onMounted(loadData)
 }
 
 .page-subtitle {
-  color: var(--color-text-tertiary);
-}
-
-.loading-state,
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 240px;
   color: var(--color-text-tertiary);
 }
 

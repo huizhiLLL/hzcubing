@@ -1,120 +1,135 @@
 <template>
   <div class="user-profile">
-    <div v-if="loading" class="loading-state">
-      <p>加载中...</p>
-    </div>
+    <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
     <template v-else-if="userData">
-      <section class="profile-header">
-        <div class="profile-avatar" :style="{ background: avatarBg }">
-          <img v-if="userData.avatar" :src="userData.avatar" :alt="userData.nickname" class="avatar-image" />
-          <span v-else class="avatar-text">{{ avatarInitial }}</span>
-        </div>
+      <AppSectionCard class="profile-hero" variant="subtle">
+        <div class="profile-identity">
+          <div class="profile-avatar" :style="{ background: avatarBg }">
+            <img v-if="userData.avatar" :src="userData.avatar" :alt="userData.nickname" class="avatar-image" />
+            <span v-else class="avatar-text">{{ avatarInitial }}</span>
+          </div>
 
-        <div class="profile-info">
-          <div class="profile-topline">
-            <div>
-              <h1 class="profile-name">{{ userData.nickname }}</h1>
-              <p v-if="userData.bio" class="profile-bio">{{ userData.bio }}</p>
+          <div class="identity-copy">
+            <div class="identity-topline">
+              <div>
+                <p class="profile-kicker">个人主页</p>
+                <h1 class="profile-name">{{ userData.nickname }}</h1>
+              </div>
+
+              <router-link
+                v-if="isCurrentUser"
+                to="/settings"
+                class="settings-link"
+              >
+                编辑资料
+              </router-link>
             </div>
 
-            <router-link
-              v-if="isCurrentUser"
-              to="/settings"
-              class="settings-link"
-            >
-              编辑资料
-            </router-link>
-          </div>
+            <p v-if="userData.bio" class="profile-bio">{{ userData.bio }}</p>
 
-          <div class="profile-meta">
-            <span v-if="userData.wcaId" class="meta-pill">WCA ID: {{ userData.wcaId }}</span>
-            <span v-if="userData.email && isCurrentUser" class="meta-pill subtle">{{ userData.email }}</span>
-            <span v-if="memberSince" class="meta-pill subtle">加入于 {{ memberSince }}</span>
+            <div class="profile-meta">
+              <span v-if="userData.wcaId" class="meta-pill">WCA ID: {{ userData.wcaId }}</span>
+              <span v-if="userData.email && isCurrentUser" class="meta-pill subtle">{{ userData.email }}</span>
+              <span v-if="memberSince" class="meta-pill subtle">加入于 {{ memberSince }}</span>
+            </div>
           </div>
         </div>
-      </section>
+      </AppSectionCard>
 
-      <section v-if="personalBests.length > 0" class="pb-section">
-        <div class="section-heading">
-          <h2 class="section-title">个人最佳</h2>
-          <span class="section-subtitle">按项目汇总最佳单次和平均</span>
-        </div>
-
+      <AppSectionCard v-if="personalBests.length > 0" class="pb-stage" title="个人最佳" subtitle="按项目汇总最佳单次与平均成绩">
+        <template #aside>
+          <span class="summary-chip">{{ rankedPersonalBests.length }} 项</span>
+        </template>
         <div class="pb-grid">
-          <article v-for="pb in sortedPersonalBests" :key="pb.event" class="pb-card">
+          <article
+            v-for="pb in rankedPersonalBests"
+            :key="pb.event"
+            class="pb-card"
+            :class="pb.bestRank && pb.bestRank <= 3 ? `podium-${pb.bestRank}` : ''"
+          >
             <div class="pb-header">
-              <span class="event-name">{{ getEventName(pb.event) }}</span>
-              <span class="event-code">{{ pb.event }}</span>
+              <div>
+                <span class="event-name">{{ getEventName(pb.event) }}</span>
+                <span class="event-code">{{ pb.event }}</span>
+              </div>
+              <span v-if="pb.bestRank" class="rank-chip">#{{ pb.bestRank }}</span>
             </div>
+
             <div class="pb-times">
-              <div v-if="pb.bestSingleSeconds !== null" class="pb-item">
+              <div class="pb-item">
                 <span class="pb-label">单次</span>
-                <span class="pb-value">{{ formatTime(pb.bestSingleSeconds) }}</span>
+                <span class="pb-value" :class="{ muted: pb.bestSingleSeconds === null }">
+                  {{ pb.bestSingleSeconds !== null ? formatTime(pb.bestSingleSeconds) : '—' }}
+                </span>
               </div>
-              <div v-if="pb.bestAverageSeconds !== null" class="pb-item">
+              <div class="pb-item">
                 <span class="pb-label">平均</span>
-                <span class="pb-value">{{ formatTime(pb.bestAverageSeconds) }}</span>
+                <span class="pb-value" :class="{ muted: pb.bestAverageSeconds === null }">
+                  {{ pb.bestAverageSeconds !== null ? formatTime(pb.bestAverageSeconds) : '—' }}
+                </span>
               </div>
             </div>
           </article>
         </div>
-      </section>
+      </AppSectionCard>
 
-      <section v-if="createdMemeEvents.length > 0" class="activity-section">
-        <div class="section-heading">
-          <h2 class="section-title">创建的整活项目</h2>
-          <span class="section-subtitle">这个人搞出来的项目</span>
-        </div>
+      <AppSectionCard v-else class="empty-panel" variant="subtle">
+        <p>还没有形成个人最佳记录。</p>
+      </AppSectionCard>
 
-        <div class="activity-list">
-          <article v-for="event in createdMemeEvents" :key="event.id" class="activity-item">
-            <div class="activity-left event-item-left">
-              <span class="event-badge">{{ event.name }}</span>
-              <div class="activity-times">
-                <span class="activity-time muted code-text">{{ event.id }}</span>
-                <span v-if="event.description" class="activity-time muted">{{ event.description }}</span>
+      <section
+        v-if="createdMemeEvents.length > 0 || recentRecords.length > 0"
+        class="activity-layout"
+        :class="{ 'single-column': createdMemeEvents.length === 0 || recentRecords.length === 0 }"
+      >
+        <AppSectionCard v-if="recentRecords.length > 0" class="activity-panel" title="最近提交" subtitle="最近 10 条成绩记录">
+          <div class="activity-list">
+            <article v-for="record in recentRecords" :key="record._id" class="activity-item">
+              <div class="activity-left">
+                <span class="event-badge">{{ getEventName(record.event) }}</span>
+                <div class="activity-times">
+                  <span v-if="record.singleSeconds !== null" class="activity-time">单次 {{ formatTime(record.singleSeconds) }}</span>
+                  <span v-if="record.averageSeconds !== null" class="activity-time muted">平均 {{ formatTime(record.averageSeconds) }}</span>
+                </div>
               </div>
-            </div>
-            <span class="activity-date">{{ event.isActive ? '启用中' : '已停用' }}</span>
-          </article>
-        </div>
-      </section>
+              <span class="activity-date">{{ formatDate(record.timestamp) }}</span>
+            </article>
+          </div>
+        </AppSectionCard>
 
-      <section v-if="recentRecords.length > 0" class="activity-section">
-        <div class="section-heading">
-          <h2 class="section-title">最近提交</h2>
-          <span class="section-subtitle">最近 10 条成绩记录</span>
-        </div>
-
-        <div class="activity-list">
-          <article v-for="record in recentRecords" :key="record._id" class="activity-item">
-            <div class="activity-left">
-              <span class="event-badge">{{ getEventName(record.event) }}</span>
-              <div class="activity-times">
-                <span v-if="record.singleSeconds !== null" class="activity-time">单次 {{ formatTime(record.singleSeconds) }}</span>
-                <span v-if="record.averageSeconds !== null" class="activity-time muted">平均 {{ formatTime(record.averageSeconds) }}</span>
+        <AppSectionCard v-if="createdMemeEvents.length > 0" class="activity-panel" title="创建的整活项目" subtitle="这个人搞出来的项目">
+          <div class="activity-list">
+            <article v-for="event in createdMemeEvents" :key="event.id" class="activity-item">
+              <div class="activity-left event-item-left">
+                <span class="event-badge">{{ event.name }}</span>
+                <div class="activity-times">
+                  <span class="activity-time muted code-text">{{ event.id }}</span>
+                  <span v-if="event.description" class="activity-time muted">{{ event.description }}</span>
+                </div>
               </div>
-            </div>
-            <span class="activity-date">{{ formatDate(record.timestamp) }}</span>
-          </article>
-        </div>
+              <span class="activity-date">{{ event.isActive ? '启用中' : '已停用' }}</span>
+            </article>
+          </div>
+        </AppSectionCard>
       </section>
 
-      <div v-if="personalBests.length === 0 && recentRecords.length === 0 && createdMemeEvents.length === 0" class="empty-state">
-        <p>暂无成绩记录</p>
-      </div>
+      <AppStatusBlock
+        v-if="personalBests.length === 0 && recentRecords.length === 0 && createdMemeEvents.length === 0"
+        variant="empty"
+        message="暂无成绩记录"
+      />
     </template>
 
-    <div v-else class="empty-state">
-      <p>用户不存在</p>
-    </div>
+    <AppStatusBlock v-else variant="empty" message="用户不存在" />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import AppSectionCard from '@/components/common/AppSectionCard.vue'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useUserStore } from '../stores/user'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
@@ -131,6 +146,7 @@ const userData = ref(null)
 const personalBests = ref([])
 const recentRecords = ref([])
 const createdMemeEvents = ref([])
+const hasGlobalRankData = ref(false)
 
 const isCurrentUser = computed(() => {
   const currentId = userStore.user?.id || userStore.user?._id
@@ -149,15 +165,84 @@ const memberSince = computed(() => {
 
 const eventOrder = computed(() => eventsStore.allEvents.map(event => event.id))
 
-const sortedPersonalBests = computed(() => {
-  return [...personalBests.value].sort((a, b) => {
-    const indexA = eventOrder.value.indexOf(a.event)
-    const indexB = eventOrder.value.indexOf(b.event)
-    if (indexA === -1 && indexB === -1) return a.event.localeCompare(b.event)
-    if (indexA === -1) return 1
-    if (indexB === -1) return -1
-    return indexA - indexB
+const rankMaps = computed(() => {
+  const singleRanks = new Map()
+  const averageRanks = new Map()
+
+  eventOrder.value.forEach((eventId) => {
+    const eventRecords = recordsStore.records.filter(record => record.event === eventId)
+    const singleBestMap = new Map()
+    const averageBestMap = new Map()
+
+    eventRecords.forEach((record) => {
+      const userId = String(record.userId)
+
+      if (record.singleSeconds !== null && record.singleSeconds !== undefined) {
+        const existingSingle = singleBestMap.get(userId)
+        if (existingSingle === undefined || record.singleSeconds < existingSingle) {
+          singleBestMap.set(userId, record.singleSeconds)
+        }
+      }
+
+      if (record.averageSeconds !== null && record.averageSeconds !== undefined) {
+        const existingAverage = averageBestMap.get(userId)
+        if (existingAverage === undefined || record.averageSeconds < existingAverage) {
+          averageBestMap.set(userId, record.averageSeconds)
+        }
+      }
+    })
+
+    Array.from(singleBestMap.entries())
+      .sort((a, b) => a[1] - b[1])
+      .forEach(([userId], index) => {
+        singleRanks.set(`${eventId}:${userId}`, index + 1)
+      })
+
+    Array.from(averageBestMap.entries())
+      .sort((a, b) => a[1] - b[1])
+      .forEach(([userId], index) => {
+        averageRanks.set(`${eventId}:${userId}`, index + 1)
+      })
   })
+
+  return {
+    singleRanks,
+    averageRanks
+  }
+})
+
+const rankedPersonalBests = computed(() => {
+  const viewedUserId = String(userData.value?.id || userData.value?._id || '')
+
+  return [...personalBests.value]
+    .map((pb) => {
+      const singleRank = hasGlobalRankData.value
+        ? (rankMaps.value.singleRanks.get(`${pb.event}:${viewedUserId}`) || null)
+        : null
+      const averageRank = hasGlobalRankData.value
+        ? (rankMaps.value.averageRanks.get(`${pb.event}:${viewedUserId}`) || null)
+        : null
+      const bestRank = [singleRank, averageRank].filter(Boolean).sort((a, b) => a - b)[0] || null
+
+      return {
+        ...pb,
+        singleRank,
+        averageRank,
+        bestRank
+      }
+    })
+    .sort((a, b) => {
+      const rankA = a.bestRank ?? Number.POSITIVE_INFINITY
+      const rankB = b.bestRank ?? Number.POSITIVE_INFINITY
+      if (rankA !== rankB) return rankA - rankB
+
+      const indexA = eventOrder.value.indexOf(a.event)
+      const indexB = eventOrder.value.indexOf(b.event)
+      if (indexA === -1 && indexB === -1) return a.event.localeCompare(b.event)
+      if (indexA === -1) return 1
+      if (indexB === -1) return -1
+      return indexA - indexB
+    })
 })
 
 function getEventName(eventId) {
@@ -186,6 +271,7 @@ async function loadProfile() {
   personalBests.value = []
   recentRecords.value = []
   createdMemeEvents.value = []
+  hasGlobalRankData.value = false
 
   try {
     const userId = route.params.id || userStore.user?.id || userStore.user?._id
@@ -202,13 +288,30 @@ async function loadProfile() {
 
     userData.value = userResult.data
 
-    const [bestResult, historyResult] = await Promise.all([
+    const [bestResult, historyResult, recordsResult] = await Promise.allSettled([
       recordsStore.fetchUserBest(userId),
-      recordsStore.fetchUserHistory(userId, { pageSize: 10 })
+      recordsStore.fetchUserHistory(userId, { pageSize: 10 }),
+      recordsStore.fetchRecords({ pageSize: 2000 })
     ])
 
-    personalBests.value = bestResult || []
-    recentRecords.value = historyResult.data || []
+    if (bestResult.status === 'fulfilled') {
+      personalBests.value = bestResult.value || []
+    } else {
+      throw bestResult.reason
+    }
+
+    if (historyResult.status === 'fulfilled') {
+      recentRecords.value = historyResult.value.data || []
+    } else {
+      throw historyResult.reason
+    }
+
+    if (recordsResult.status === 'fulfilled') {
+      hasGlobalRankData.value = true
+    } else {
+      console.warn('Failed to load global rank data for profile PB ordering:', recordsResult.reason)
+    }
+
     createdMemeEvents.value = (eventsStore.memeEvents || []).filter(event => event.createdBy === String(userId))
   } catch (err) {
     console.error('Failed to load user profile:', err)
@@ -233,41 +336,25 @@ onMounted(async () => {
 .user-profile {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2xl);
+  gap: var(--space-xl);
 }
 
-.loading-state,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 280px;
-  color: var(--color-text-tertiary);
-}
-
-/* loading-icon / empty-icon removed */
-
-.profile-header {
+.profile-identity {
   display: flex;
   gap: var(--space-xl);
   align-items: flex-start;
-  padding: var(--space-xl);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
 }
 
 .profile-avatar {
-  width: 108px;
-  height: 108px;
-  border-radius: 50%;
+  width: 104px;
+  height: 104px;
+  border-radius: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.12);
 }
 
 .avatar-image {
@@ -278,29 +365,40 @@ onMounted(async () => {
 
 .avatar-text {
   color: white;
-  font-size: 2.5rem;
+  font-size: 2.35rem;
   font-weight: 700;
 }
 
-.profile-info {
+.identity-copy {
   flex: 1;
   min-width: 0;
 }
 
-.profile-topline {
+.identity-topline {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-lg);
 }
 
-.profile-name {
-  font-size: 2rem;
+.profile-kicker {
+  margin-bottom: 0.35rem;
+  color: var(--color-primary);
+  font-size: 0.78rem;
   font-weight: 700;
-  margin-bottom: var(--space-sm);
+  letter-spacing: 0.1em;
+}
+
+.profile-name {
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
 }
 
 .profile-bio {
+  margin-top: 0.8rem;
+  max-width: 760px;
   color: var(--color-text-secondary);
   line-height: 1.7;
 }
@@ -309,12 +407,20 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-sm) var(--space-lg);
-  border-radius: var(--radius-md);
+  min-height: 46px;
+  padding: 0.85rem 1.05rem;
+  border-radius: 16px;
   background: var(--color-text);
   color: var(--color-bg);
   font-weight: 600;
   white-space: nowrap;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.settings-link:hover {
+  transform: translateY(-1px);
+  background: var(--color-primary);
 }
 
 .profile-meta {
@@ -324,36 +430,21 @@ onMounted(async () => {
   margin-top: var(--space-lg);
 }
 
-.meta-pill {
+.meta-pill,
+.summary-chip {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-xs) var(--space-md);
+  justify-content: center;
+  min-height: 34px;
+  padding: 0.4rem 0.8rem;
   border-radius: 999px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  font-size: 0.875rem;
+  background: color-mix(in srgb, var(--color-bg) 72%, var(--color-bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  font-size: 0.84rem;
 }
 
 .meta-pill.subtle {
   color: var(--color-text-secondary);
-}
-
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: var(--space-md);
-  margin-bottom: var(--space-lg);
-}
-
-.section-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.section-subtitle {
-  color: var(--color-text-tertiary);
-  font-size: 0.9rem;
 }
 
 .pb-grid {
@@ -362,56 +453,124 @@ onMounted(async () => {
   gap: var(--space-md);
 }
 
-.pb-card,
-.activity-item {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+.pb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 178px;
+  padding: 1rem 1.05rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-primary-light) 18%, transparent), transparent 48%),
+    color-mix(in srgb, var(--color-bg-secondary) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 20px;
+  transition:
+    transform var(--transition-normal),
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal);
 }
 
-.pb-card {
-  padding: var(--space-lg);
+.pb-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+  box-shadow: 0 16px 28px color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.pb-card.podium-1 {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(212, 175, 55, 0.18)),
+    color-mix(in srgb, var(--color-bg-secondary) 98%, transparent);
+  border-color: color-mix(in srgb, var(--color-gold) 46%, var(--color-border));
+}
+
+.pb-card.podium-2 {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(156, 163, 175, 0.2)),
+    color-mix(in srgb, var(--color-bg-secondary) 98%, transparent);
+  border-color: color-mix(in srgb, var(--color-silver) 54%, var(--color-border));
+}
+
+.pb-card.podium-3 {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(205, 127, 50, 0.2)),
+    color-mix(in srgb, var(--color-bg-secondary) 98%, transparent);
+  border-color: color-mix(in srgb, var(--color-bronze) 52%, var(--color-border));
 }
 
 .pb-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-sm);
-  margin-bottom: var(--space-md);
 }
 
-.event-name {
+.rank-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
+.event-name {
+  display: block;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
 .event-code {
+  display: block;
+  margin-top: 0.2rem;
   color: var(--color-text-tertiary);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
 }
 
 .pb-times {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 0.85rem;
+  margin-top: auto;
 }
 
 .pb-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
+  gap: var(--space-sm);
 }
 
 .pb-label {
   color: var(--color-text-tertiary);
-  font-size: 0.875rem;
+  font-size: 0.84rem;
 }
 
 .pb-value {
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--color-primary);
+  font-size: 1.08rem;
+  letter-spacing: -0.03em;
+}
+
+.pb-value.muted {
+  color: var(--color-text-tertiary);
+}
+
+.activity-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: var(--space-lg);
+}
+
+.activity-layout.single-column {
+  grid-template-columns: 1fr;
 }
 
 .activity-list {
@@ -425,7 +584,10 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-lg);
+  padding: 0.95rem 1rem;
+  background: color-mix(in srgb, var(--color-bg-secondary) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 18px;
 }
 
 .activity-left {
@@ -446,9 +608,9 @@ onMounted(async () => {
 }
 
 .event-badge {
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--color-bg);
-  border-radius: var(--radius-md);
+  padding: 0.35rem 0.65rem;
+  background: color-mix(in srgb, var(--color-bg) 74%, var(--color-bg-secondary));
+  border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 600;
   white-space: nowrap;
@@ -468,14 +630,25 @@ onMounted(async () => {
   font-family: var(--font-mono);
 }
 
+.empty-panel {
+  padding: 1.2rem 1.3rem;
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 900px) {
+  .activity-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
-  .profile-header {
+  .profile-identity {
     flex-direction: column;
     align-items: center;
     text-align: center;
   }
 
-  .profile-topline {
+  .identity-topline {
     flex-direction: column;
     align-items: center;
   }

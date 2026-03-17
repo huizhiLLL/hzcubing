@@ -1,21 +1,15 @@
 <template>
   <div class="settings">
-    <div class="page-header">
-      <div class="page-header-copy">
-        <span class="page-eyebrow">个人资料</span>
-        <h1>个人设置</h1>
-      </div>
-      <router-link v-if="profileLink" :to="profileLink" class="profile-link">
-        返回个人主页
-      </router-link>
-    </div>
+    <AppPageHeader eyebrow="个人资料" title="个人设置" title-tag="h1">
+      <template #aside>
+        <router-link v-if="profileLink" :to="profileLink" class="profile-link">
+          返回个人主页
+        </router-link>
+      </template>
+    </AppPageHeader>
 
     <div class="settings-sections">
-      <section class="settings-card">
-        <div class="section-heading">
-          <h2 class="section-title">基本信息</h2>
-        </div>
-
+      <AppSectionCard title="基本信息">
         <div class="form-group">
           <label class="form-label">邮箱</label>
           <input :value="userStore.user?.email" type="email" class="form-input" disabled />
@@ -36,22 +30,26 @@
           <label class="form-label">个人简介 <span class="optional">(可选)</span></label>
           <textarea v-model="form.bio" class="form-textarea" placeholder="介绍一下自己..." rows="4"></textarea>
         </div>
-      </section>
+      </AppSectionCard>
 
-      <div v-if="error" class="error-message">{{ error }}</div>
-      <div v-if="success" class="success-message">保存成功！</div>
+      <AppStatusBlock v-if="error" variant="error" layout="banner" :message="error" />
+      <AppStatusBlock v-if="success" variant="success" layout="banner" message="保存成功！" />
 
-      <div class="settings-actions">
+      <AppFormActions>
         <button class="save-btn" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? '保存中...' : '保存修改' }}
         </button>
-      </div>
+      </AppFormActions>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppFormActions from '@/components/common/AppFormActions.vue'
+import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSectionCard from '@/components/common/AppSectionCard.vue'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useUserStore } from '../stores/user'
 
 const userStore = useUserStore()
@@ -110,44 +108,6 @@ const handleSave = async () => {
   margin: 0 auto;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-lg);
-  margin-bottom: var(--space-xl);
-}
-
-.page-header-copy {
-  max-width: 620px;
-}
-
-.page-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.9rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-primary-light) 68%, transparent);
-  color: var(--color-primary);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-}
-
-.page-header h1 {
-  font-size: clamp(2rem, 3vw, 2.6rem);
-  font-weight: 700;
-  margin-bottom: 0.6rem;
-  letter-spacing: -0.03em;
-}
-
-.page-desc {
-  color: var(--color-text-secondary);
-  line-height: 1.75;
-}
-
 .profile-link {
   display: inline-flex;
   align-items: center;
@@ -173,29 +133,6 @@ const handleSave = async () => {
   display: flex;
   flex-direction: column;
   gap: 18px;
-}
-
-.settings-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  padding: 1.35rem 1.4rem;
-  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
-  border-radius: 22px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
-}
-
-.section-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.section-title {
-  font-size: 1.06rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
 .form-group {
@@ -256,35 +193,6 @@ const handleSave = async () => {
   line-height: 1.5;
 }
 
-.error-message,
-.success-message {
-  padding: 1rem 1.05rem;
-  border-radius: 18px;
-  text-align: left;
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  border: 1px solid transparent;
-}
-
-.error-message {
-  background: color-mix(in srgb, var(--color-error) 9%, transparent);
-  color: var(--color-error);
-  border-color: color-mix(in srgb, var(--color-error) 16%, transparent);
-}
-
-.success-message {
-  background: color-mix(in srgb, var(--color-success) 10%, transparent);
-  color: var(--color-success);
-  border-color: color-mix(in srgb, var(--color-success) 18%, transparent);
-}
-
-.settings-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-md);
-}
-
 .save-btn {
   min-width: 168px;
   padding: 1rem 1.4rem;
@@ -314,12 +222,6 @@ const handleSave = async () => {
 }
 
 @media (max-width: 768px) {
-  .page-header,
-  .settings-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .profile-link,
   .save-btn {
     width: 100%;

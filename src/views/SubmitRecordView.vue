@@ -1,27 +1,16 @@
 <template>
   <div class="submit-record">
-    <div class="page-header">
-      <h2>提交成绩</h2>
-      <p class="page-subtitle">录入一条新的成绩</p>
-    </div>
+    <AppPageHeader title="提交成绩" subtitle="录入一条新的成绩" />
 
     <form class="submit-form" @submit.prevent="handleSubmit">
-      <section class="form-section">
-        <div class="section-heading">
-          <h2 class="section-title">项目</h2>
-        </div>
-
+      <AppSectionCard title="项目">
         <div class="form-group">
           <label class="form-label"></label>
           <AppSelect v-model="form.event" :options="submitEventOptions" />
         </div>
-      </section>
+      </AppSectionCard>
 
-      <section class="form-section">
-        <div class="section-heading">
-          <h2 class="section-title">成绩</h2>
-        </div>
-
+      <AppSectionCard title="成绩">
         <div class="form-group">
           <label class="form-label">单次 <span class="optional">(可选)</span></label>
           <input
@@ -50,13 +39,9 @@
           <span v-if="averageTimeError" class="form-error">{{ averageTimeError }}</span>
           <span class="form-hint">单次或平均至少填写一项。</span>
         </div>
-      </section>
+      </AppSectionCard>
 
-      <section class="form-section">
-        <div class="section-heading">
-          <h2 class="section-title">补充信息<span class="optional"> (可选)</span></h2>
-        </div>
-
+      <AppSectionCard title="补充信息 (可选)">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">使用魔方 </label>
@@ -78,14 +63,10 @@
             />
           </div>
         </div>
-      </section>
+      </AppSectionCard>
 
-      <section v-if="hasPreview || submitError || submitSuccess" class="feedback-section">
+      <AppSectionCard v-if="hasPreview || submitError || submitSuccess" title="成绩预览">
         <div v-if="hasPreview" class="preview-section">
-          <div class="section-heading preview-heading">
-            <h2 class="section-title">成绩预览</h2>
-          </div>
-
           <div class="preview-grid">
             <div v-if="previewSingle !== null" class="preview-item">
               <span class="preview-label">单次预览</span>
@@ -98,20 +79,16 @@
           </div>
         </div>
 
-        <div v-if="submitError" class="error-message">
-          {{ submitError }}
-        </div>
+        <AppStatusBlock v-if="submitError" variant="error" layout="banner" :message="submitError" />
 
-        <div v-if="submitSuccess" class="success-message">
-          成绩提交成功！
-        </div>
-      </section>
+        <AppStatusBlock v-if="submitSuccess" variant="success" layout="banner" message="成绩提交成功！" />
+      </AppSectionCard>
 
-      <div class="submit-actions">
+      <AppFormActions>
         <button type="submit" class="submit-btn" :disabled="isSubmitting || !hasValidData">
           {{ isSubmitting ? '提交中...' : '提交成绩' }}
         </button>
-      </div>
+      </AppFormActions>
     </form>
   </div>
 </template>
@@ -119,7 +96,11 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppFormActions from '@/components/common/AppFormActions.vue'
+import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSectionCard from '@/components/common/AppSectionCard.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
 
@@ -285,16 +266,6 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
-.page-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: var(--space-xs);
-}
-
-.page-subtitle {
-  color: var(--color-text-tertiary);
-}
-
 .submit-form {
   display: flex;
   flex-direction: column;
@@ -304,29 +275,6 @@ onMounted(async () => {
   border-radius: 28px;
   border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
-}
-
-.form-section,
-.feedback-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  padding: 1.35rem 1.4rem;
-  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
-  border-radius: 22px;
-}
-
-.section-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.section-title {
-  font-size: 1.06rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
 .form-group {
@@ -402,10 +350,6 @@ onMounted(async () => {
   gap: var(--space-md);
 }
 
-.preview-heading {
-  margin-bottom: 0.1rem;
-}
-
 .preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -435,36 +379,6 @@ onMounted(async () => {
   color: var(--color-primary);
   font-size: 1.2rem;
   letter-spacing: -0.03em;
-}
-
-.error-message,
-.success-message {
-  padding: 1rem 1.05rem;
-  border-radius: 18px;
-  text-align: left;
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  border: 1px solid transparent;
-}
-
-.error-message {
-  background: color-mix(in srgb, var(--color-error) 9%, transparent);
-  color: var(--color-error);
-  border-color: color-mix(in srgb, var(--color-error) 16%, transparent);
-}
-
-.success-message {
-  background: color-mix(in srgb, var(--color-success) 10%, transparent);
-  color: var(--color-success);
-  border-color: color-mix(in srgb, var(--color-success) 18%, transparent);
-}
-
-.submit-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-md);
-  padding: 0.35rem 0.35rem 0.1rem;
 }
 
 .submit-btn {
@@ -508,12 +422,6 @@ onMounted(async () => {
 
   .form-row {
     grid-template-columns: 1fr;
-  }
-
-  .submit-actions {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 0;
   }
 
   .submit-btn {

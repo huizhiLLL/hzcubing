@@ -39,3 +39,5 @@ server/scripts/
 .claude/
 .vscode/
 docs/
+tmp/
+output/

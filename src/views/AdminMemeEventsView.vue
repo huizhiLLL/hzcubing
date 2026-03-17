@@ -1,25 +1,23 @@
 <template>
   <div class="meme-events-admin">
-    <div class="page-header">
-      <div>
-        <h2>整活项目管理</h2>
-        <p class="page-subtitle">管理当前数据库中的全部整活项目</p>
-      </div>
-      <span class="stats-pill">共 {{ memeEvents.length }} 个项目</span>
-    </div>
+    <AppPageHeader title="整活项目管理" subtitle="管理当前数据库中的全部整活项目">
+      <template #aside>
+        <span class="stats-pill">共 {{ memeEvents.length }} 个项目</span>
+      </template>
+    </AppPageHeader>
 
-    <div v-if="!canManage" class="forbidden-card">
-      <h2>没有权限</h2>
-      <p>这个页面只给管理员喵</p>
-    </div>
+    <AppStatusBlock
+      v-if="!canManage"
+      variant="error"
+      message="这个页面只给管理员喵"
+      title="没有权限"
+    />
 
     <template v-else>
-      <section class="admin-card">
-        <div class="section-header">
-          <h2>{{ editingCode ? '编辑项目' : '新增项目' }}</h2>
-          <button v-if="editingCode" class="ghost-btn" @click="resetForm">取消编辑</button>
-        </div>
-
+      <AppSectionCard :title="editingCode ? '编辑项目' : '新增项目'">
+        <template v-if="editingCode" #aside>
+          <button class="ghost-btn" @click="resetForm">取消编辑</button>
+        </template>
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">项目名称</label>
@@ -43,22 +41,20 @@
           <span>{{ form.isActive ? '启用中' : '停用中' }}</span>
         </label>
 
-        <div v-if="formError" class="error-message">{{ formError }}</div>
-        <div v-if="formSuccess" class="success-message">{{ formSuccess }}</div>
+        <AppStatusBlock v-if="formError" variant="error" layout="banner" :message="formError" />
+        <AppStatusBlock v-if="formSuccess" variant="success" layout="banner" :message="formSuccess" />
 
-        <div class="actions-row">
+        <AppFormActions>
           <button class="primary-btn" :disabled="submitting" @click="handleSubmit">
             {{ submitting ? '保存中...' : (editingCode ? '保存修改' : '创建项目') }}
           </button>
-        </div>
-      </section>
+        </AppFormActions>
+      </AppSectionCard>
 
-      <section class="admin-card">
-        <div class="section-header">
-          <h2>项目列表</h2>
+      <AppSectionCard title="项目列表">
+        <template #aside>
           <button class="ghost-btn" :disabled="eventsStore.isLoading" @click="loadEvents">刷新</button>
-        </div>
-
+        </template>
         <div class="list-wrap">
           <article v-for="event in memeEvents" :key="event.id" class="event-card">
             <div class="event-main">
@@ -91,15 +87,19 @@
             </div>
           </article>
 
-          <div v-if="memeEvents.length === 0" class="empty-state">当前还没有整活项目</div>
+          <AppStatusBlock v-if="memeEvents.length === 0" variant="empty" layout="banner" message="当前还没有整活项目" />
         </div>
-      </section>
+      </AppSectionCard>
     </template>
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import AppFormActions from '@/components/common/AppFormActions.vue'
+import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSectionCard from '@/components/common/AppSectionCard.vue'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useEventsStore } from '@/stores/events'
 import { useUserStore } from '@/stores/user'
 
@@ -242,30 +242,18 @@ onMounted(loadEvents)
   margin: 0 auto;
 }
 
-.page-header,
-.section-header,
 .event-top,
 .event-actions,
-.actions-row,
 .event-meta {
   display: flex;
   align-items: center;
 }
 
-.page-header,
-.section-header,
 .event-top {
   justify-content: space-between;
   gap: var(--space-md);
 }
 
-.page-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: var(--space-xs);
-}
-
-.page-subtitle,
 .form-hint,
 .event-code,
 .event-desc,
@@ -273,17 +261,10 @@ onMounted(loadEvents)
   color: var(--color-text-secondary);
 }
 
-.admin-card,
-.forbidden-card,
 .event-card {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
-}
-
-.admin-card,
-.forbidden-card {
-  padding: var(--space-xl);
 }
 
 .form-grid {
@@ -392,24 +373,6 @@ onMounted(loadEvents)
   color: var(--color-text-secondary);
 }
 
-.error-message,
-.success-message,
-.empty-state {
-  padding: var(--space-md);
-  border-radius: var(--radius-lg);
-  text-align: center;
-}
-
-.error-message {
-  background: rgba(239, 68, 68, 0.12);
-  color: var(--color-error);
-}
-
-.success-message {
-  background: rgba(34, 197, 94, 0.14);
-  color: #15803d;
-}
-
 .list-wrap {
   display: flex;
   flex-direction: column;
@@ -458,11 +421,8 @@ onMounted(loadEvents)
     grid-template-columns: 1fr;
   }
 
-  .page-header,
-  .section-header,
   .event-top,
-  .event-actions,
-  .actions-row {
+  .event-actions {
     flex-direction: column;
     align-items: stretch;
   }

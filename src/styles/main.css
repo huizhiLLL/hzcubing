@@ -59,7 +59,7 @@
 
   /* 字体 - 中文优雅组合 */
   --font-heading: 'Noto Serif TC', 'Cormorant', serif;
-  --font-body: 'Noto Sans TC', 'Montserrat', sans-serif;
+  --font-body: 'Noto Serif TC', 'Songti SC', 'STSong', 'SimSun', serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 

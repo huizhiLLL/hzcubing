@@ -1,53 +1,44 @@
 <template>
   <div class="leaderboard">
-    <div class="filter-panel">
-      <div class="event-selector-wrap">
-        <div class="event-selector">
-          <button
-            v-for="event in visibleEvents"
-            :key="event.id"
-            class="event-tab"
-            :class="{ active: currentEvent === event.id }"
-            @click="selectEvent(event.id)"
-          >
-            <span class="event-name">{{ event.name }}</span>
-          </button>
+    <AppPageHeader title="排行榜" subtitle="按项目与成绩类型查看最佳记录" />
+
+    <AppSectionCard title="筛选条件" subtitle="切换项目与成绩类型">
+      <div class="filter-panel">
+        <div class="event-selector-wrap">
+          <div class="event-selector">
+            <button
+              v-for="event in visibleEvents"
+              :key="event.id"
+              class="event-tab"
+              :class="{ active: currentEvent === event.id }"
+              @click="selectEvent(event.id)"
+            >
+              <span class="event-name">{{ event.name }}</span>
+            </button>
+          </div>
+          <div v-if="overflowEventOptions.length" class="event-overflow">
+            <AppSelect
+              :model-value="overflowSelection"
+              :options="overflowSelectOptions"
+              @update:model-value="handleOverflowSelect"
+            />
+          </div>
         </div>
-        <div v-if="overflowEventOptions.length" class="event-overflow">
-          <AppSelect
-            :model-value="overflowSelection"
-            :options="overflowSelectOptions"
-            @update:model-value="handleOverflowSelect"
-          />
+
+        <div class="type-toggle">
+          <button class="type-btn" :class="{ active: type === 'single' }" @click="type = 'single'">单次</button>
+          <button class="type-btn" :class="{ active: type === 'average' }" @click="type = 'average'">平均</button>
         </div>
       </div>
+    </AppSectionCard>
 
-      <div class="type-toggle">
-        <button class="type-btn" :class="{ active: type === 'single' }" @click="type = 'single'">单次</button>
-        <button class="type-btn" :class="{ active: type === 'average' }" @click="type = 'average'">平均</button>
-      </div>
-    </div>
+    <AppStatusBlock
+      v-if="!loading && sortedRecords.length === 0"
+      variant="empty"
+      :message="`暂无${currentEventName}数据`"
+    />
 
-    <div v-if="loading" class="loading-state">
-      <p>加载中...</p>
-    </div>
-
-    <div v-else-if="sortedRecords.length > 0" class="top-three">
-      <div v-for="(player, index) in topThree" :key="player._id || index" class="top-card" :class="['rank-' + (index + 1)]">
-        <div class="medal">{{ medals[index] }}</div>
-        <router-link :to="`/user/${player.userId}`" class="user-link">
-          {{ player.nickname }}
-        </router-link>
-        <div class="top-time">{{ formatTime(getTimeValue(player)) }}</div>
-        <span class="top-date">{{ formatDate(player.timestamp) }}</span>
-      </div>
-    </div>
-
-    <div v-else class="empty-state">
-      <p>暂无{{ currentEventName }}数据</p>
-    </div>
-
-    <div v-if="sortedRecords.length > 0" class="rank-table">
+    <div v-if="!loading && sortedRecords.length > 0" class="rank-table">
       <table>
         <thead>
           <tr>
@@ -77,7 +68,10 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSectionCard from '@/components/common/AppSectionCard.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
+import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
 
@@ -89,7 +83,6 @@ const eventsStore = useEventsStore()
 const currentEvent = ref('333')
 const type = ref('single')
 const loading = ref(false)
-const medals = ['🥇', '🥈', '🥉']
 const maxVisibleTabs = 8
 
 const allEvents = computed(() => eventsStore.allEvents)
@@ -127,8 +120,6 @@ const sortedRecords = computed(() => {
     .sort((a, b) => a[timeField] - b[timeField])
     .slice(0, 100)
 })
-
-const topThree = computed(() => sortedRecords.value.slice(0, 3))
 
 function getTimeValue(player) {
   return type.value === 'single' ? player.singleSeconds : player.averageSeconds
@@ -262,70 +253,9 @@ onMounted(async () => {
   color: var(--color-bg);
 }
 
-.loading-state,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2xl);
-  color: var(--color-text-tertiary);
-}
-
-.top-three {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-md);
-}
-
-.top-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-xl);
-  background: var(--color-bg-secondary);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  text-align: center;
-  position: relative;
-}
-
-.top-card.rank-1 {
-  border-color: var(--color-gold);
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.1) 0%, transparent 100%);
-}
-
-.top-card.rank-2 {
-  border-color: var(--color-silver);
-  background: linear-gradient(180deg, rgba(156, 163, 175, 0.1) 0%, transparent 100%);
-}
-
-.top-card.rank-3 {
-  border-color: var(--color-bronze);
-  background: linear-gradient(180deg, rgba(205, 127, 50, 0.1) 0%, transparent 100%);
-}
-
-.medal {
-  position: absolute;
-  top: -12px;
-  font-size: 1.5rem;
-}
-
-.user-link,
 .player-link {
   font-weight: 600;
   color: var(--color-text);
-}
-
-.top-time {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.top-date {
-  color: var(--color-text-tertiary);
 }
 
 .rank-table {
@@ -362,10 +292,6 @@ onMounted(async () => {
 }
 
 @media (max-width: 900px) {
-  .top-three {
-    grid-template-columns: 1fr;
-  }
-
   .event-selector-wrap {
     width: 100%;
     flex-direction: column;
