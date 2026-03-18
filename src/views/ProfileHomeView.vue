@@ -19,11 +19,11 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const profileRouteKey = computed(() => userStore.user?.id || userStore.user?._id || 'guest')
+const profileRouteKey = computed(() => userStore.user?.userNo || userStore.user?.id || 'guest')
 
 watchEffect(() => {
-  const userId = userStore.user?.id || userStore.user?._id
-  if (userId && route.params.id !== userId) {
+  const userId = userStore.user?.userNo || userStore.user?.id
+  if (userId && String(route.params.id) !== String(userId)) {
     router.replace({ name: 'Profile', params: { id: userId } })
   }
 })

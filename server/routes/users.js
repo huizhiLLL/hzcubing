@@ -2,6 +2,7 @@ import express from 'express'
 import { body, validationResult } from 'express-validator'
 import User from '../models/User.js'
 import { protect, optionalAuth } from '../middleware/auth.js'
+import { findUserByIdentifier } from '../utils/userLookup.js'
 
 const router = express.Router()
 
@@ -27,7 +28,7 @@ const profileValidation = [
 // @access  Public
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id)
+    const user = await findUserByIdentifier(req.params.id)
 
     if (!user) {
       return res.status(404).json({
@@ -40,7 +41,8 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
       code: 200,
       message: 'Success',
       data: {
-        id: user._id,
+        id: user.userNo,
+        userNo: user.userNo,
         _id: user._id,
         email: user.email,
         nickname: user.nickname,
@@ -88,7 +90,8 @@ router.put('/profile', protect, profileValidation, async (req, res, next) => {
       code: 200,
       message: 'Profile updated successfully',
       data: {
-        id: user._id,
+        id: user.userNo,
+        userNo: user.userNo,
         _id: user._id,
         email: user.email,
         nickname: user.nickname,
@@ -117,7 +120,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const skip = (pageNum - 1) * pageSizeNum
 
     const users = await User.find({ status: 'active' })
-      .select('nickname avatar role email createdAt')
+      .select('userNo nickname avatar role email createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSizeNum)

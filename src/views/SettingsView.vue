@@ -65,7 +65,7 @@ const form = reactive({
 })
 
 const profileLink = computed(() => {
-  const id = userStore.user?.id || userStore.user?._id
+  const id = userStore.user?.userNo || userStore.user?.id
   return id ? `/profile/${id}` : ''
 })
 

@@ -51,8 +51,8 @@ const playerSummary = computed(() => {
   const userMap = new Map()
 
   users.value.forEach(user => {
-    userMap.set(user.id || user._id, {
-      userId: user.id || user._id,
+    userMap.set(String(user.userNo || user.id || user._id), {
+      userId: user.userNo || user.id || user._id,
       nickname: user.nickname,
       email: user.email,
       createdAt: user.createdAt,

@@ -100,7 +100,8 @@ router.post('/register', registerValidation, async (req, res, next) => {
       data: {
         token,
         user: {
-          id: user._id,
+          id: user.userNo,
+          userNo: user.userNo,
           _id: user._id,
           email: user.email,
           nickname: user.nickname,
@@ -170,7 +171,8 @@ router.post('/login', loginValidation, async (req, res, next) => {
       data: {
         token,
         user: {
-          id: user._id,
+          id: user.userNo,
+          userNo: user.userNo,
           _id: user._id,
           email: user.email,
           nickname: user.nickname,
@@ -196,7 +198,8 @@ router.get('/me', protect, async (req, res, next) => {
       code: 200,
       message: 'Success',
       data: {
-        id: req.user._id,
+        id: req.user.userNo,
+        userNo: req.user.userNo,
         _id: req.user._id,
         email: req.user.email,
         nickname: req.user.nickname,
