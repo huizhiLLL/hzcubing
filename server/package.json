@@ -11,6 +11,7 @@
     "migrate-simple": "node scripts/migrate-simple.js",
     "migrate-meme-events": "node scripts/migrate-meme-events.js",
     "migrate-qq-ids": "node scripts/migrate-qq-ids.js",
+    "backfill-user-nos": "node scripts/backfill-user-nos.js",
     "clear-record-scramble": "node scripts/clear-record-scramble.js",
     "create-test-user": "node scripts/create-test-user.js",
     "fix-passwords": "node scripts/fix-passwords.js",

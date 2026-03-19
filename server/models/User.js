@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
+import Counter from './Counter.js'
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -45,6 +46,12 @@ const userSchema = new mongoose.Schema({
     sparse: true, // 允许 null 值唯一
     default: null
   },
+  userNo: {
+    type: Number,
+    unique: true,
+    sparse: true,
+    min: 1
+  },
   role: {
     type: String,
     enum: ['user', 'admin', 'super_admin'],
@@ -59,6 +66,23 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
+})
+
+// Auto assign userNo before first save
+userSchema.pre('save', async function(next) {
+  if (!this.isNew || this.userNo) return next()
+
+  try {
+    const counter = await Counter.findByIdAndUpdate(
+      'userNo',
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    )
+    this.userNo = counter.seq
+    next()
+  } catch (error) {
+    next(error)
+  }
 })
 
 // Hash password before saving

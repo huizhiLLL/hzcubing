@@ -3,8 +3,21 @@ import { body, validationResult } from 'express-validator'
 import Record from '../models/Record.js'
 import User from '../models/User.js'
 import { protect, optionalAuth } from '../middleware/auth.js'
+import { findUserByIdentifier } from '../utils/userLookup.js'
 
 const router = express.Router()
+
+async function resolveUserQuery(identifier) {
+  const user = await findUserByIdentifier(identifier, 'nickname userNo')
+  if (!user) return null
+
+  return {
+    user,
+    objectId: user._id,
+    userNo: user.userNo,
+    nickname: user.nickname || 'Anonymous'
+  }
+}
 
 // Helper: Convert time string to seconds
 function convertToSeconds(time) {
@@ -76,20 +89,23 @@ router.get('/', optionalAuth, async (req, res, next) => {
 
     // Enrich with user nicknames
     const userIds = [...new Set(records.map(r => r.userId).filter(Boolean))]
-    const users = await User.find({ _id: { $in: userIds } }).select('nickname').lean()
-    const userMap = new Map(users.map(u => [u._id.toString(), u.nickname]))
+    const users = await User.find({ _id: { $in: userIds } }).select('nickname userNo').lean()
+    const userMap = new Map(users.map(u => [u._id.toString(), u]))
 
-    const enrichedRecords = records.map(record => ({
-      _id: record._id,
-      userId: record.userId,
-      nickname: userMap.get(record.userId.toString()) || record.nickname || 'Anonymous',
-      event: record.event,
-      singleSeconds: record.singleSeconds,
-      averageSeconds: record.averageSeconds,
-      cube: record.cube,
-      method: record.method,
-      timestamp: record.timestamp
-    }))
+    const enrichedRecords = records.map(record => {
+      const user = userMap.get(record.userId.toString())
+      return {
+        _id: record._id,
+        profileUserNo: user?.userNo || null,
+        nickname: user?.nickname || record.nickname || 'Anonymous',
+        event: record.event,
+        singleSeconds: record.singleSeconds,
+        averageSeconds: record.averageSeconds,
+        cube: record.cube,
+        method: record.method,
+        timestamp: record.timestamp
+      }
+    })
 
     res.json({
       code: 200,
@@ -114,7 +130,15 @@ router.get('/user/:userId', optionalAuth, async (req, res, next) => {
     const pageSizeNum = Math.min(200, Math.max(1, parseInt(pageSize)))
     const skip = (pageNum - 1) * pageSizeNum
 
-    const query = { userId: req.params.userId }
+    const resolved = await resolveUserQuery(req.params.userId)
+    if (!resolved) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found'
+      })
+    }
+
+    const query = { userId: resolved.objectId }
     if (event) query.event = event
 
     const [records, total] = await Promise.all([
@@ -126,14 +150,10 @@ router.get('/user/:userId', optionalAuth, async (req, res, next) => {
       Record.countDocuments(query)
     ])
 
-    // Get user's nickname
-    const user = await User.findById(req.params.userId).select('nickname').lean()
-    const nickname = user?.nickname || 'Anonymous'
-
     const enrichedRecords = records.map(record => ({
       _id: record._id,
-      userId: record.userId,
-      nickname,
+      profileUserNo: resolved.userNo,
+      nickname: resolved.nickname,
       event: record.event,
       singleSeconds: record.singleSeconds,
       averageSeconds: record.averageSeconds,
@@ -179,11 +199,11 @@ router.get('/best', optionalAuth, async (req, res, next) => {
         bestMap.set(e, {
           event: e,
           bestSingleSeconds: null,
-          bestSingleUserId: null,
+          bestSingleUserObjectId: null,
           bestSingleNickname: null,
           bestSingleTimestamp: null,
           bestAverageSeconds: null,
-          bestAverageUserId: null,
+          bestAverageUserObjectId: null,
           bestAverageNickname: null,
           bestAverageTimestamp: null
         })
@@ -194,7 +214,7 @@ router.get('/best', optionalAuth, async (req, res, next) => {
       // Check single best
       if (s !== null && s !== undefined && (best.bestSingleSeconds === null || s < best.bestSingleSeconds)) {
         best.bestSingleSeconds = s
-        best.bestSingleUserId = record.userId
+        best.bestSingleUserObjectId = record.userId
         best.bestSingleNickname = record.nickname
         best.bestSingleTimestamp = record.timestamp
       }
@@ -202,7 +222,7 @@ router.get('/best', optionalAuth, async (req, res, next) => {
       // Check average best
       if (a !== null && a !== undefined && (best.bestAverageSeconds === null || a < best.bestAverageSeconds)) {
         best.bestAverageSeconds = a
-        best.bestAverageUserId = record.userId
+        best.bestAverageUserObjectId = record.userId
         best.bestAverageNickname = record.nickname
         best.bestAverageTimestamp = record.timestamp
       }
@@ -211,24 +231,29 @@ router.get('/best', optionalAuth, async (req, res, next) => {
     // Enrich with current nicknames
     const userIds = [...new Set(
       Array.from(bestMap.values())
-        .flatMap(b => [b.bestSingleUserId, b.bestAverageUserId])
+        .flatMap(b => [b.bestSingleUserObjectId, b.bestAverageUserObjectId])
         .filter(Boolean)
     )]
     
-    const users = await User.find({ _id: { $in: userIds } }).select('nickname').lean()
-    const userMap = new Map(users.map(u => [u._id.toString(), u.nickname]))
+    const users = await User.find({ _id: { $in: userIds } }).select('nickname userNo').lean()
+    const userMap = new Map(users.map(u => [u._id.toString(), u]))
 
-    const data = Array.from(bestMap.values()).map(best => ({
-      event: best.event,
-      bestSingleSeconds: best.bestSingleSeconds,
-      bestSingleUserId: best.bestSingleUserId,
-      bestSingleNickname: userMap.get(best.bestSingleUserId?.toString()) || best.bestSingleNickname || 'Anonymous',
-      bestSingleTimestamp: best.bestSingleTimestamp,
-      bestAverageSeconds: best.bestAverageSeconds,
-      bestAverageUserId: best.bestAverageUserId,
-      bestAverageNickname: userMap.get(best.bestAverageUserId?.toString()) || best.bestAverageNickname || 'Anonymous',
-      bestAverageTimestamp: best.bestAverageTimestamp
-    }))
+    const data = Array.from(bestMap.values()).map(best => {
+      const singleUser = best.bestSingleUserObjectId ? userMap.get(best.bestSingleUserObjectId.toString()) : null
+      const averageUser = best.bestAverageUserObjectId ? userMap.get(best.bestAverageUserObjectId.toString()) : null
+
+      return {
+        event: best.event,
+        bestSingleSeconds: best.bestSingleSeconds,
+        bestSingleUserNo: singleUser?.userNo || null,
+        bestSingleNickname: singleUser?.nickname || best.bestSingleNickname || 'Anonymous',
+        bestSingleTimestamp: best.bestSingleTimestamp,
+        bestAverageSeconds: best.bestAverageSeconds,
+        bestAverageUserNo: averageUser?.userNo || null,
+        bestAverageNickname: averageUser?.nickname || best.bestAverageNickname || 'Anonymous',
+        bestAverageTimestamp: best.bestAverageTimestamp
+      }
+    })
 
     res.json({
       code: 200,
@@ -247,7 +272,15 @@ router.get('/user/:userId/best', optionalAuth, async (req, res, next) => {
   try {
     const { event } = req.query
 
-    const query = { userId: req.params.userId }
+    const resolved = await resolveUserQuery(req.params.userId)
+    if (!resolved) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found'
+      })
+    }
+
+    const query = { userId: resolved.objectId }
     if (event) query.event = event
 
     const records = await Record.find(query).lean()
@@ -298,7 +331,15 @@ router.get('/user/:userId/history', optionalAuth, async (req, res, next) => {
     const pageSizeNum = Math.min(200, Math.max(1, parseInt(pageSize)))
     const skip = (pageNum - 1) * pageSizeNum
 
-    const query = { userId: req.params.userId }
+    const resolved = await resolveUserQuery(req.params.userId)
+    if (!resolved) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found'
+      })
+    }
+
+    const query = { userId: resolved.objectId }
     if (event) query.event = event
 
     const [records, total] = await Promise.all([
@@ -310,14 +351,10 @@ router.get('/user/:userId/history', optionalAuth, async (req, res, next) => {
       Record.countDocuments(query)
     ])
 
-    // Get user's nickname
-    const user = await User.findById(req.params.userId).select('nickname').lean()
-    const nickname = user?.nickname || 'Anonymous'
-
     const enrichedRecords = records.map(record => ({
       _id: record._id,
-      userId: record.userId,
-      nickname,
+      profileUserNo: resolved.userNo,
+      nickname: resolved.nickname,
       event: record.event,
       singleSeconds: record.singleSeconds,
       averageSeconds: record.averageSeconds,
@@ -527,13 +564,17 @@ router.get('/recent-breaks', optionalAuth, async (req, res, next) => {
 
     // Enrich with current nicknames
     const userIds = [...new Set(data.map(r => r.userId).filter(Boolean))]
-    const users = await User.find({ _id: { $in: userIds } }).select('nickname').lean()
-    const userMap = new Map(users.map(u => [u._id.toString(), u.nickname]))
+    const users = await User.find({ _id: { $in: userIds } }).select('nickname userNo').lean()
+    const userMap = new Map(users.map(u => [u._id.toString(), u]))
 
-    const enrichedData = data.map(record => ({
-      ...record,
-      nickname: userMap.get(record.userId.toString()) || record.nickname || 'Anonymous'
-    }))
+    const enrichedData = data.map(record => {
+      const user = userMap.get(record.userId.toString())
+      return {
+        ...record,
+        userId: user?.userNo || null,
+        nickname: user?.nickname || record.nickname || 'Anonymous'
+      }
+    })
 
     res.json({
       code: 200,

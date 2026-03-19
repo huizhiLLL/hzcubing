@@ -1,4 +1,4 @@
-# [HZCubing](https://hzcubing.club)
+# hzcubing
 
 一个面向魔方玩家的社区成绩系统。
 

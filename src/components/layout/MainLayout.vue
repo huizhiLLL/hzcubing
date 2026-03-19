@@ -304,29 +304,29 @@ onUnmounted(() => {
 
 .sidebar-nav {
   flex: 1;
-  padding: 18px 12px;
+  padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow-y: auto;
 }
 
 .sidebar-footer {
-  padding: 16px 12px 18px;
+  padding: 14px 12px 16px;
   border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
-  padding: 12px 14px;
+  min-height: 46px;
+  padding: 10px 13px;
   color: var(--color-text-secondary);
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid transparent;
   transition:
     background-color var(--transition-fast),
@@ -374,9 +374,9 @@ onUnmounted(() => {
 
 .sidebar-collapsed .nav-item {
   justify-content: center;
-  min-height: 54px;
-  padding: 12px;
-  border-radius: 20px;
+  min-height: 48px;
+  padding: 10px;
+  border-radius: 18px;
 }
 
 .sidebar-collapsed .nav-item:hover {

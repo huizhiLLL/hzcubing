@@ -150,8 +150,8 @@ const createdMemeEvents = ref([])
 const hasGlobalRankData = ref(false)
 
 const isCurrentUser = computed(() => {
-  const currentId = userStore.user?.id || userStore.user?._id
-  const viewedId = userData.value?.id || userData.value?._id
+  const currentId = userStore.user?.userNo || userStore.user?.id
+  const viewedId = userData.value?.userNo || userData.value?.id
   return !!currentId && !!viewedId && String(currentId) === String(viewedId)
 })
 
@@ -202,7 +202,7 @@ async function loadProfile() {
   hasGlobalRankData.value = false
 
   try {
-    const userId = route.params.id || userStore.user?.id || userStore.user?._id
+    const userId = route.params.id || userStore.user?.userNo || userStore.user?.id
     if (!userId) {
       userData.value = null
       return
@@ -240,7 +240,9 @@ async function loadProfile() {
       console.warn('Failed to load global rank data for profile PB ordering:', recordsResult.reason)
     }
 
-    createdMemeEvents.value = (eventsStore.memeEvents || []).filter(event => event.createdBy === String(userId))
+    createdMemeEvents.value = (eventsStore.memeEvents || []).filter(event => {
+      return String(event.createdBy) === String(userId) || String(event.createdBy) === String(userData.value?._id)
+    })
   } catch (err) {
     console.error('Failed to load user profile:', err)
     userData.value = null

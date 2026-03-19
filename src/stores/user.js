@@ -20,8 +20,11 @@ export const useUserStore = defineStore('user', () => {
     try {
       const result = await authAPI.me()
       if (result.code === 200 && result.data) {
-        user.value = result.data
-        localStorage.setItem('userInfo', JSON.stringify(result.data))
+        user.value = {
+          ...result.data,
+          id: result.data.userNo || result.data.id
+        }
+        localStorage.setItem('userInfo', JSON.stringify(user.value))
         return true
       }
       return false
@@ -44,8 +47,9 @@ export const useUserStore = defineStore('user', () => {
       
       if (result.code === 200 && result.data) {
         const { token: newToken, user: userData } = result.data
-        setAuth(newToken, userData)
-        return userData
+        const normalizedUser = { ...userData, id: userData.userNo || userData.id }
+        setAuth(newToken, normalizedUser)
+        return normalizedUser
       } else {
         throw new Error(result.message || 'Login failed')
       }
@@ -67,8 +71,9 @@ export const useUserStore = defineStore('user', () => {
       
       if (result.code === 200 && result.data) {
         const { token: newToken, user: newUser } = result.data
-        setAuth(newToken, newUser)
-        return newUser
+        const normalizedUser = { ...newUser, id: newUser.userNo || newUser.id }
+        setAuth(newToken, normalizedUser)
+        return normalizedUser
       } else {
         throw new Error(result.message || 'Registration failed')
       }
@@ -89,7 +94,7 @@ export const useUserStore = defineStore('user', () => {
       const result = await userAPI.updateProfile(profileData)
       
       if (result.code === 200 && result.data) {
-        user.value = { ...user.value, ...result.data }
+        user.value = { ...user.value, ...result.data, id: result.data.userNo || result.data.id || user.value?.id }
         localStorage.setItem('userInfo', JSON.stringify(user.value))
         return user.value
       } else {
@@ -135,7 +140,14 @@ export const useUserStore = defineStore('user', () => {
     
     if (storedUser) {
       try {
-        user.value = JSON.parse(storedUser)
+        const parsedUser = JSON.parse(storedUser)
+        user.value = parsedUser
+          ? {
+              ...parsedUser,
+              id: parsedUser.userNo || parsedUser.id,
+              userNo: parsedUser.userNo || parsedUser.id || null
+            }
+          : null
       } catch (e) {
         console.error('Failed to parse stored user info')
       }
