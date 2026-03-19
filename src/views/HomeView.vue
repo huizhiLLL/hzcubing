@@ -114,7 +114,11 @@ const stats = computed(() => ({
 }))
 
 const uniqueUsers = computed(() => {
-  const userIds = new Set(recordsStore.records.map(r => r.userId))
+  const userIds = new Set(
+    recordsStore.records
+      .map(record => record.profileUserNo)
+      .filter(value => value !== null && value !== undefined && value !== '')
+  )
   return userIds.size
 })
 
