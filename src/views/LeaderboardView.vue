@@ -52,7 +52,7 @@
           <tr v-for="(player, index) in sortedRecords" :key="player._id || index">
             <td class="col-rank"><span class="rank-num">{{ index + 1 }}</span></td>
             <td class="col-player">
-              <router-link :to="`/user/${player.userId}`" class="player-link">
+              <router-link :to="`/user/${player.profileUserNo}`" class="player-link">
                 {{ player.nickname }}
               </router-link>
             </td>

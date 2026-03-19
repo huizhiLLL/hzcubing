@@ -130,7 +130,16 @@ router.get('/', optionalAuth, async (req, res, next) => {
     res.json({
       code: 200,
       message: 'Success',
-      data: users,
+      data: users.map(user => ({
+        id: user.userNo,
+        userNo: user.userNo,
+        _id: user._id,
+        nickname: user.nickname,
+        avatar: user.avatar,
+        role: user.role,
+        email: user.email,
+        createdAt: user.createdAt
+      })),
       page: pageNum,
       pageSize: pageSizeNum,
       total

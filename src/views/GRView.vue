@@ -31,7 +31,7 @@
                 </div>
               </td>
               <td>
-                <router-link v-if="row.bestSingleUserId" :to="`/user/${row.bestSingleUserId}`" class="user-link">
+                <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
                   {{ row.bestSingleNickname || '—' }}
                 </router-link>
                 <span v-else class="muted">—</span>
@@ -39,7 +39,7 @@
               <td>{{ formatTime(row.bestSingleSeconds) }}</td>
               <td>{{ formatTime(row.bestAverageSeconds) }}</td>
               <td>
-                <router-link v-if="row.bestAverageUserId" :to="`/user/${row.bestAverageUserId}`" class="user-link">
+                <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
                   {{ row.bestAverageNickname || '—' }}
                 </router-link>
                 <span v-else class="muted">—</span>
@@ -58,7 +58,7 @@
 
           <div class="record-block compact">
             <span class="record-label">最佳单次</span>
-            <router-link v-if="row.bestSingleUserId" :to="`/user/${row.bestSingleUserId}`" class="user-link">
+            <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
               {{ row.bestSingleNickname || '—' }}
             </router-link>
             <span class="record-time">{{ formatTime(row.bestSingleSeconds) }}</span>
@@ -66,7 +66,7 @@
 
           <div class="record-block compact">
             <span class="record-label">最佳平均</span>
-            <router-link v-if="row.bestAverageUserId" :to="`/user/${row.bestAverageUserId}`" class="user-link">
+            <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
               {{ row.bestAverageNickname || '—' }}
             </router-link>
             <span class="record-time">{{ formatTime(row.bestAverageSeconds) }}</span>

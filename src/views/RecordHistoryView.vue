@@ -8,10 +8,10 @@
     <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
     <div v-else-if="playerSummary.length > 0" class="player-grid">
-      <article v-for="player in playerSummary" :key="player.userId" class="player-card">
+      <article v-for="player in playerSummary" :key="player.profileUserNo" class="player-card">
         <div class="player-head">
           <div>
-            <router-link :to="`/user/${player.userId}`" class="player-link">
+            <router-link :to="`/user/${player.profileUserNo}`" class="player-link">
               {{ player.nickname }}
             </router-link>
             <p class="join-date">加入于 {{ formatJoinDate(player.createdAt) }}</p>
@@ -52,7 +52,7 @@ const playerSummary = computed(() => {
 
   users.value.forEach(user => {
     userMap.set(String(user.userNo || user.id || user._id), {
-      userId: user.userNo || user.id || user._id,
+      profileUserNo: user.userNo || user.id || user._id,
       nickname: user.nickname,
       email: user.email,
       createdAt: user.createdAt,

@@ -96,7 +96,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       const user = userMap.get(record.userId.toString())
       return {
         _id: record._id,
-        userId: user?.userNo || null,
+        profileUserNo: user?.userNo || null,
         nickname: user?.nickname || record.nickname || 'Anonymous',
         event: record.event,
         singleSeconds: record.singleSeconds,
@@ -152,7 +152,7 @@ router.get('/user/:userId', optionalAuth, async (req, res, next) => {
 
     const enrichedRecords = records.map(record => ({
       _id: record._id,
-      userId: resolved.userNo,
+      profileUserNo: resolved.userNo,
       nickname: resolved.nickname,
       event: record.event,
       singleSeconds: record.singleSeconds,
@@ -199,11 +199,11 @@ router.get('/best', optionalAuth, async (req, res, next) => {
         bestMap.set(e, {
           event: e,
           bestSingleSeconds: null,
-          bestSingleUserId: null,
+          bestSingleUserObjectId: null,
           bestSingleNickname: null,
           bestSingleTimestamp: null,
           bestAverageSeconds: null,
-          bestAverageUserId: null,
+          bestAverageUserObjectId: null,
           bestAverageNickname: null,
           bestAverageTimestamp: null
         })
@@ -214,7 +214,7 @@ router.get('/best', optionalAuth, async (req, res, next) => {
       // Check single best
       if (s !== null && s !== undefined && (best.bestSingleSeconds === null || s < best.bestSingleSeconds)) {
         best.bestSingleSeconds = s
-        best.bestSingleUserId = record.userId
+        best.bestSingleUserObjectId = record.userId
         best.bestSingleNickname = record.nickname
         best.bestSingleTimestamp = record.timestamp
       }
@@ -222,7 +222,7 @@ router.get('/best', optionalAuth, async (req, res, next) => {
       // Check average best
       if (a !== null && a !== undefined && (best.bestAverageSeconds === null || a < best.bestAverageSeconds)) {
         best.bestAverageSeconds = a
-        best.bestAverageUserId = record.userId
+        best.bestAverageUserObjectId = record.userId
         best.bestAverageNickname = record.nickname
         best.bestAverageTimestamp = record.timestamp
       }
@@ -231,7 +231,7 @@ router.get('/best', optionalAuth, async (req, res, next) => {
     // Enrich with current nicknames
     const userIds = [...new Set(
       Array.from(bestMap.values())
-        .flatMap(b => [b.bestSingleUserId, b.bestAverageUserId])
+        .flatMap(b => [b.bestSingleUserObjectId, b.bestAverageUserObjectId])
         .filter(Boolean)
     )]
     
@@ -239,17 +239,17 @@ router.get('/best', optionalAuth, async (req, res, next) => {
     const userMap = new Map(users.map(u => [u._id.toString(), u]))
 
     const data = Array.from(bestMap.values()).map(best => {
-      const singleUser = best.bestSingleUserId ? userMap.get(best.bestSingleUserId.toString()) : null
-      const averageUser = best.bestAverageUserId ? userMap.get(best.bestAverageUserId.toString()) : null
+      const singleUser = best.bestSingleUserObjectId ? userMap.get(best.bestSingleUserObjectId.toString()) : null
+      const averageUser = best.bestAverageUserObjectId ? userMap.get(best.bestAverageUserObjectId.toString()) : null
 
       return {
         event: best.event,
         bestSingleSeconds: best.bestSingleSeconds,
-        bestSingleUserId: singleUser?.userNo || null,
+        bestSingleUserNo: singleUser?.userNo || null,
         bestSingleNickname: singleUser?.nickname || best.bestSingleNickname || 'Anonymous',
         bestSingleTimestamp: best.bestSingleTimestamp,
         bestAverageSeconds: best.bestAverageSeconds,
-        bestAverageUserId: averageUser?.userNo || null,
+        bestAverageUserNo: averageUser?.userNo || null,
         bestAverageNickname: averageUser?.nickname || best.bestAverageNickname || 'Anonymous',
         bestAverageTimestamp: best.bestAverageTimestamp
       }
@@ -353,7 +353,7 @@ router.get('/user/:userId/history', optionalAuth, async (req, res, next) => {
 
     const enrichedRecords = records.map(record => ({
       _id: record._id,
-      userId: resolved.userNo,
+      profileUserNo: resolved.userNo,
       nickname: resolved.nickname,
       event: record.event,
       singleSeconds: record.singleSeconds,
