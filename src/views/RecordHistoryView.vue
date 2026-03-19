@@ -41,37 +41,12 @@
 import { computed, onMounted, ref } from 'vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { userAPI } from '@/api'
-import { useRecordsStore } from '../stores/records'
 
-const recordsStore = useRecordsStore()
 const users = ref([])
 const loading = ref(false)
 
 const playerSummary = computed(() => {
-  const userMap = new Map()
-
-  users.value.forEach(user => {
-    userMap.set(String(user.userNo || user.id || user._id), {
-      profileUserNo: user.userNo || user.id || user._id,
-      nickname: user.nickname,
-      email: user.email,
-      createdAt: user.createdAt,
-      recordCount: 0,
-      events: []
-    })
-  })
-
-  recordsStore.records.forEach(record => {
-    const profileUserNo = String(record.profileUserNo)
-    if (!userMap.has(profileUserNo)) return
-    const user = userMap.get(profileUserNo)
-    user.recordCount++
-    if (!user.events.includes(record.event)) {
-      user.events.push(record.event)
-    }
-  })
-
-  return Array.from(userMap.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+  return [...users.value].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
 })
 
 function formatJoinDate(dateStr) {
@@ -83,12 +58,10 @@ function formatJoinDate(dateStr) {
 async function loadData() {
   loading.value = true
   try {
-    const usersResult = await userAPI.getAll({ pageSize: 100 })
+    const usersResult = await userAPI.getOverview({ pageSize: 100 })
     if (usersResult.code === 200) {
       users.value = usersResult.data || []
     }
-
-    await recordsStore.fetchRecords({ pageSize: 2000 })
   } catch (err) {
     console.error('Failed to load data:', err)
     users.value = []

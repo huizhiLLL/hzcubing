@@ -58,7 +58,8 @@ export const userAPI = {
   getById: (userId) => api.get(`/users/${userId}`),
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
-  getAll: (params) => api.get('/users', { params })
+  getAll: (params) => api.get('/users', { params }),
+  getOverview: (params) => api.get('/users/overview', { params })
 }
 
 // Record APIs

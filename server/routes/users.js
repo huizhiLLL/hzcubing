@@ -1,6 +1,7 @@
 import express from 'express'
 import { body, validationResult } from 'express-validator'
 import User from '../models/User.js'
+import Record from '../models/Record.js'
 import { protect, optionalAuth } from '../middleware/auth.js'
 import { findUserByIdentifier } from '../utils/userLookup.js'
 
@@ -22,43 +23,6 @@ const profileValidation = [
     .trim()
     .toUpperCase()
 ]
-
-// @route   GET /api/users/:id
-// @desc    Get user by ID
-// @access  Public
-router.get('/:id', optionalAuth, async (req, res, next) => {
-  try {
-    const user = await findUserByIdentifier(req.params.id)
-
-    if (!user) {
-      return res.status(404).json({
-        code: 404,
-        message: 'User not found'
-      })
-    }
-
-    res.json({
-      code: 200,
-      message: 'Success',
-      data: {
-        id: user.userNo,
-        userNo: user.userNo,
-        _id: user._id,
-        email: user.email,
-        nickname: user.nickname,
-        bio: user.bio,
-        wcaId: user.wcaId,
-        avatar: user.avatar,
-        role: user.role,
-        status: user.status,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      }
-    })
-  } catch (error) {
-    next(error)
-  }
-})
 
 // @route   PUT /api/users/profile
 // @desc    Update current user profile
@@ -143,6 +107,99 @@ router.get('/', optionalAuth, async (req, res, next) => {
       page: pageNum,
       pageSize: pageSizeNum,
       total
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// @route   GET /api/users/overview
+// @desc    Get user overview cards with record stats
+// @access  Public
+router.get('/overview', optionalAuth, async (req, res, next) => {
+  try {
+    const { page = 1, pageSize = 100 } = req.query
+    const pageNum = Math.max(1, parseInt(page))
+    const pageSizeNum = Math.min(200, Math.max(1, parseInt(pageSize)))
+    const skip = (pageNum - 1) * pageSizeNum
+
+    const [users, total, recordStats] = await Promise.all([
+      User.find({ status: 'active' })
+        .select('userNo nickname avatar role email createdAt')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSizeNum)
+        .lean(),
+      User.countDocuments({ status: 'active' }),
+      Record.aggregate([
+        {
+          $group: {
+            _id: '$userId',
+            recordCount: { $sum: 1 },
+            events: { $addToSet: '$event' }
+          }
+        }
+      ])
+    ])
+
+    const statsMap = new Map(recordStats.map(stat => [String(stat._id), stat]))
+
+    res.json({
+      code: 200,
+      message: 'Success',
+      data: users.map(user => {
+        const stats = statsMap.get(String(user._id))
+        return {
+          profileUserNo: user.userNo,
+          nickname: user.nickname,
+          avatar: user.avatar,
+          role: user.role,
+          email: user.email,
+          createdAt: user.createdAt,
+          recordCount: stats?.recordCount || 0,
+          events: Array.isArray(stats?.events) ? stats.events : []
+        }
+      }),
+      page: pageNum,
+      pageSize: pageSizeNum,
+      total
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// @route   GET /api/users/:id
+// @desc    Get user by ID
+// @access  Public
+router.get('/:id', optionalAuth, async (req, res, next) => {
+  try {
+    const user = await findUserByIdentifier(req.params.id)
+
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found'
+      })
+    }
+
+    res.json({
+      code: 200,
+      message: 'Success',
+      data: {
+        id: user.userNo,
+        userNo: user.userNo,
+        _id: user._id,
+        email: user.email,
+        nickname: user.nickname,
+        bio: user.bio,
+        wcaId: user.wcaId,
+        avatar: user.avatar,
+        role: user.role,
+        status: user.status,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
     })
   } catch (error) {
     next(error)
