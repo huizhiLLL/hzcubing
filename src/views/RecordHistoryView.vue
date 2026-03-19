@@ -62,9 +62,9 @@ const playerSummary = computed(() => {
   })
 
   recordsStore.records.forEach(record => {
-    const userId = String(record.userId)
-    if (!userMap.has(userId)) return
-    const user = userMap.get(userId)
+    const profileUserNo = String(record.profileUserNo)
+    if (!userMap.has(profileUserNo)) return
+    const user = userMap.get(profileUserNo)
     user.recordCount++
     if (!user.events.includes(record.event)) {
       user.events.push(record.event)

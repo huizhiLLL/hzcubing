@@ -104,15 +104,15 @@ const sortedRecords = computed(() => {
   eventRecords.value
     .filter(record => record[timeField] !== null && record[timeField] !== undefined)
     .forEach(record => {
-      const userId = String(record.userId)
-      if (!userBestMap.has(userId)) {
-        userBestMap.set(userId, record)
+      const profileUserNo = String(record.profileUserNo)
+      if (!userBestMap.has(profileUserNo)) {
+        userBestMap.set(profileUserNo, record)
         return
       }
 
-      const existing = userBestMap.get(userId)
+      const existing = userBestMap.get(profileUserNo)
       if (record[timeField] < existing[timeField]) {
-        userBestMap.set(userId, record)
+        userBestMap.set(profileUserNo, record)
       }
     })
 
