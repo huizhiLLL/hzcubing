@@ -1,5 +1,10 @@
 function normalizeUserId(userId) {
+  if (userId === null || userId === undefined || userId === '') return null
   return String(userId)
+}
+
+function getRecordUserId(record) {
+  return normalizeUserId(record?.profileUserNo ?? record?.userId)
 }
 
 function getTimeField(type) {
@@ -13,7 +18,8 @@ export function getLeaderboardRecordsForEvent(records, eventId, type = 'single',
   records
     .filter(record => record.event === eventId && record[timeField] !== null && record[timeField] !== undefined)
     .forEach((record) => {
-      const userId = normalizeUserId(record.userId)
+      const userId = getRecordUserId(record)
+      if (!userId) return
       const existing = userBestMap.get(userId)
 
       if (!existing || record[timeField] < existing[timeField]) {
@@ -36,12 +42,16 @@ export function buildEventRankMaps(records, eventIds = []) {
   targetEventIds.forEach((eventId) => {
     getLeaderboardRecordsForEvent(records, eventId, 'single', Number.POSITIVE_INFINITY)
       .forEach((record, index) => {
-        singleRanks.set(`${eventId}:${normalizeUserId(record.userId)}`, index + 1)
+        const userId = getRecordUserId(record)
+        if (!userId) return
+        singleRanks.set(`${eventId}:${userId}`, index + 1)
       })
 
     getLeaderboardRecordsForEvent(records, eventId, 'average', Number.POSITIVE_INFINITY)
       .forEach((record, index) => {
-        averageRanks.set(`${eventId}:${normalizeUserId(record.userId)}`, index + 1)
+        const userId = getRecordUserId(record)
+        if (!userId) return
+        averageRanks.set(`${eventId}:${userId}`, index + 1)
       })
   })
 

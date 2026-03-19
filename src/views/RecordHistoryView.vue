@@ -58,8 +58,10 @@
 import { computed, onMounted, ref } from 'vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { userAPI } from '@/api'
+import { useRecordsStore } from '../stores/records'
 
 const PAGE_SIZE = 12
+const recordsStore = useRecordsStore()
 
 const users = ref([])
 const loading = ref(false)

@@ -14,8 +14,19 @@ export const useRecordsStore = defineStore('records', () => {
   const loaded = ref(false)
   const lastFetchKey = ref('')
   let inflightRecordsPromise = null
+
+  function getRecordUserKey(record) {
+    const value = record?.profileUserNo ?? record?.userId ?? null
+    if (value === null || value === undefined || value === '') return null
+    return String(value)
+  }
+
   const uniqueUserCount = computed(() => {
-    return new Set(records.value.map(record => String(record.userId))).size
+    return new Set(
+      records.value
+        .map(getRecordUserKey)
+        .filter(Boolean)
+    ).size
   })
   const homeSummary = computed(() => ({
     totalRecords: records.value.length,
@@ -277,7 +288,8 @@ export const useRecordsStore = defineStore('records', () => {
 
   // Get user's personal bests from loaded records
   function getUserPersonalBests(userId) {
-    const userRecords = records.value.filter(r => r.userId === userId)
+    const normalizedUserId = String(userId)
+    const userRecords = records.value.filter((record) => getRecordUserKey(record) === normalizedUserId)
     
     return userRecords.reduce((best, record) => {
       const event = record.event
