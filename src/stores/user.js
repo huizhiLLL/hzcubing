@@ -140,7 +140,14 @@ export const useUserStore = defineStore('user', () => {
     
     if (storedUser) {
       try {
-        user.value = JSON.parse(storedUser)
+        const parsedUser = JSON.parse(storedUser)
+        user.value = parsedUser
+          ? {
+              ...parsedUser,
+              id: parsedUser.userNo || parsedUser.id,
+              userNo: parsedUser.userNo || parsedUser.id || null
+            }
+          : null
       } catch (e) {
         console.error('Failed to parse stored user info')
       }

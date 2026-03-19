@@ -175,33 +175,33 @@ const rankMaps = computed(() => {
     const averageBestMap = new Map()
 
     eventRecords.forEach((record) => {
-      const userId = String(record.userId)
+      const profileUserNo = String(record.profileUserNo)
 
       if (record.singleSeconds !== null && record.singleSeconds !== undefined) {
-        const existingSingle = singleBestMap.get(userId)
+        const existingSingle = singleBestMap.get(profileUserNo)
         if (existingSingle === undefined || record.singleSeconds < existingSingle) {
-          singleBestMap.set(userId, record.singleSeconds)
+          singleBestMap.set(profileUserNo, record.singleSeconds)
         }
       }
 
       if (record.averageSeconds !== null && record.averageSeconds !== undefined) {
-        const existingAverage = averageBestMap.get(userId)
+        const existingAverage = averageBestMap.get(profileUserNo)
         if (existingAverage === undefined || record.averageSeconds < existingAverage) {
-          averageBestMap.set(userId, record.averageSeconds)
+          averageBestMap.set(profileUserNo, record.averageSeconds)
         }
       }
     })
 
     Array.from(singleBestMap.entries())
       .sort((a, b) => a[1] - b[1])
-      .forEach(([userId], index) => {
-        singleRanks.set(`${eventId}:${userId}`, index + 1)
+      .forEach(([profileUserNo], index) => {
+        singleRanks.set(`${eventId}:${profileUserNo}`, index + 1)
       })
 
     Array.from(averageBestMap.entries())
       .sort((a, b) => a[1] - b[1])
-      .forEach(([userId], index) => {
-        averageRanks.set(`${eventId}:${userId}`, index + 1)
+      .forEach(([profileUserNo], index) => {
+        averageRanks.set(`${eventId}:${profileUserNo}`, index + 1)
       })
   })
 
@@ -212,15 +212,15 @@ const rankMaps = computed(() => {
 })
 
 const rankedPersonalBests = computed(() => {
-  const viewedUserId = String(userData.value?.id || userData.value?._id || '')
+  const viewedUserNo = String(userData.value?.userNo || userData.value?.id || '')
 
   return [...personalBests.value]
     .map((pb) => {
       const singleRank = hasGlobalRankData.value
-        ? (rankMaps.value.singleRanks.get(`${pb.event}:${viewedUserId}`) || null)
+        ? (rankMaps.value.singleRanks.get(`${pb.event}:${viewedUserNo}`) || null)
         : null
       const averageRank = hasGlobalRankData.value
-        ? (rankMaps.value.averageRanks.get(`${pb.event}:${viewedUserId}`) || null)
+        ? (rankMaps.value.averageRanks.get(`${pb.event}:${viewedUserNo}`) || null)
         : null
       const bestRank = [singleRank, averageRank].filter(Boolean).sort((a, b) => a - b)[0] || null
 
