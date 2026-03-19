@@ -118,29 +118,38 @@ router.get('/', optionalAuth, async (req, res, next) => {
 // @access  Public
 router.get('/overview', optionalAuth, async (req, res, next) => {
   try {
-    const { page = 1, pageSize = 100 } = req.query
+    const { page = 1, pageSize = 12 } = req.query
     const pageNum = Math.max(1, parseInt(page))
-    const pageSizeNum = Math.min(200, Math.max(1, parseInt(pageSize)))
+    const pageSizeNum = Math.min(100, Math.max(1, parseInt(pageSize)))
     const skip = (pageNum - 1) * pageSizeNum
 
-    const [users, total, recordStats] = await Promise.all([
+    const [users, total] = await Promise.all([
       User.find({ status: 'active' })
         .select('userNo nickname avatar role email createdAt')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSizeNum)
         .lean(),
-      User.countDocuments({ status: 'active' }),
-      Record.aggregate([
-        {
-          $group: {
-            _id: '$userId',
-            recordCount: { $sum: 1 },
-            events: { $addToSet: '$event' }
-          }
-        }
-      ])
+      User.countDocuments({ status: 'active' })
     ])
+
+    const userObjectIds = users.map(user => user._id).filter(Boolean)
+    const recordStats = userObjectIds.length
+      ? await Record.aggregate([
+          {
+            $match: {
+              userId: { $in: userObjectIds }
+            }
+          },
+          {
+            $group: {
+              _id: '$userId',
+              recordCount: { $sum: 1 },
+              events: { $addToSet: '$event' }
+            }
+          }
+        ])
+      : []
 
     const statsMap = new Map(recordStats.map(stat => [String(stat._id), stat]))
 
@@ -162,7 +171,8 @@ router.get('/overview', optionalAuth, async (req, res, next) => {
       }),
       page: pageNum,
       pageSize: pageSizeNum,
-      total
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSizeNum))
     })
   } catch (error) {
     next(error)
