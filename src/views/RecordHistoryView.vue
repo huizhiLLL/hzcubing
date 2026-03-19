@@ -88,7 +88,7 @@ async function loadData() {
       users.value = usersResult.data || []
     }
 
-    await recordsStore.fetchRecords({ pageSize: 2000 })
+    await recordsStore.ensureRecordsLoaded({ pageSize: 2000 })
   } catch (err) {
     console.error('Failed to load data:', err)
     users.value = []

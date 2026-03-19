@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { recordAPI } from '@/api'
 import { useUserStore } from './user'
+import { buildEventRankMaps, getLeaderboardRecordsForEvent } from '@/utils/recordRanking'
 
 export const useRecordsStore = defineStore('records', () => {
   const userStore = useUserStore()
@@ -10,6 +11,16 @@ export const useRecordsStore = defineStore('records', () => {
   const recentBreaks = ref([])
   const isLoading = ref(false)
   const error = ref(null)
+  const loaded = ref(false)
+  const lastFetchKey = ref('')
+  let inflightRecordsPromise = null
+  const uniqueUserCount = computed(() => {
+    return new Set(records.value.map(record => String(record.userId))).size
+  })
+  const homeSummary = computed(() => ({
+    totalRecords: records.value.length,
+    totalUsers: uniqueUserCount.value
+  }))
 
   function truncateToTwoDecimals(value) {
     if (value === null || value === undefined || isNaN(value)) return null
@@ -41,11 +52,14 @@ export const useRecordsStore = defineStore('records', () => {
   async function fetchRecords(params = {}) {
     isLoading.value = true
     error.value = null
+    const fetchKey = JSON.stringify(params || {})
 
     try {
       const result = await recordAPI.getAll(params)
       if (result.code === 200) {
         records.value = result.data || []
+        loaded.value = true
+        lastFetchKey.value = fetchKey
         return result
       } else {
         throw new Error(result.message || 'Failed to fetch records')
@@ -56,6 +70,28 @@ export const useRecordsStore = defineStore('records', () => {
     } finally {
       isLoading.value = false
     }
+  }
+
+  async function ensureRecordsLoaded(params = {}, options = {}) {
+    const force = options.force === true
+    const fetchKey = JSON.stringify(params || {})
+
+    if (!force && loaded.value && lastFetchKey.value === fetchKey && records.value.length > 0) {
+      return records.value
+    }
+
+    if (!force && inflightRecordsPromise && lastFetchKey.value === fetchKey) {
+      return inflightRecordsPromise
+    }
+
+    lastFetchKey.value = fetchKey
+    inflightRecordsPromise = fetchRecords(params)
+      .then((result) => result.data || records.value)
+      .finally(() => {
+        inflightRecordsPromise = null
+      })
+
+    return inflightRecordsPromise
   }
 
   // Fetch user records
@@ -231,6 +267,14 @@ export const useRecordsStore = defineStore('records', () => {
     return records.value.filter(r => r.event === event)
   }
 
+  function getLeaderboardRecords(eventId, type = 'single', limit = 100) {
+    return getLeaderboardRecordsForEvent(records.value, eventId, type, limit)
+  }
+
+  function getEventRankMaps(eventIds = []) {
+    return buildEventRankMaps(records.value, eventIds)
+  }
+
   // Get user's personal bests from loaded records
   function getUserPersonalBests(userId) {
     const userRecords = records.value.filter(r => r.userId === userId)
@@ -261,9 +305,13 @@ export const useRecordsStore = defineStore('records', () => {
     records,
     bestRecords,
     recentBreaks,
+    loaded,
+    uniqueUserCount,
+    homeSummary,
     isLoading,
     error,
     fetchRecords,
+    ensureRecordsLoaded,
     fetchUserRecords,
     fetchUserBest,
     fetchUserHistory,
@@ -273,6 +321,8 @@ export const useRecordsStore = defineStore('records', () => {
     updateRecord,
     deleteRecord,
     getRecordsByEvent,
+    getLeaderboardRecords,
+    getEventRankMaps,
     getUserPersonalBests,
     formatTime
   }

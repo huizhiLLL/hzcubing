@@ -108,41 +108,8 @@ const animationFrameIds = {
   totalUsers: null
 }
 
-const stats = computed(() => ({
-  totalRecords: recordsStore.records.length,
-  totalUsers: uniqueUsers.value
-}))
-
-const uniqueUsers = computed(() => {
-  const userIds = new Set(recordsStore.records.map(r => r.userId))
-  return userIds.size
-})
-
-const groupedEventCards = computed(() => [
-  {
-    label: '官方项目',
-    kicker: 'Classic',
-    value: 'official',
-    events: eventsStore.getEventsByCategory('official')
-  },
-  {
-    label: '趣味项目',
-    kicker: 'Playground',
-    value: 'fun',
-    events: eventsStore.getEventsByCategory('fun')
-  },
-  {
-    label: '整活项目',
-    kicker: 'Offbeat',
-    value: 'meme',
-    events: eventsStore.getEventsByCategory('meme')
-  }
-].filter(group => group.events.length > 0).map(group => ({
-  ...group,
-  featured: group.events[0] || null,
-  supporting: group.events.slice(1, 5),
-  trailing: group.events.slice(5)
-})))
+const stats = computed(() => recordsStore.homeSummary)
+const groupedEventCards = computed(() => eventsStore.homeEventShowcase)
 
 function animateValue(key, target) {
   if (animationFrameIds[key]) {
@@ -182,8 +149,8 @@ watch(
 onMounted(async () => {
   try {
     await Promise.all([
-      recordsStore.fetchRecords({ pageSize: 2000 }),
-      eventsStore.fetchMemeEvents()
+      recordsStore.ensureRecordsLoaded({ pageSize: 2000 }),
+      eventsStore.ensureMemeEventsLoaded()
     ])
   } catch (err) {
     console.error('Failed to load home data:', err)

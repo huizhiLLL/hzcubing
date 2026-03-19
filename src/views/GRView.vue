@@ -113,7 +113,7 @@ function formatTime(seconds) {
 async function loadGR() {
   loading.value = true
   try {
-    await eventsStore.fetchMemeEvents()
+    await eventsStore.ensureMemeEventsLoaded()
     bestRecords.value = await recordsStore.fetchBestRecords()
   } catch (error) {
     console.error('Failed to load GR data:', error)

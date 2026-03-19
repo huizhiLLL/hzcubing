@@ -158,7 +158,7 @@ function formatDate(value) {
 async function loadEvents() {
   if (!canManage.value) return
   try {
-    await eventsStore.fetchMemeEvents(true)
+    await eventsStore.ensureMemeEventsLoaded({ force: true })
   } catch (err) {
     formError.value = err.message || '加载项目失败'
   }

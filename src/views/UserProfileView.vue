@@ -134,6 +134,7 @@ import { useUserStore } from '../stores/user'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
 import { userAPI } from '@/api'
+import { rankPersonalBests } from '@/utils/recordRanking'
 import { getAvatarGradient, getInitial } from '@/utils/avatar'
 
 const route = useRoute()
@@ -165,84 +166,11 @@ const memberSince = computed(() => {
 
 const eventOrder = computed(() => eventsStore.allEvents.map(event => event.id))
 
-const rankMaps = computed(() => {
-  const singleRanks = new Map()
-  const averageRanks = new Map()
-
-  eventOrder.value.forEach((eventId) => {
-    const eventRecords = recordsStore.records.filter(record => record.event === eventId)
-    const singleBestMap = new Map()
-    const averageBestMap = new Map()
-
-    eventRecords.forEach((record) => {
-      const userId = String(record.userId)
-
-      if (record.singleSeconds !== null && record.singleSeconds !== undefined) {
-        const existingSingle = singleBestMap.get(userId)
-        if (existingSingle === undefined || record.singleSeconds < existingSingle) {
-          singleBestMap.set(userId, record.singleSeconds)
-        }
-      }
-
-      if (record.averageSeconds !== null && record.averageSeconds !== undefined) {
-        const existingAverage = averageBestMap.get(userId)
-        if (existingAverage === undefined || record.averageSeconds < existingAverage) {
-          averageBestMap.set(userId, record.averageSeconds)
-        }
-      }
-    })
-
-    Array.from(singleBestMap.entries())
-      .sort((a, b) => a[1] - b[1])
-      .forEach(([userId], index) => {
-        singleRanks.set(`${eventId}:${userId}`, index + 1)
-      })
-
-    Array.from(averageBestMap.entries())
-      .sort((a, b) => a[1] - b[1])
-      .forEach(([userId], index) => {
-        averageRanks.set(`${eventId}:${userId}`, index + 1)
-      })
-  })
-
-  return {
-    singleRanks,
-    averageRanks
-  }
-})
-
 const rankedPersonalBests = computed(() => {
-  const viewedUserId = String(userData.value?.id || userData.value?._id || '')
+  if (!hasGlobalRankData.value) return [...personalBests.value]
 
-  return [...personalBests.value]
-    .map((pb) => {
-      const singleRank = hasGlobalRankData.value
-        ? (rankMaps.value.singleRanks.get(`${pb.event}:${viewedUserId}`) || null)
-        : null
-      const averageRank = hasGlobalRankData.value
-        ? (rankMaps.value.averageRanks.get(`${pb.event}:${viewedUserId}`) || null)
-        : null
-      const bestRank = [singleRank, averageRank].filter(Boolean).sort((a, b) => a - b)[0] || null
-
-      return {
-        ...pb,
-        singleRank,
-        averageRank,
-        bestRank
-      }
-    })
-    .sort((a, b) => {
-      const rankA = a.bestRank ?? Number.POSITIVE_INFINITY
-      const rankB = b.bestRank ?? Number.POSITIVE_INFINITY
-      if (rankA !== rankB) return rankA - rankB
-
-      const indexA = eventOrder.value.indexOf(a.event)
-      const indexB = eventOrder.value.indexOf(b.event)
-      if (indexA === -1 && indexB === -1) return a.event.localeCompare(b.event)
-      if (indexA === -1) return 1
-      if (indexB === -1) return -1
-      return indexA - indexB
-    })
+  const viewedUserId = userData.value?.id || userData.value?._id || ''
+  return rankPersonalBests(personalBests.value, viewedUserId, eventOrder.value, recordsStore.records)
 })
 
 function getEventName(eventId) {
@@ -291,7 +219,7 @@ async function loadProfile() {
     const [bestResult, historyResult, recordsResult] = await Promise.allSettled([
       recordsStore.fetchUserBest(userId),
       recordsStore.fetchUserHistory(userId, { pageSize: 10 }),
-      recordsStore.fetchRecords({ pageSize: 2000 })
+      recordsStore.ensureRecordsLoaded({ pageSize: 2000 })
     ])
 
     if (bestResult.status === 'fulfilled') {
@@ -324,7 +252,7 @@ async function loadProfile() {
 watch(() => route.params.id, loadProfile)
 onMounted(async () => {
   try {
-    await eventsStore.fetchMemeEvents()
+    await eventsStore.ensureMemeEventsLoaded()
   } catch (error) {
     console.error('Failed to load meme events for profile:', error)
   }

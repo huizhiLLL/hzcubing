@@ -250,7 +250,7 @@ async function handleSubmit() {
 
 onMounted(async () => {
   try {
-    await eventsStore.fetchMemeEvents()
+    await eventsStore.ensureMemeEventsLoaded()
   } catch (error) {
     console.error('Failed to load meme events:', error)
   }

@@ -17,6 +17,7 @@ export const useEventsStore = defineStore('events', () => {
   const isLoading = ref(false)
   const loaded = ref(false)
   const error = ref(null)
+  let inflightMemeEventsPromise = null
 
   const dynamicMemeEvents = computed(() =>
     memeEvents.value.map(event => ({
@@ -45,6 +46,36 @@ export const useEventsStore = defineStore('events', () => {
       options: dynamicMemeEvents.value.map(({ id, name }) => ({ label: name, value: id }))
     }
   }))
+  const homeEventShowcase = computed(() => {
+    const showcaseMeta = {
+      official: {
+        label: '官方项目',
+        kicker: 'Classic'
+      },
+      fun: {
+        label: '趣味项目',
+        kicker: 'Playground'
+      },
+      meme: {
+        label: '整活项目',
+        kicker: 'Offbeat'
+      }
+    }
+
+    return Object.entries(showcaseMeta)
+      .map(([value, meta]) => {
+        const events = allEvents.value.filter(event => event.category === value)
+        return {
+          ...meta,
+          value,
+          events,
+          featured: events[0] || null,
+          supporting: events.slice(1, 5),
+          trailing: events.slice(5)
+        }
+      })
+      .filter(group => group.events.length > 0)
+  })
 
   async function fetchMemeEvents(force = false) {
     if (loaded.value && !force) return dynamicMemeEvents.value
@@ -65,6 +96,25 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
+  async function ensureMemeEventsLoaded(options = {}) {
+    const force = options.force === true
+
+    if (!force && loaded.value) {
+      return dynamicMemeEvents.value
+    }
+
+    if (!force && inflightMemeEventsPromise) {
+      return inflightMemeEventsPromise
+    }
+
+    inflightMemeEventsPromise = fetchMemeEvents(force)
+      .finally(() => {
+        inflightMemeEventsPromise = null
+      })
+
+    return inflightMemeEventsPromise
+  }
+
   async function createMemeEvent(payload) {
     isLoading.value = true
     error.value = null
@@ -72,7 +122,7 @@ export const useEventsStore = defineStore('events', () => {
     try {
       const result = await memeEventAPI.create(payload)
       loaded.value = false
-      await fetchMemeEvents(true)
+      await ensureMemeEventsLoaded({ force: true })
       return result.data
     } catch (err) {
       error.value = err.message || 'Failed to create meme event'
@@ -89,7 +139,7 @@ export const useEventsStore = defineStore('events', () => {
     try {
       const result = await memeEventAPI.update(eventCode, payload)
       loaded.value = false
-      await fetchMemeEvents(true)
+      await ensureMemeEventsLoaded({ force: true })
       return result.data
     } catch (err) {
       error.value = err.message || 'Failed to update meme event'
@@ -106,7 +156,7 @@ export const useEventsStore = defineStore('events', () => {
     try {
       const result = await memeEventAPI.delete(eventCode)
       loaded.value = false
-      await fetchMemeEvents(true)
+      await ensureMemeEventsLoaded({ force: true })
       return result
     } catch (err) {
       error.value = err.message || 'Failed to delete meme event'
@@ -146,10 +196,12 @@ export const useEventsStore = defineStore('events', () => {
     memeEvents,
     allEvents,
     groupedEvents,
+    homeEventShowcase,
     isLoading,
     loaded,
     error,
     fetchMemeEvents,
+    ensureMemeEventsLoaded,
     createMemeEvent,
     updateMemeEvent,
     deleteMemeEvent,

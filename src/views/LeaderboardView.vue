@@ -95,30 +95,8 @@ const overflowSelectOptions = computed(() => [
 ])
 const currentEventName = computed(() => eventsStore.getEventName(currentEvent.value))
 
-const eventRecords = computed(() => recordsStore.records.filter(record => record.event === currentEvent.value))
-
 const sortedRecords = computed(() => {
-  const timeField = type.value === 'single' ? 'singleSeconds' : 'averageSeconds'
-  const userBestMap = new Map()
-
-  eventRecords.value
-    .filter(record => record[timeField] !== null && record[timeField] !== undefined)
-    .forEach(record => {
-      const userId = String(record.userId)
-      if (!userBestMap.has(userId)) {
-        userBestMap.set(userId, record)
-        return
-      }
-
-      const existing = userBestMap.get(userId)
-      if (record[timeField] < existing[timeField]) {
-        userBestMap.set(userId, record)
-      }
-    })
-
-  return Array.from(userBestMap.values())
-    .sort((a, b) => a[timeField] - b[timeField])
-    .slice(0, 100)
+  return recordsStore.getLeaderboardRecords(currentEvent.value, type.value, 100)
 })
 
 function getTimeValue(player) {
@@ -155,8 +133,8 @@ onMounted(async () => {
   loading.value = true
   try {
     await Promise.all([
-      recordsStore.fetchRecords({ pageSize: 2000 }),
-      eventsStore.fetchMemeEvents()
+      recordsStore.ensureRecordsLoaded({ pageSize: 2000 }),
+      eventsStore.ensureMemeEventsLoaded()
     ])
 
     const initialEvent = route.query.event
