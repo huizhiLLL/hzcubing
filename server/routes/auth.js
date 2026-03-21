@@ -341,7 +341,9 @@ router.get('/find-user-by-qq', async (req, res, next) => {
       code: 200,
       message: 'Success',
       data: {
-        id: user._id,
+        id: user.userNo,
+        userNo: user.userNo,
+        _id: user._id,
         nickname: user.nickname,
         email: user.email,
         qqId: user.qqId
