@@ -304,7 +304,9 @@ router.post('/bind-user-by-nickname', async (req, res, next) => {
       code: 200,
       message: 'User bound successfully',
       data: {
-        userId: targetUser._id,
+        userId: targetUser.userNo,
+        userNo: targetUser.userNo,
+        _id: targetUser._id,
         nickname: targetUser.nickname,
         qqId: targetUser.qqId
       }
