@@ -20,7 +20,7 @@ const routes = [
   {
     path: '/players',
     name: 'Players',
-    component: () => import('../views/RecordHistoryView.vue')
+    component: () => import('../views/PlayersOverviewView.vue')
   },
   {
     path: '/user/:id',
