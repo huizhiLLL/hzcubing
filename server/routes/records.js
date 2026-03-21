@@ -66,6 +66,19 @@ const recordValidation = [
     .isFloat({ min: 0 }).withMessage('Average time must be a positive number')
 ]
 
+const recordUpdateValidation = [
+  body('event')
+    .optional()
+    .trim()
+    .notEmpty().withMessage('Event is required'),
+  body('singleSeconds')
+    .optional({ nullable: true })
+    .isFloat({ min: 0 }).withMessage('Single time must be a positive number'),
+  body('averageSeconds')
+    .optional({ nullable: true })
+    .isFloat({ min: 0 }).withMessage('Average time must be a positive number')
+]
+
 // @route   GET /api/records
 // @desc    Get all records (paginated)
 // @access  Public
@@ -429,8 +442,17 @@ router.post('/', protect, recordValidation, async (req, res, next) => {
 // @route   PUT /api/records/:id
 // @desc    Update a record
 // @access  Private (owner only)
-router.put('/:id', protect, async (req, res, next) => {
+router.put('/:id', protect, recordUpdateValidation, async (req, res, next) => {
   try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        code: 400,
+        message: 'Validation failed',
+        errors: errors.array()
+      })
+    }
+
     const record = await Record.findById(req.params.id)
 
     if (!record) {
@@ -450,11 +472,21 @@ router.put('/:id', protect, async (req, res, next) => {
 
     const { event, singleSeconds, averageSeconds, cube, method } = req.body
 
-    if (event) record.event = event
+    const nextSingleSeconds = singleSeconds !== undefined ? singleSeconds : record.singleSeconds
+    const nextAverageSeconds = averageSeconds !== undefined ? averageSeconds : record.averageSeconds
+
+    if (nextSingleSeconds == null && nextAverageSeconds == null) {
+      return res.status(400).json({
+        code: 400,
+        message: 'At least one of singleSeconds or averageSeconds is required'
+      })
+    }
+
+    if (event !== undefined) record.event = event
     if (singleSeconds !== undefined) record.singleSeconds = singleSeconds
     if (averageSeconds !== undefined) record.averageSeconds = averageSeconds
-    if (cube !== undefined) record.cube = cube
-    if (method !== undefined) record.method = method
+    if (cube !== undefined) record.cube = cube || null
+    if (method !== undefined) record.method = method || null
 
     await record.save()
 

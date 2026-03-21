@@ -1,11 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { recordAPI } from '@/api'
-import { useUserStore } from './user'
 import { buildEventRankMaps, getLeaderboardRecordsForEvent } from '@/utils/recordRanking'
 
 export const useRecordsStore = defineStore('records', () => {
-  const userStore = useUserStore()
   const records = ref([])
   const bestRecords = ref({})
   const recentBreaks = ref([])
@@ -32,6 +30,20 @@ export const useRecordsStore = defineStore('records', () => {
     totalRecords: records.value.length,
     totalUsers: uniqueUserCount.value
   }))
+
+  async function refreshCachedRecords() {
+    if (!lastFetchKey.value) return
+
+    let params = {}
+
+    try {
+      params = JSON.parse(lastFetchKey.value)
+    } catch {
+      params = {}
+    }
+
+    await fetchRecords(params)
+  }
 
   function truncateToTwoDecimals(value) {
     if (value === null || value === undefined || isNaN(value)) return null
@@ -215,8 +227,7 @@ export const useRecordsStore = defineStore('records', () => {
     try {
       const result = await recordAPI.create(recordData)
       if (result.code === 200) {
-        // Refresh records
-        await fetchRecords()
+        await refreshCachedRecords()
         return result
       } else {
         throw new Error(result.message || 'Failed to create record')
@@ -237,8 +248,7 @@ export const useRecordsStore = defineStore('records', () => {
     try {
       const result = await recordAPI.update(id, recordData)
       if (result.code === 200) {
-        // Refresh records
-        await fetchRecords()
+        await refreshCachedRecords()
         return result
       } else {
         throw new Error(result.message || 'Failed to update record')
@@ -259,8 +269,11 @@ export const useRecordsStore = defineStore('records', () => {
     try {
       const result = await recordAPI.delete(id)
       if (result.code === 200) {
-        // Remove from local list
-        records.value = records.value.filter(r => r._id !== id)
+        if (lastFetchKey.value) {
+          await refreshCachedRecords()
+        } else {
+          records.value = records.value.filter(r => r._id !== id)
+        }
         return result
       } else {
         throw new Error(result.message || 'Failed to delete record')
