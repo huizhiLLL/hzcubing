@@ -1,6 +1,7 @@
 import express from 'express'
 import { body, validationResult } from 'express-validator'
 import MemeEvent from '../models/MemeEvent.js'
+import Record from '../models/Record.js'
 import { adminOnly, optionalAuth, protect } from '../middleware/auth.js'
 
 const router = express.Router()
@@ -141,6 +142,7 @@ router.put('/:eventCode', protect, adminOnly, memeEventValidation, async (req, r
     }
 
     const nextEventCode = req.body.eventCode ? normalizeEventCode(req.body.eventCode) : event.eventCode
+    const previousEventCode = event.eventCode
 
     if (!nextEventCode) {
       return res.status(400).json({
@@ -166,10 +168,22 @@ router.put('/:eventCode', protect, adminOnly, memeEventValidation, async (req, r
 
     await event.save()
 
+    let migratedRecordCount = 0
+    if (nextEventCode !== previousEventCode) {
+      const migratedRecordsResult = await Record.updateMany(
+        { event: previousEventCode },
+        { $set: { event: nextEventCode } }
+      )
+      migratedRecordCount = migratedRecordsResult.modifiedCount
+    }
+
     res.json({
       code: 200,
       message: 'Meme event updated successfully',
-      data: serializeEvent(event)
+      data: {
+        ...serializeEvent(event),
+        migratedRecordCount
+      }
     })
   } catch (error) {
     next(error)
@@ -190,11 +204,15 @@ router.delete('/:eventCode', protect, adminOnly, async (req, res, next) => {
       })
     }
 
+    const deletedRecordsResult = await Record.deleteMany({ event: event.eventCode })
     await MemeEvent.deleteOne({ _id: event._id })
 
     res.json({
       code: 200,
-      message: 'Meme event deleted successfully'
+      message: 'Meme event deleted successfully',
+      data: {
+        deletedRecordCount: deletedRecordsResult.deletedCount
+      }
     })
   } catch (error) {
     next(error)
