@@ -6,6 +6,20 @@ import { protect, optionalAuth } from '../middleware/auth.js'
 import { findUserByIdentifier } from '../utils/userLookup.js'
 
 const router = express.Router()
+const MAX_AVATAR_LENGTH = 2 * 1024 * 1024
+
+function isSupportedAvatar(value) {
+  if (value === undefined || value === null || value === '') return true
+  if (typeof value !== 'string') return false
+  if (value.length > MAX_AVATAR_LENGTH) return false
+
+  return (
+    value.startsWith('data:image/') ||
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('/')
+  )
+}
 
 // Validation rules
 const profileValidation = [
@@ -21,7 +35,14 @@ const profileValidation = [
   body('wcaId')
     .optional()
     .trim()
-    .toUpperCase()
+    .toUpperCase(),
+  body('avatar')
+    .custom((value) => {
+      if (!isSupportedAvatar(value)) {
+        throw new Error('头像必须是有效的图片 Base64 数据或可访问的图片地址')
+      }
+      return true
+    })
 ]
 
 // @route   PUT /api/users/profile
@@ -39,7 +60,7 @@ router.put('/profile', protect, profileValidation, async (req, res, next) => {
       })
     }
 
-    const { nickname, bio, wcaId } = req.body
+    const { nickname, bio, wcaId, avatar } = req.body
 
     // Update user
     const user = await User.findById(req.user._id)
@@ -47,6 +68,9 @@ router.put('/profile', protect, profileValidation, async (req, res, next) => {
     if (nickname) user.nickname = nickname
     if (bio !== undefined) user.bio = bio
     if (wcaId !== undefined) user.wcaId = wcaId
+    if (avatar !== undefined) {
+      user.avatar = avatar ? avatar.trim() : null
+    }
 
     await user.save()
 

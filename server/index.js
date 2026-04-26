@@ -31,8 +31,8 @@ app.use(cors({
 
 // Middleware
 app.use(morgan('dev'))
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ limit: '3mb' }))
+app.use(express.urlencoded({ extended: true, limit: '3mb' }))
 
 // Health check
 app.get('/health', (req, res) => {

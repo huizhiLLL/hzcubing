@@ -43,6 +43,13 @@ export const errorHandler = (err, req, res, next) => {
     })
   }
 
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({
+      code: 413,
+      message: '请求内容过大，请将头像压缩后重试'
+    })
+  }
+
   // Default error
   res.status(err.statusCode || 500).json({
     code: err.statusCode || 500,

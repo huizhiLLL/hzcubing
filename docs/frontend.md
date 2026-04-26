@@ -20,7 +20,7 @@
 
 - 首页可进入主要功能
 - 排行榜可按项目和单次/平均查看最佳记录
-- 登录、注册、资料设置、个人主页、成绩提交与个人成绩管理已打通
+- 登录、注册、资料设置（含头像修改）、个人主页、成绩提交与个人成绩管理已打通
 - 整活项目管理页已具备管理员 CRUD 能力
 - `records`、`events` 两类共享数据和排名逻辑已经从页面内抽离出来
 
@@ -53,7 +53,7 @@
 | `/profile/:id` | `src/views/UserProfileView.vue` | 已实现 | 个人资料、PB、最近成绩、创建的整活项目已可用 |
 | `/profile` | `src/views/ProfileHomeView.vue` | 已实现 | 已登录用户的个人主页入口包装页 |
 | `/submit` | `src/views/SubmitRecordView.vue` | 已实现 | 支持项目选择、时间解析、预览、提交，以及对个人已提交成绩的修改与删除 |
-| `/settings` | `src/views/SettingsView.vue` | 已实现 | 支持昵称、WCA ID、个人简介更新 |
+| `/settings` | `src/views/SettingsView.vue` | 已实现 | 支持头像、昵称、WCA ID、个人简介更新 |
 | `/auth` | `src/views/AuthView.vue` | 已实现 | 登录/注册双模式表单 |
 | `/admin/meme-events` | `src/views/AdminMemeEventsView.vue` | 已实现 | 管理员可新增、编辑、启停、删除整活项目 |
 
@@ -158,7 +158,7 @@
 - 成绩提交
 - 排行榜查看
 - 个人主页查看
-- 个人设置修改
+- 个人设置修改（含头像）
 
 当前不足：
 
