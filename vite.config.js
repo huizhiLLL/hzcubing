@@ -14,6 +14,6 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    allowedHosts: ['dev.hzcubing.club', 'hzcubing.club']
+    allowedHosts: ['dev.hzcubing.club', 'hzcubing.club','hzcubing.fun']
   }
 })
