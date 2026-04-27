@@ -3,6 +3,11 @@ import jwt from 'jsonwebtoken'
 import { body, validationResult } from 'express-validator'
 import User from '../models/User.js'
 import { protect } from '../middleware/auth.js'
+import {
+  createMemeEvent,
+  memeEventValidation,
+  serializeEvent
+} from '../utils/memeEvents.js'
 
 const router = express.Router()
 
@@ -350,6 +355,59 @@ router.get('/find-user-by-qq', async (req, res, next) => {
         email: user.email,
         qqId: user.qqId
       }
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// @route   POST /api/auth/create-meme-event
+// @desc    Create meme event by QQ ID (for AstrBot plugin, no auth required)
+// @access  Public
+router.post('/create-meme-event', memeEventValidation, async (req, res, next) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        code: 400,
+        message: 'Validation failed',
+        errors: errors.array()
+      })
+    }
+
+    const { qqId, eventCode, eventName, description } = req.body
+
+    if (!qqId || qqId.trim() === '') {
+      return res.status(400).json({
+        code: 400,
+        message: 'QQ ID is required'
+      })
+    }
+
+    const user = await User.findOne({ qqId: qqId.trim() })
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found, please bind first'
+      })
+    }
+
+    const result = await createMemeEvent({
+      eventCode,
+      eventName,
+      description,
+      createdBy: user._id.toString(),
+      createdByName: user.nickname || user.email
+    })
+
+    if (!result.ok) {
+      return res.status(result.status).json(result.body)
+    }
+
+    res.status(201).json({
+      code: 200,
+      message: 'Meme event created successfully',
+      data: serializeEvent(result.event)
     })
   } catch (error) {
     next(error)
