@@ -19,6 +19,71 @@ async function resolveUserQuery(identifier) {
   }
 }
 
+function isValidRecordTime(value) {
+  return value !== null && value !== undefined
+}
+
+function createGrHistoryItem(record, type) {
+  const seconds = type === 'single' ? record.singleSeconds : record.averageSeconds
+
+  return {
+    _id: record._id,
+    userId: record.userId,
+    nickname: record.nickname,
+    event: record.event,
+    type,
+    seconds,
+    timestamp: record.timestamp
+  }
+}
+
+function buildGrHistory(records) {
+  let bestSingle = Infinity
+  let bestAverage = Infinity
+  const single = []
+  const average = []
+
+  for (const record of records) {
+    const s = record.singleSeconds
+    const a = record.averageSeconds
+
+    if (isValidRecordTime(s) && s < bestSingle) {
+      bestSingle = s
+      single.push(createGrHistoryItem(record, 'single'))
+    }
+
+    if (isValidRecordTime(a) && a < bestAverage) {
+      bestAverage = a
+      average.push(createGrHistoryItem(record, 'average'))
+    }
+  }
+
+  return {
+    single: single.reverse(),
+    average: average.reverse()
+  }
+}
+
+async function enrichGrHistoryItems(items) {
+  const userIds = [...new Set(items.map(item => item.userId).filter(Boolean))]
+  const users = await User.find({ _id: { $in: userIds } }).select('nickname userNo').lean()
+  const userMap = new Map(users.map(u => [u._id.toString(), u]))
+
+  return items.map(item => {
+    const user = item.userId ? userMap.get(item.userId.toString()) : null
+
+    return {
+      _id: item._id,
+      userId: user?.userNo || null,
+      nickname: user?.nickname || item.nickname || 'Anonymous',
+      event: item.event,
+      type: item.type,
+      seconds: item.seconds,
+      timestamp: item.timestamp
+    }
+  })
+}
+
 // Helper: Convert time string to seconds
 function convertToSeconds(time) {
   if (time === null || time === undefined) return null
@@ -272,6 +337,44 @@ router.get('/best', optionalAuth, async (req, res, next) => {
       code: 200,
       message: 'Success',
       data
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// @route   GET /api/records/gr-history/:event
+// @desc    Get GR break history for one event
+// @access  Public
+router.get('/gr-history/:event', optionalAuth, async (req, res, next) => {
+  try {
+    const event = String(req.params.event || '').trim()
+
+    if (!event) {
+      return res.status(400).json({
+        code: 400,
+        message: 'Event is required'
+      })
+    }
+
+    const records = await Record.find({ event })
+      .sort({ timestamp: 1, _id: 1 })
+      .lean()
+
+    const history = buildGrHistory(records)
+    const [singleHistory, averageHistory] = await Promise.all([
+      enrichGrHistoryItems(history.single),
+      enrichGrHistoryItems(history.average)
+    ])
+
+    res.json({
+      code: 200,
+      message: 'Success',
+      data: {
+        event,
+        single: singleHistory,
+        average: averageHistory
+      }
     })
   } catch (error) {
     next(error)
