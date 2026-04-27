@@ -1,49 +1,16 @@
 import express from 'express'
-import { body, validationResult } from 'express-validator'
+import { validationResult } from 'express-validator'
 import MemeEvent from '../models/MemeEvent.js'
 import Record from '../models/Record.js'
 import { adminOnly, optionalAuth, protect } from '../middleware/auth.js'
+import {
+  createMemeEvent,
+  memeEventValidation,
+  normalizeEventCode,
+  serializeEvent
+} from '../utils/memeEvents.js'
 
 const router = express.Router()
-
-const memeEventValidation = [
-  body('eventCode')
-    .optional()
-    .trim()
-    .isLength({ min: 2, max: 32 }).withMessage('Event code must be 2-32 characters')
-    .matches(/^[a-zA-Z0-9_-]+$/).withMessage('Event code can only contain letters, numbers, underscore, and hyphen'),
-  body('eventName')
-    .trim()
-    .notEmpty().withMessage('Event name is required')
-    .isLength({ max: 50 }).withMessage('Event name must be less than 50 characters'),
-  body('description')
-    .optional()
-    .trim()
-    .isLength({ max: 300 }).withMessage('Description must be less than 300 characters')
-]
-
-function serializeEvent(event) {
-  return {
-    id: event.eventCode,
-    name: event.eventName,
-    category: 'meme',
-    description: event.description || '',
-    createdBy: event.createdBy,
-    createdByName: event.createdByName,
-    isActive: event.isActive,
-    createdAt: event.createdAt,
-    updatedAt: event.updatedAt
-  }
-}
-
-function normalizeEventCode(input = '') {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9_-]/g, '')
-}
-
 // @route   GET /api/meme-events
 // @desc    Get active meme events
 // @access  Public
@@ -80,38 +47,22 @@ router.post('/', protect, adminOnly, memeEventValidation, async (req, res, next)
       })
     }
 
-    const rawCode = req.body.eventCode || req.body.eventName || ''
-    const eventCode = normalizeEventCode(rawCode)
-
-    if (!eventCode) {
-      return res.status(400).json({
-        code: 400,
-        message: 'Event code is invalid'
-      })
-    }
-
-    const existing = await MemeEvent.findOne({ eventCode })
-    if (existing) {
-      return res.status(400).json({
-        code: 400,
-        message: 'Event code already exists'
-      })
-    }
-
-    const event = await MemeEvent.create({
-      eventCode,
-      eventName: req.body.eventName.trim(),
-      description: req.body.description?.trim() || '',
-      type: 'meme',
+    const result = await createMemeEvent({
+      eventCode: req.body.eventCode,
+      eventName: req.body.eventName,
+      description: req.body.description,
       createdBy: req.user._id.toString(),
-      createdByName: req.user.nickname || req.user.email,
-      isActive: true
+      createdByName: req.user.nickname || req.user.email
     })
+
+    if (!result.ok) {
+      return res.status(result.status).json(result.body)
+    }
 
     res.status(201).json({
       code: 200,
       message: 'Meme event created successfully',
-      data: serializeEvent(event)
+      data: serializeEvent(result.event)
     })
   } catch (error) {
     next(error)
