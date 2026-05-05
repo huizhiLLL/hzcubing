@@ -15,7 +15,13 @@ const app = express()
 const PORT = process.env.PORT || 3001
 
 // CORS configuration
-const corsOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173', 'http://127.0.0.1:5173']
+const defaultCorsOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173']
+const configuredCorsOrigins = process.env.CORS_ORIGINS
+  ?.split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean) || []
+const corsOrigins = [...new Set([...defaultCorsOrigins, ...configuredCorsOrigins])]
+
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
