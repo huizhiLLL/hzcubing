@@ -1,6 +1,14 @@
 /* 基础样式 - 优雅中文风格 */
 @import url('https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Noto+Serif+TC:wght@400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap');
 
+@font-face {
+  font-family: 'TsangerJinKaiWeb';
+  src: url('/fonts/TsangerJinKai03-W04.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* 浅色主题 */
   --color-bg: #FAFAFA;
@@ -57,9 +65,12 @@
   --transition-normal: 250ms ease;
   --transition-slow: 400ms ease;
 
-  /* 字体 - 中文优雅组合 */
-  --font-heading: 'Noto Serif TC', 'Cormorant', serif;
-  --font-body: 'Noto Serif TC', 'Songti SC', 'STSong', 'SimSun', serif;
+  /* 字体 - 正文中文楷体优先，大字号标题使用更稳的衬线字体 */
+  --font-cn-kai: 'TsangerJinKaiWeb', 'TsangerJinKai03-W04', 'TsangerJinKai03', '仓耳今楷03', '仓耳今楷', 'Kaiti SC', 'STKaiti', 'KaiTi', '楷体', serif;
+  --font-cn-serif: 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: var(--font-cn-serif);
+  --font-body: var(--font-cn-kai);
+  --font-hero-heading: 'Noto Serif TC', 'Cormorant', serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 

@@ -1,9 +1,8 @@
 <template>
   <section class="section-card" :class="[`variant-${variant}`]">
-    <div v-if="title || subtitle || hasHeaderAside" class="section-card-header" :class="{ 'has-aside': hasHeaderAside }">
-      <div v-if="title || subtitle" class="section-heading">
+    <div v-if="title || hasHeaderAside" class="section-card-header" :class="{ 'has-aside': hasHeaderAside }">
+      <div v-if="title" class="section-heading">
         <component v-if="title" :is="titleTag" class="section-title">{{ title }}</component>
-        <p v-if="subtitle" class="section-subtitle">{{ subtitle }}</p>
       </div>
       <div v-if="hasHeaderAside" class="section-card-aside">
         <slot name="aside" />
@@ -18,10 +17,6 @@ import { computed, useSlots } from 'vue'
 
 const props = defineProps({
   title: {
-    type: String,
-    default: ''
-  },
-  subtitle: {
     type: String,
     default: ''
   },
@@ -69,15 +64,10 @@ const hasHeaderAside = computed(() => Boolean(slots.aside))
 }
 
 .section-title {
+  font-family: var(--font-heading);
   font-size: 1.06rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.section-subtitle {
-  color: var(--color-text-tertiary);
-  font-size: 0.9rem;
-  line-height: 1.6;
+  letter-spacing: 0;
 }
 
 .section-card-aside {

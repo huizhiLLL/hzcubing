@@ -5,14 +5,11 @@
         class="auth-intro"
         :eyebrow="isLogin ? '欢迎回来' : '创建账号'"
         :title="isLogin ? '登录账号' : '注册账号'"
-        :subtitle="isLogin ? '继续访问你的成绩、个人资料与排行榜记录。' : '创建一个账号，开始记录你的练习与比赛成绩。'"
         title-tag="h1"
       />
 
       <AppSectionCard
         class="auth-card"
-        :title="isLogin ? '账号信息' : '注册信息'"
-        :subtitle="isLogin ? '输入邮箱与密码即可继续。' : '填写基础资料，几步内完成注册。'"
       >
         <form class="auth-form" @submit.prevent="handleSubmit">
           <div class="form-group">
@@ -72,7 +69,6 @@
           <AppStatusBlock v-if="error" variant="error" layout="banner" :message="error" />
 
           <AppFormActions align="between" class="auth-actions">
-            <p class="submit-note">{{ isLogin ? '登录后将返回你刚才想访问的页面。' : '注册成功后会自动进入站点首页。' }}</p>
             <button type="submit" class="submit-btn" :disabled="isSubmitting">
               {{ isSubmitting ? '处理中...' : (isLogin ? '登录' : '注册') }}
             </button>
@@ -161,21 +157,28 @@ const handleSubmit = async () => {
 .auth-page {
   min-height: calc(100vh - 160px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-top: clamp(1rem, 5vh, 3rem);
 }
 
 .auth-shell {
-  width: min(100%, 980px);
+  width: min(100%, 520px);
   display: grid;
-  grid-template-columns: minmax(260px, 0.95fr) minmax(360px, 1.05fr);
-  gap: 24px;
-  align-items: stretch;
+  gap: 18px;
 }
 
 .auth-intro {
-  justify-content: center;
-  padding: 1.5rem 0.5rem;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.auth-intro :deep(.page-header-copy) {
+  max-width: none;
+}
+
+.auth-card {
+  padding: 1.55rem;
 }
 
 .auth-form {
@@ -227,13 +230,6 @@ const handleSubmit = async () => {
   margin-top: 0.35rem;
 }
 
-.submit-note {
-  max-width: 260px;
-  color: var(--color-text-tertiary);
-  font-size: 0.84rem;
-  line-height: 1.65;
-}
-
 .submit-btn {
   min-width: 148px;
   padding: 1rem 1.4rem;
@@ -279,16 +275,15 @@ const handleSubmit = async () => {
 }
 
 @media (max-width: 768px) {
-  .auth-shell {
-    grid-template-columns: 1fr;
-    gap: 18px;
+  .auth-page {
+    min-height: auto;
+    padding-top: 0;
   }
 
-  .auth-intro {
-    padding: 0;
+  .auth-card {
+    padding: 1.25rem;
   }
 
-  .submit-note,
   .submit-btn {
     max-width: none;
     width: 100%;

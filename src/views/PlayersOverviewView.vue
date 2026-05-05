@@ -1,9 +1,6 @@
 <template>
   <div class="players">
-    <div class="page-header">
-      <h2>选手总览</h2>
-      <p class="page-subtitle">按加入时间排序</p>
-    </div>
+    <AppPageHeader title="选手总览" />
 
     <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
@@ -56,6 +53,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { userAPI } from '@/api'
 import { useRecordsStore } from '../stores/records'
@@ -122,16 +120,6 @@ onMounted(() => loadData(1))
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
-}
-
-.page-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: var(--space-xs);
-}
-
-.page-subtitle {
-  color: var(--color-text-tertiary);
 }
 
 .player-grid {

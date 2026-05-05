@@ -1,6 +1,6 @@
 <template>
   <div class="submit-record">
-    <AppPageHeader title="提交成绩" subtitle="录入一条新的成绩，也可以管理你已经提交的记录。">
+    <AppPageHeader title="提交成绩">
       <template #aside>
         <button type="button" class="page-manage-btn" :class="{ active: showManager }" @click="toggleManager">
           {{ showManager ? '收起已提交成绩' : '管理已提交成绩' }}
@@ -12,7 +12,6 @@
       v-if="showManager"
       class="manage-records-card"
       title="已提交成绩管理"
-      subtitle="查看、修改或删除你最近提交的成绩记录。"
     >
       <template #aside>
         <button type="button" class="ghost-btn" :disabled="manageLoading" @click="loadManagedRecords">
@@ -24,7 +23,6 @@
         v-if="manageLoading"
         variant="loading"
         title="正在加载成绩"
-        message="马上就好，正在读取你最近提交的成绩。"
       />
 
       <template v-else>
@@ -35,7 +33,6 @@
           v-if="!manageError && managedRecords.length === 0"
           variant="empty"
           title="还没有可管理的成绩"
-          message="先提交一条成绩，之后就可以在这里修改或删除。"
         />
 
         <div v-else class="manage-record-list">
@@ -750,9 +747,10 @@ onMounted(async () => {
 }
 
 .manage-record-title {
+  font-family: var(--font-heading);
   font-size: 1rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .manage-record-subtitle {

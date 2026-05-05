@@ -1,8 +1,8 @@
 <template>
   <div class="leaderboard">
-    <AppPageHeader title="排行榜" subtitle="按项目与成绩类型查看最佳记录" />
+    <AppPageHeader title="排行榜" />
 
-    <AppSectionCard title="筛选条件" subtitle="切换项目与成绩类型">
+    <AppSectionCard title="筛选条件">
       <div class="filter-panel">
         <div class="event-selector-wrap">
           <div class="event-selector">

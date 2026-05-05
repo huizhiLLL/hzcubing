@@ -37,7 +37,6 @@
     <section class="quick-nav">
       <div class="section-heading">
         <h2 class="section-title">探索项目</h2>
-        <p class="section-subtitle">官方、趣味、整活项目都在这里</p>
       </div>
 
       <div class="event-salon">
@@ -184,7 +183,7 @@ onBeforeUnmount(() => {
 }
 
 .hero-title {
-  font-family: var(--font-heading);
+  font-family: var(--font-hero-heading);
   font-size: 4rem;
   font-weight: 600;
   line-height: 1.1;
@@ -326,10 +325,6 @@ onBeforeUnmount(() => {
   color: var(--color-text);
 }
 
-.section-subtitle {
-  color: var(--color-text-tertiary);
-}
-
 .event-salon {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -381,9 +376,10 @@ onBeforeUnmount(() => {
 }
 
 .group-header h3 {
+  font-family: var(--font-heading);
   font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .group-header span {

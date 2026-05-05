@@ -1,11 +1,6 @@
 <template>
   <div class="gr-page">
-    <div class="page-header">
-      <div>
-        <h2>GR 纪录</h2>
-        <p class="page-subtitle">全站各项目的最佳成绩</p>
-      </div>
-    </div>
+    <AppPageHeader title="GR 纪录" />
 
     <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
@@ -79,6 +74,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
@@ -131,16 +127,6 @@ onMounted(loadGR)
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
-}
-
-.page-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: var(--space-xs);
-}
-
-.page-subtitle {
-  color: var(--color-text-tertiary);
 }
 
 .desktop-table {

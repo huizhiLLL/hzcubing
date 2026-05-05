@@ -37,7 +37,7 @@
         </div>
       </AppSectionCard>
 
-      <AppSectionCard v-if="personalBests.length > 0" class="pb-stage" title="个人最佳" subtitle="按项目汇总最佳单次与平均成绩">
+      <AppSectionCard v-if="personalBests.length > 0" class="pb-stage" title="个人最佳">
         <template #aside>
           <span class="summary-chip">{{ rankedPersonalBests.length }} 项</span>
         </template>
@@ -83,7 +83,7 @@
         class="activity-layout"
         :class="{ 'single-column': createdMemeEvents.length === 0 || recentRecords.length === 0 }"
       >
-        <AppSectionCard v-if="recentRecords.length > 0" class="activity-panel" title="最近提交" subtitle="最近 10 条成绩记录">
+        <AppSectionCard v-if="recentRecords.length > 0" class="activity-panel" title="最近提交">
           <div class="activity-list">
             <article v-for="record in recentRecords" :key="record._id" class="activity-item">
               <div class="activity-left">
@@ -98,7 +98,7 @@
           </div>
         </AppSectionCard>
 
-        <AppSectionCard v-if="createdMemeEvents.length > 0" class="activity-panel" title="创建的整活项目" subtitle="这个人搞出来的项目">
+        <AppSectionCard v-if="createdMemeEvents.length > 0" class="activity-panel" title="创建的整活项目">
           <div class="activity-list">
             <article v-for="event in createdMemeEvents" :key="event.id" class="activity-item">
               <div class="activity-left event-item-left">
@@ -320,9 +320,10 @@ onMounted(async () => {
 }
 
 .profile-name {
+  font-family: var(--font-heading);
   font-size: clamp(2rem, 3vw, 2.8rem);
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   line-height: 1.05;
 }
 

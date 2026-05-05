@@ -1,6 +1,6 @@
 <template>
   <div class="meme-events-admin">
-    <AppPageHeader title="整活项目管理" subtitle="管理当前数据库中的全部整活项目">
+    <AppPageHeader title="整活项目管理">
       <template #aside>
         <span class="stats-pill">共 {{ memeEvents.length }} 个项目</span>
       </template>
@@ -390,6 +390,7 @@ onMounted(loadEvents)
 }
 
 .event-top h3 {
+  font-family: var(--font-heading);
   font-size: 1.1rem;
   font-weight: 700;
 }

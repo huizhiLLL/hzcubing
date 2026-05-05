@@ -3,7 +3,6 @@
     <div class="page-header-copy">
       <span v-if="eyebrow" class="page-eyebrow">{{ eyebrow }}</span>
       <component :is="titleTag" class="page-title">{{ title }}</component>
-      <p v-if="subtitle" class="page-subtitle">{{ subtitle }}</p>
     </div>
     <div v-if="hasAside" class="page-header-aside">
       <slot name="aside" />
@@ -22,10 +21,6 @@ const props = defineProps({
   title: {
     type: String,
     required: true
-  },
-  subtitle: {
-    type: String,
-    default: ''
   },
   titleTag: {
     type: String,
@@ -65,15 +60,11 @@ const hasAside = computed(() => Boolean(slots.aside))
 }
 
 .page-title {
-  font-size: clamp(1.5rem, 3vw, 2.6rem);
+  font-family: var(--font-heading);
+  font-size: clamp(1.35rem, 2.4vw, 2.1rem);
   font-weight: 700;
   margin-bottom: var(--space-xs);
-  letter-spacing: -0.03em;
-}
-
-.page-subtitle {
-  color: var(--color-text-tertiary);
-  line-height: 1.65;
+  letter-spacing: 0;
 }
 
 .page-header-aside {

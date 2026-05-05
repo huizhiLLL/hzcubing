@@ -334,7 +334,7 @@ onUnmounted(() => {
     border-color var(--transition-fast),
     transform var(--transition-fast);
   font-size: 0.9375rem;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-body);
   font-weight: 500;
 }
 

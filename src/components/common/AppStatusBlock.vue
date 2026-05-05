@@ -147,6 +147,7 @@ const showDot = computed(() => props.variant !== 'loading')
 }
 
 .status-title {
+  font-family: var(--font-heading);
   font-weight: 700;
   margin-bottom: 0.2rem;
 }
