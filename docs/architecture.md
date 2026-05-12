@@ -158,8 +158,28 @@ store 负责：
 
 后端位于 `server/`，使用独立依赖和脚本：
 
-- `npm run dev`
-- `npm start`
+- `npm run dev` — 开发启动（`node --watch`）
+- `npm start` — 生产启动（`node index.js`）
+
+### 生产部署
+
+后端在生产环境通过 **PM2**（v6.0.14）管理进程，部署于 OpenResty 反向代理之后：
+
+- `api.hzcubing.fun` → Cloudflare（小黄云） → OpenResty → `127.0.0.1:3001`
+- PM2 负责进程守护（崩溃自动重启）、日志管理和开机自启
+
+常用命令：
+
+| 操作 | 命令 |
+|------|------|
+| 启动 | `PORT=3001 pm2 start server/index.js --name hzcubing-api` |
+| 重启 | `pm2 restart hzcubing-api` |
+| 停止 | `pm2 stop hzcubing-api` |
+| 查看状态 | `pm2 status` |
+| 查看日志 | `pm2 logs hzcubing-api` |
+| 保存进程列表 | `pm2 save`（修改 PM2 进程后务必执行） |
+
+首次部署需执行 `pm2 startup` 设置开机自启。
 
 远端服务器只用于临时脚本执行、数据库操作和运行状态排查。默认不在远端服务器长期修改代码。
 
