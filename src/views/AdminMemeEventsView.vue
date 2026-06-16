@@ -13,13 +13,13 @@
       <section class="plain-section">
         <div class="plain-section-header">
           <div class="section-actions">
-            <button type="button" class="icon-btn" aria-label="新增项目" title="新增项目" @click="openCreateModal">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
-            <button class="ghost-btn" :disabled="eventsStore.isLoading" @click="loadEvents">刷新</button>
+            <AppIconButton icon="plus" label="新增项目" @click="openCreateModal" />
+            <AppIconButton
+              icon="refresh"
+              :label="eventsStore.isLoading ? '刷新中' : '刷新项目'"
+              :loading="eventsStore.isLoading"
+              @click="loadEvents"
+            />
           </div>
         </div>
         <AppStatusBlock v-if="formSuccess" variant="success" layout="banner" :message="formSuccess" />
@@ -29,7 +29,6 @@
               <div class="event-top">
                 <div>
                   <h3>{{ event.name }}</h3>
-                  <p class="event-code">{{ event.id }}</p>
                 </div>
                 <span class="status-pill" :class="event.isActive ? 'is-active' : 'is-inactive'">
                   {{ event.isActive ? '启用中' : '已停用' }}
@@ -39,19 +38,27 @@
               <p v-if="event.description" class="event-desc">{{ event.description }}</p>
 
               <div class="event-meta">
-                <span>创建者：{{ event.createdByName || 'system' }}</span>
-                <span>更新于：{{ formatDate(event.updatedAt || event.createdAt) }}</span>
+                <span>{{ event.createdByName || 'system' }}</span>
+                <span>{{ formatDate(event.updatedAt || event.createdAt) }}</span>
               </div>
             </div>
 
             <div class="event-actions">
-              <button class="ghost-btn" @click="startEdit(event)">编辑</button>
-              <button class="ghost-btn" :disabled="submitting && editingCode === event.id" @click="toggleStatus(event)">
-                {{ event.isActive ? '停用' : '启用' }}
-              </button>
-              <button class="danger-btn" :disabled="deletingCode === event.id" @click="handleDelete(event)">
-                {{ deletingCode === event.id ? '删除中...' : '删除' }}
-              </button>
+              <AppIconButton icon="edit" label="编辑项目" @click="startEdit(event)" />
+              <AppIconButton
+                :icon="event.isActive ? 'pause' : 'play'"
+                :label="event.isActive ? '停用项目' : '启用项目'"
+                :variant="event.isActive ? 'muted' : 'success'"
+                :disabled="submitting && editingCode === event.id"
+                @click="toggleStatus(event)"
+              />
+              <AppIconButton
+                icon="trash"
+                :label="deletingCode === event.id ? '删除中' : '删除项目'"
+                variant="danger"
+                :loading="deletingCode === event.id"
+                @click="handleDelete(event)"
+              />
             </div>
           </article>
 
@@ -113,6 +120,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import AppFormActions from '@/components/common/AppFormActions.vue'
+import AppIconButton from '@/components/common/AppIconButton.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useEventsStore } from '@/stores/events'
@@ -531,6 +539,7 @@ onMounted(loadEvents)
 .event-actions {
   gap: var(--space-sm);
   flex-wrap: wrap;
+  justify-content: flex-end;
   margin-top: var(--space-md);
 }
 
@@ -541,8 +550,15 @@ onMounted(loadEvents)
 
   .event-top,
   .event-actions {
-    flex-direction: column;
     align-items: stretch;
+  }
+
+  .event-top {
+    flex-direction: column;
+  }
+
+  .event-actions {
+    justify-content: flex-start;
   }
 
   .plain-section-header {

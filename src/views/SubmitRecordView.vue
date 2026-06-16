@@ -1,23 +1,26 @@
 <template>
   <div class="submit-record">
-    <AppPageHeader title="提交成绩">
+    <AppPageHeader :title="isManagePage ? '管理成绩' : '提交成绩'">
       <template #aside>
-        <button type="button" class="page-manage-btn" :class="{ active: showManager }" @click="toggleManager">
-          {{ showManager ? '收起已提交成绩' : '管理已提交成绩' }}
+        <button type="button" class="page-manage-btn" :class="{ active: isManagePage }" @click="handleHeaderAction">
+          {{ isManagePage ? '返回' : '管理成绩' }}
         </button>
       </template>
     </AppPageHeader>
 
     <div class="submit-record-body">
       <section
-        v-if="showManager"
+        v-if="isManagePage"
         class="manage-records-section"
       >
-        <div class="plain-section-header">
-          <h2 class="plain-section-title">已提交成绩管理</h2>
-          <button type="button" class="ghost-btn" :disabled="manageLoading" @click="loadManagedRecords">
-            {{ manageLoading ? '刷新中...' : '刷新列表' }}
-          </button>
+          <div class="plain-section-header">
+            <h2 class="plain-section-title">已提交成绩管理</h2>
+          <AppIconButton
+            icon="refresh"
+            :label="manageLoading ? '刷新中' : '刷新列表'"
+            :loading="manageLoading"
+            @click="loadManagedRecords"
+          />
         </div>
 
         <AppStatusBlock
@@ -45,17 +48,20 @@
                 </div>
 
                 <div class="manage-record-actions">
-                  <button type="button" class="ghost-btn" @click="startEditingRecord(record)">
-                    {{ editingRecordId === record._id ? '取消修改' : '修改' }}
-                  </button>
-                  <button
-                    type="button"
-                    class="danger-btn"
+                  <AppIconButton
+                    :icon="editingRecordId === record._id ? 'x' : 'edit'"
+                    :label="editingRecordId === record._id ? '取消修改' : '修改成绩'"
                     :disabled="deletingRecordId === record._id || isSavingEdit"
+                    @click="startEditingRecord(record)"
+                  />
+                  <AppIconButton
+                    icon="trash"
+                    :label="deletingRecordId === record._id ? '删除中' : '删除成绩'"
+                    variant="danger"
+                    :disabled="deletingRecordId === record._id || isSavingEdit"
+                    :loading="deletingRecordId === record._id"
                     @click="handleDeleteRecord(record)"
-                  >
-                    {{ deletingRecordId === record._id ? '删除中...' : '删除' }}
-                  </button>
+                  />
                 </div>
               </div>
 
@@ -113,7 +119,7 @@
 
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">使用魔方 <span class="optional">(可选)</span></label>
+                    <label class="form-label">魔方 <span class="optional">(可选)</span></label>
                     <input
                       v-model="editForm.cube"
                       type="text"
@@ -162,7 +168,7 @@
         </template>
       </section>
 
-      <form class="submit-form" @submit.prevent="handleSubmit">
+      <form v-else class="submit-form" @submit.prevent="handleSubmit">
         <section class="plain-section">
           <h2 class="plain-section-title">项目</h2>
           <div class="form-group">
@@ -171,15 +177,14 @@
         </section>
 
         <section class="plain-section">
-          <h2 class="plain-section-title">成绩</h2>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">单次 <span class="optional">(可选)</span></label>
+              <label class="form-label">单次 <span class="optional"></span></label>
               <input
                 v-model="form.singleTime"
                 type="text"
                 class="time-input"
-                placeholder="输入单次成绩，如 12.34 或 1:23.45"
+                placeholder="如 12.34 或 1:23.45"
                 :class="{ 'has-error': singleTimeError }"
                 @input="handleSingleTimeInput"
                 @blur="validateSingleTime"
@@ -188,12 +193,12 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">平均 <span class="optional">(可选)</span></label>
+              <label class="form-label">平均 <span class="optional"></span></label>
               <input
                 v-model="form.averageTime"
                 type="text"
                 class="time-input"
-                placeholder="输入平均成绩，如 10.56 或 58.90"
+                placeholder="如 10.56 或 58.90"
                 :class="{ 'has-error': averageTimeError }"
                 @input="handleAverageTimeInput"
                 @blur="validateAverageTime"
@@ -205,15 +210,14 @@
         </section>
 
         <section class="plain-section">
-          <h2 class="plain-section-title">补充信息 <span class="optional">(可选)</span></h2>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">使用魔方</label>
+              <label class="form-label">魔方</label>
               <input
                 v-model="form.cube"
                 type="text"
                 class="form-input"
-                placeholder="如：RS3M V5"
+                placeholder="如：RS3M V5 （可选）"
               />
             </div>
 
@@ -223,14 +227,13 @@
                 v-model="form.method"
                 type="text"
                 class="form-input"
-                placeholder="如：CFOP, Roux, ZZ"
+                placeholder="如：CFOP, Roux, ZZ （可选）"
               />
             </div>
           </div>
         </section>
 
         <section v-if="hasPreview || submitError || submitSuccess" class="plain-section">
-          <h2 class="plain-section-title">成绩预览</h2>
           <div v-if="hasPreview" class="preview-section">
             <div class="preview-grid">
               <div v-if="previewSingle !== null" class="preview-item">
@@ -259,8 +262,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppFormActions from '@/components/common/AppFormActions.vue'
+import AppIconButton from '@/components/common/AppIconButton.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
@@ -271,6 +276,8 @@ import { useUserStore } from '../stores/user'
 const recordsStore = useRecordsStore()
 const eventsStore = useEventsStore()
 const userStore = useUserStore()
+const route = useRoute()
+const router = useRouter()
 
 function createEmptyForm() {
   return {
@@ -293,7 +300,6 @@ const averageTimeError = ref('')
 const previewSingle = ref(null)
 const previewAverage = ref(null)
 
-const showManager = ref(false)
 const manageLoading = ref(false)
 const manageError = ref('')
 const manageSuccess = ref('')
@@ -319,11 +325,8 @@ const hasValidData = computed(() => isFormReady(form.value))
 const hasPreview = computed(() => previewSingle.value !== null || previewAverage.value !== null)
 const editHasValidData = computed(() => isFormReady(editForm.value))
 const editHasPreview = computed(() => editPreviewSingle.value !== null || editPreviewAverage.value !== null)
-const submitSuccessMessage = computed(() =>
-  showManager.value
-    ? '成绩提交成功，已同步刷新右上角展开的管理列表。'
-    : '成绩提交成功，可继续提交下一条，或在右上角管理已提交成绩。'
-)
+const isManagePage = computed(() => route.name === 'SubmitRecordManage')
+const submitSuccessMessage = computed(() => '成绩提交成功，可继续提交下一条，或在右上角管理已提交成绩。')
 
 function truncateToTwoDecimals(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return null
@@ -536,16 +539,13 @@ async function loadManagedRecords(options = {}) {
   }
 }
 
-async function toggleManager() {
-  showManager.value = !showManager.value
-
-  if (showManager.value) {
-    await loadManagedRecords()
-  } else {
-    manageError.value = ''
-    manageSuccess.value = ''
-    resetEditState()
+function handleHeaderAction() {
+  if (isManagePage.value) {
+    router.push({ name: 'SubmitRecord' })
+    return
   }
+
+  router.push({ name: 'SubmitRecordManage' })
 }
 
 function startEditingRecord(record) {
@@ -590,10 +590,6 @@ async function handleSubmit() {
     await recordsStore.createRecord(payload)
     submitSuccess.value = true
     resetSubmitForm()
-
-    if (showManager.value) {
-      await loadManagedRecords({ preserveMessage: true })
-    }
   } catch (err) {
     submitError.value = err.message || '提交失败，请重试'
   } finally {
@@ -657,9 +653,24 @@ async function handleDeleteRecord(record) {
 onMounted(async () => {
   try {
     await eventsStore.ensureMemeEventsLoaded()
+
+    if (isManagePage.value) {
+      await loadManagedRecords()
+    }
   } catch (error) {
     console.error('Failed to load meme events:', error)
   }
+})
+
+watch(isManagePage, async (nextIsManagePage) => {
+  if (nextIsManagePage) {
+    await loadManagedRecords()
+    return
+  }
+
+  manageError.value = ''
+  manageSuccess.value = ''
+  resetEditState()
 })
 </script>
 
@@ -793,7 +804,8 @@ onMounted(async () => {
 .manage-record-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  justify-content: flex-end;
+  gap: 0.6rem;
 }
 
 .manage-record-times {
@@ -1026,9 +1038,13 @@ onMounted(async () => {
     flex-direction: column;
   }
 
-  .manage-record-actions,
   .edit-form-actions {
     width: 100%;
+  }
+
+  .manage-record-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .page-manage-btn,
