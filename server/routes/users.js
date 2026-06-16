@@ -149,7 +149,7 @@ router.get('/overview', optionalAuth, async (req, res, next) => {
 
     const [users, total] = await Promise.all([
       User.find({ status: 'active' })
-        .select('userNo nickname avatar role email createdAt')
+        .select('userNo nickname createdAt')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSizeNum)
@@ -185,9 +185,6 @@ router.get('/overview', optionalAuth, async (req, res, next) => {
         return {
           profileUserNo: user.userNo,
           nickname: user.nickname,
-          avatar: user.avatar,
-          role: user.role,
-          email: user.email,
           createdAt: user.createdAt,
           recordCount: stats?.recordCount || 0,
           events: Array.isArray(stats?.events) ? stats.events : []

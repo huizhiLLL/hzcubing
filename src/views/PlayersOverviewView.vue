@@ -56,10 +56,8 @@ import { computed, onMounted, ref } from 'vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { userAPI } from '@/api'
-import { useRecordsStore } from '../stores/records'
 
 const PAGE_SIZE = 12
-const recordsStore = useRecordsStore()
 
 const users = ref([])
 const loading = ref(false)
@@ -97,7 +95,6 @@ async function loadData(page = 1) {
       currentPage.value = usersResult.page || page
       totalPages.value = usersResult.totalPages || 1
     }
-    await recordsStore.ensureRecordsLoaded({ pageSize: 2000 })
   } catch (err) {
     console.error('Failed to load data:', err)
     users.value = []
