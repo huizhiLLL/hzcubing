@@ -25,6 +25,7 @@
 - `docs/project.md`：项目定位、当前状态、当前重点、暂不做内容。
 - `docs/architecture.md`：技术栈、前后端边界、模块职责、接口和数据约束。
 - `docs/roadmap.md`：后续计划、优先级、暂缓事项、重要技术决策。
+- `docs/api.md`：后端接口的 API 文档
 
 完成以下改动后必须检查是否同步文档：
 
