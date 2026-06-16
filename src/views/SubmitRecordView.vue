@@ -392,7 +392,7 @@ const filteredManagedRecords = computed(() => (
 
 function truncateToTwoDecimals(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return null
-  return Math.trunc((Number(value) + Number.EPSILON) * 100) / 100
+  return Math.trunc(Number(value) * 100 + 1e-9) / 100
 }
 
 function parseTime(timeStr) {
