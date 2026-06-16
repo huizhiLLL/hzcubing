@@ -405,7 +405,9 @@ router.get('/user/:userId/best', optionalAuth, async (req, res, next) => {
     const query = { userId: resolved.objectId }
     if (event) query.event = event
 
-    const records = await Record.find(query).lean()
+    const records = await Record.find(query)
+      .select('event singleSeconds averageSeconds')
+      .lean()
 
     const bestMap = new Map()
 
@@ -418,7 +420,10 @@ router.get('/user/:userId/best', optionalAuth, async (req, res, next) => {
         bestMap.set(e, {
           event: e,
           bestSingleSeconds: null,
-          bestAverageSeconds: null
+          bestAverageSeconds: null,
+          singleRank: null,
+          averageRank: null,
+          bestRank: null
         })
       }
 
@@ -433,10 +438,46 @@ router.get('/user/:userId/best', optionalAuth, async (req, res, next) => {
       }
     }
 
+    const personalBests = Array.from(bestMap.values())
+
+    const rankTasks = []
+
+    for (const best of personalBests) {
+      if (best.bestSingleSeconds !== null) {
+        rankTasks.push(
+          Record.distinct('userId', {
+            event: best.event,
+            singleSeconds: { $ne: null, $lt: best.bestSingleSeconds }
+          }).then(userIds => {
+            best.singleRank = userIds.length + 1
+          })
+        )
+      }
+
+      if (best.bestAverageSeconds !== null) {
+        rankTasks.push(
+          Record.distinct('userId', {
+            event: best.event,
+            averageSeconds: { $ne: null, $lt: best.bestAverageSeconds }
+          }).then(userIds => {
+            best.averageRank = userIds.length + 1
+          })
+        )
+      }
+    }
+
+    await Promise.all(rankTasks)
+
+    for (const best of personalBests) {
+      best.bestRank = [best.singleRank, best.averageRank]
+        .filter(Boolean)
+        .sort((a, b) => a - b)[0] || null
+    }
+
     res.json({
       code: 200,
       message: 'Success',
-      data: Array.from(bestMap.values())
+      data: personalBests
     })
   } catch (error) {
     next(error)

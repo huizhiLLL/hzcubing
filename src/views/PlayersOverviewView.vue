@@ -58,6 +58,7 @@ import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { userAPI } from '@/api'
 
 const PAGE_SIZE = 12
+const overviewPageCache = new Map()
 
 const users = ref([])
 const loading = ref(false)
@@ -86,14 +87,27 @@ function formatJoinDate(dateStr) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+function applyOverviewResult(result, fallbackPage) {
+  users.value = result.data || []
+  currentPage.value = result.page || fallbackPage
+  totalPages.value = result.totalPages || 1
+}
+
 async function loadData(page = 1) {
+  const cacheKey = `${page}:${PAGE_SIZE}`
+  const cachedResult = overviewPageCache.get(cacheKey)
+
+  if (cachedResult) {
+    applyOverviewResult(cachedResult, page)
+    return
+  }
+
   loading.value = true
   try {
     const usersResult = await userAPI.getOverview({ page, pageSize: PAGE_SIZE })
     if (usersResult.code === 200) {
-      users.value = usersResult.data || []
-      currentPage.value = usersResult.page || page
-      totalPages.value = usersResult.totalPages || 1
+      overviewPageCache.set(cacheKey, usersResult)
+      applyOverviewResult(usersResult, page)
     }
   } catch (err) {
     console.error('Failed to load data:', err)

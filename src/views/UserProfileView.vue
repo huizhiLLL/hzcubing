@@ -134,7 +134,6 @@ import { useUserStore } from '../stores/user'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
 import { userAPI } from '@/api'
-import { rankPersonalBests } from '@/utils/recordRanking'
 import { getAvatarGradient, getInitial } from '@/utils/avatar'
 
 const route = useRoute()
@@ -142,12 +141,15 @@ const userStore = useUserStore()
 const recordsStore = useRecordsStore()
 const eventsStore = useEventsStore()
 
+const PROFILE_HISTORY_SIZE = 10
+const profileCache = new Map()
+let profileLoadId = 0
+
 const loading = ref(true)
 const userData = ref(null)
 const personalBests = ref([])
 const recentRecords = ref([])
 const createdMemeEvents = ref([])
-const hasGlobalRankData = ref(false)
 
 const isCurrentUser = computed(() => {
   const currentId = userStore.user?.userNo || userStore.user?.id
@@ -167,10 +169,19 @@ const memberSince = computed(() => {
 const eventOrder = computed(() => eventsStore.allEvents.map(event => event.id))
 
 const rankedPersonalBests = computed(() => {
-  if (!hasGlobalRankData.value) return [...personalBests.value]
+  return [...personalBests.value]
+    .sort((a, b) => {
+      const rankA = a.bestRank ?? Number.POSITIVE_INFINITY
+      const rankB = b.bestRank ?? Number.POSITIVE_INFINITY
+      if (rankA !== rankB) return rankA - rankB
 
-  const viewedUserId = userData.value?.id || userData.value?._id || ''
-  return rankPersonalBests(personalBests.value, viewedUserId, eventOrder.value, recordsStore.records)
+      const indexA = eventOrder.value.indexOf(a.event)
+      const indexB = eventOrder.value.indexOf(b.event)
+      if (indexA === -1 && indexB === -1) return a.event.localeCompare(b.event)
+      if (indexA === -1) return 1
+      if (indexB === -1) return -1
+      return indexA - indexB
+    })
 })
 
 function getEventName(eventId) {
@@ -193,72 +204,97 @@ function formatDate(dateStr) {
   return `${date.getMonth() + 1}/${date.getDate()}`
 }
 
+function getViewedUserId() {
+  return route.params.id || userStore.user?.userNo || userStore.user?.id || ''
+}
+
+function getProfileCacheKey(userId) {
+  return `${userId}:${PROFILE_HISTORY_SIZE}`
+}
+
+function updateCreatedMemeEvents(userId = getViewedUserId()) {
+  if (!userData.value) {
+    createdMemeEvents.value = []
+    return
+  }
+
+  createdMemeEvents.value = (eventsStore.memeEvents || []).filter(event => {
+    return String(event.createdBy) === String(userId) || String(event.createdBy) === String(userData.value?._id)
+  })
+}
+
+function applyProfileResult(result) {
+  userData.value = result.userData
+  personalBests.value = result.personalBests
+  recentRecords.value = result.recentRecords
+  updateCreatedMemeEvents(result.userId)
+}
+
 async function loadProfile() {
+  const loadId = ++profileLoadId
   loading.value = true
   userData.value = null
   personalBests.value = []
   recentRecords.value = []
   createdMemeEvents.value = []
-  hasGlobalRankData.value = false
 
   try {
-    const userId = route.params.id || userStore.user?.userNo || userStore.user?.id
+    const userId = getViewedUserId()
     if (!userId) {
       userData.value = null
       return
     }
 
-    const userResult = await userAPI.getById(userId)
+    const cacheKey = getProfileCacheKey(userId)
+    const cachedResult = profileCache.get(cacheKey)
+
+    if (cachedResult) {
+      applyProfileResult(cachedResult)
+      loading.value = false
+      return
+    }
+
+    const [userResult, bestResult, historyResult] = await Promise.all([
+      userAPI.getById(userId),
+      recordsStore.fetchUserBest(userId),
+      recordsStore.fetchUserHistory(userId, { pageSize: PROFILE_HISTORY_SIZE })
+    ])
+
+    if (loadId !== profileLoadId) return
     if (userResult.code !== 200 || !userResult.data) {
       userData.value = null
       return
     }
 
-    userData.value = userResult.data
-
-    const [bestResult, historyResult, recordsResult] = await Promise.allSettled([
-      recordsStore.fetchUserBest(userId),
-      recordsStore.fetchUserHistory(userId, { pageSize: 10 }),
-      recordsStore.ensureRecordsLoaded({ pageSize: 2000 })
-    ])
-
-    if (bestResult.status === 'fulfilled') {
-      personalBests.value = bestResult.value || []
-    } else {
-      throw bestResult.reason
+    const profileResult = {
+      userId,
+      userData: userResult.data,
+      personalBests: bestResult || [],
+      recentRecords: historyResult.data || []
     }
 
-    if (historyResult.status === 'fulfilled') {
-      recentRecords.value = historyResult.value.data || []
-    } else {
-      throw historyResult.reason
-    }
-
-    if (recordsResult.status === 'fulfilled') {
-      hasGlobalRankData.value = true
-    } else {
-      console.warn('Failed to load global rank data for profile PB ordering:', recordsResult.reason)
-    }
-
-    createdMemeEvents.value = (eventsStore.memeEvents || []).filter(event => {
-      return String(event.createdBy) === String(userId) || String(event.createdBy) === String(userData.value?._id)
-    })
+    profileCache.set(cacheKey, profileResult)
+    applyProfileResult(profileResult)
   } catch (err) {
     console.error('Failed to load user profile:', err)
     userData.value = null
   } finally {
-    loading.value = false
+    if (loadId === profileLoadId) {
+      loading.value = false
+    }
   }
 }
 
 watch(() => route.params.id, loadProfile)
 onMounted(async () => {
+  loadProfile()
+
   try {
     await eventsStore.ensureMemeEventsLoaded()
+    updateCreatedMemeEvents()
   } catch (error) {
     console.error('Failed to load meme events for profile:', error)
   }
-  loadProfile()
 })
 </script>
 
