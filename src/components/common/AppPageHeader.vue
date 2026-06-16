@@ -38,7 +38,7 @@ const hasAside = computed(() => Boolean(slots.aside))
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-lg);
-  margin-bottom: var(--space-xl);
+  margin-bottom: 0;
 }
 
 .page-header-copy {

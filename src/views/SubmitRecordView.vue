@@ -8,246 +8,253 @@
       </template>
     </AppPageHeader>
 
-    <AppSectionCard
-      v-if="showManager"
-      class="manage-records-card"
-      title="已提交成绩管理"
-    >
-      <template #aside>
-        <button type="button" class="ghost-btn" :disabled="manageLoading" @click="loadManagedRecords">
-          {{ manageLoading ? '刷新中...' : '刷新列表' }}
-        </button>
-      </template>
-
-      <AppStatusBlock
-        v-if="manageLoading"
-        variant="loading"
-        title="正在加载成绩"
-      />
-
-      <template v-else>
-        <AppStatusBlock v-if="manageError" variant="error" layout="banner" :message="manageError" />
-        <AppStatusBlock v-if="manageSuccess" variant="success" layout="banner" :message="manageSuccess" />
+    <div class="submit-record-body">
+      <section
+        v-if="showManager"
+        class="manage-records-section"
+      >
+        <div class="plain-section-header">
+          <h2 class="plain-section-title">已提交成绩管理</h2>
+          <button type="button" class="ghost-btn" :disabled="manageLoading" @click="loadManagedRecords">
+            {{ manageLoading ? '刷新中...' : '刷新列表' }}
+          </button>
+        </div>
 
         <AppStatusBlock
-          v-if="!manageError && managedRecords.length === 0"
-          variant="empty"
-          title="还没有可管理的成绩"
+          v-if="manageLoading"
+          variant="loading"
+          title="正在加载成绩"
         />
 
-        <div v-else class="manage-record-list">
-          <article v-for="record in managedRecords" :key="record._id" class="manage-record-item">
-            <div class="manage-record-head">
-              <div class="manage-record-copy">
-                <h3 class="manage-record-title">{{ getEventName(record.event) }}</h3>
-                <p class="manage-record-subtitle">{{ formatDate(record.timestamp) }}</p>
-              </div>
+        <template v-else>
+          <AppStatusBlock v-if="manageError" variant="error" layout="banner" :message="manageError" />
+          <AppStatusBlock v-if="manageSuccess" variant="success" layout="banner" :message="manageSuccess" />
 
-              <div class="manage-record-actions">
-                <button type="button" class="ghost-btn" @click="startEditingRecord(record)">
-                  {{ editingRecordId === record._id ? '取消修改' : '修改' }}
-                </button>
-                <button
-                  type="button"
-                  class="danger-btn"
-                  :disabled="deletingRecordId === record._id || isSavingEdit"
-                  @click="handleDeleteRecord(record)"
-                >
-                  {{ deletingRecordId === record._id ? '删除中...' : '删除' }}
-                </button>
-              </div>
-            </div>
+          <AppStatusBlock
+            v-if="!manageError && managedRecords.length === 0"
+            variant="empty"
+            title="还没有可管理的成绩"
+          />
 
-            <div class="manage-record-times">
-              <span v-if="record.singleSeconds !== null" class="manage-time-chip">
-                单次 {{ formatPreview(record.singleSeconds) }}
-              </span>
-              <span v-if="record.averageSeconds !== null" class="manage-time-chip muted">
-                平均 {{ formatPreview(record.averageSeconds) }}
-              </span>
-            </div>
+          <div v-else class="manage-record-list">
+            <article v-for="record in managedRecords" :key="record._id" class="manage-record-item">
+              <div class="manage-record-head">
+                <div class="manage-record-copy">
+                  <h3 class="manage-record-title">{{ getEventName(record.event) }}</h3>
+                  <p class="manage-record-subtitle">{{ formatDate(record.timestamp) }}</p>
+                </div>
 
-            <div class="manage-meta-grid">
-              <span class="manage-meta-item">魔方 {{ record.cube || '未填写' }}</span>
-              <span class="manage-meta-item">解法 {{ record.method || '未填写' }}</span>
-            </div>
-
-            <form v-if="editingRecordId === record._id" class="edit-record-form" @submit.prevent="handleUpdateRecord">
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">项目</label>
-                  <AppSelect v-model="editForm.event" :options="submitEventOptions" />
+                <div class="manage-record-actions">
+                  <button type="button" class="ghost-btn" @click="startEditingRecord(record)">
+                    {{ editingRecordId === record._id ? '取消修改' : '修改' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="danger-btn"
+                    :disabled="deletingRecordId === record._id || isSavingEdit"
+                    @click="handleDeleteRecord(record)"
+                  >
+                    {{ deletingRecordId === record._id ? '删除中...' : '删除' }}
+                  </button>
                 </div>
               </div>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">单次 <span class="optional">(可选)</span></label>
-                  <input
-                    v-model="editForm.singleTime"
-                    type="text"
-                    class="time-input"
-                    placeholder="输入单次成绩，如 12.34 或 1:23.45"
-                    :class="{ 'has-error': editSingleTimeError }"
-                    @input="handleEditSingleTimeInput"
-                    @blur="validateEditSingleTime"
-                  />
-                  <span v-if="editSingleTimeError" class="form-error">{{ editSingleTimeError }}</span>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">平均 <span class="optional">(可选)</span></label>
-                  <input
-                    v-model="editForm.averageTime"
-                    type="text"
-                    class="time-input"
-                    placeholder="输入平均成绩，如 10.56 或 58.90"
-                    :class="{ 'has-error': editAverageTimeError }"
-                    @input="handleEditAverageTimeInput"
-                    @blur="validateEditAverageTime"
-                  />
-                  <span v-if="editAverageTimeError" class="form-error">{{ editAverageTimeError }}</span>
-                </div>
+              <div class="manage-record-times">
+                <span v-if="record.singleSeconds !== null" class="manage-time-chip">
+                  单次 {{ formatPreview(record.singleSeconds) }}
+                </span>
+                <span v-if="record.averageSeconds !== null" class="manage-time-chip muted">
+                  平均 {{ formatPreview(record.averageSeconds) }}
+                </span>
               </div>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">使用魔方 <span class="optional">(可选)</span></label>
-                  <input
-                    v-model="editForm.cube"
-                    type="text"
-                    class="form-input"
-                    placeholder="如：RS3M V5"
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">解法 <span class="optional">(可选)</span></label>
-                  <input
-                    v-model="editForm.method"
-                    type="text"
-                    class="form-input"
-                    placeholder="如：CFOP, Roux, ZZ"
-                  />
-                </div>
+              <div class="manage-meta-grid">
+                <span class="manage-meta-item">魔方 {{ record.cube || '未填写' }}</span>
+                <span class="manage-meta-item">解法 {{ record.method || '未填写' }}</span>
               </div>
 
-              <div v-if="editHasPreview" class="preview-section compact">
-                <div class="preview-grid">
-                  <div v-if="editPreviewSingle !== null" class="preview-item">
-                    <span class="preview-label">单次预览</span>
-                    <span class="preview-value">{{ formatPreview(editPreviewSingle) }}</span>
-                  </div>
-                  <div v-if="editPreviewAverage !== null" class="preview-item">
-                    <span class="preview-label">平均预览</span>
-                    <span class="preview-value">{{ formatPreview(editPreviewAverage) }}</span>
+              <form v-if="editingRecordId === record._id" class="edit-record-form" @submit.prevent="handleUpdateRecord">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">项目</label>
+                    <AppSelect v-model="editForm.event" :options="submitEventOptions" />
                   </div>
                 </div>
-              </div>
 
-              <AppStatusBlock v-if="editError" variant="error" layout="banner" :message="editError" />
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">单次 <span class="optional">(可选)</span></label>
+                    <input
+                      v-model="editForm.singleTime"
+                      type="text"
+                      class="time-input"
+                      placeholder="输入单次成绩，如 12.34 或 1:23.45"
+                      :class="{ 'has-error': editSingleTimeError }"
+                      @input="handleEditSingleTimeInput"
+                      @blur="validateEditSingleTime"
+                    />
+                    <span v-if="editSingleTimeError" class="form-error">{{ editSingleTimeError }}</span>
+                  </div>
 
-              <div class="edit-form-actions">
-                <button type="submit" class="submit-btn secondary" :disabled="isSavingEdit || !editHasValidData">
-                  {{ isSavingEdit ? '保存中...' : '保存修改' }}
-                </button>
-                <button type="button" class="ghost-btn" :disabled="isSavingEdit" @click="resetEditState">
-                  取消
-                </button>
-              </div>
-            </form>
-          </article>
-        </div>
-      </template>
-    </AppSectionCard>
+                  <div class="form-group">
+                    <label class="form-label">平均 <span class="optional">(可选)</span></label>
+                    <input
+                      v-model="editForm.averageTime"
+                      type="text"
+                      class="time-input"
+                      placeholder="输入平均成绩，如 10.56 或 58.90"
+                      :class="{ 'has-error': editAverageTimeError }"
+                      @input="handleEditAverageTimeInput"
+                      @blur="validateEditAverageTime"
+                    />
+                    <span v-if="editAverageTimeError" class="form-error">{{ editAverageTimeError }}</span>
+                  </div>
+                </div>
 
-    <form class="submit-form" @submit.prevent="handleSubmit">
-      <AppSectionCard title="项目">
-        <div class="form-group">
-          <label class="form-label"></label>
-          <AppSelect v-model="form.event" :options="submitEventOptions" />
-        </div>
-      </AppSectionCard>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">使用魔方 <span class="optional">(可选)</span></label>
+                    <input
+                      v-model="editForm.cube"
+                      type="text"
+                      class="form-input"
+                      placeholder="如：RS3M V5"
+                    />
+                  </div>
 
-      <AppSectionCard title="成绩">
-        <div class="form-group">
-          <label class="form-label">单次 <span class="optional">(可选)</span></label>
-          <input
-            v-model="form.singleTime"
-            type="text"
-            class="time-input"
-            placeholder="输入单次成绩，如 12.34 或 1:23.45"
-            :class="{ 'has-error': singleTimeError }"
-            @input="handleSingleTimeInput"
-            @blur="validateSingleTime"
-          />
-          <span v-if="singleTimeError" class="form-error">{{ singleTimeError }}</span>
-        </div>
+                  <div class="form-group">
+                    <label class="form-label">解法 <span class="optional">(可选)</span></label>
+                    <input
+                      v-model="editForm.method"
+                      type="text"
+                      class="form-input"
+                      placeholder="如：CFOP, Roux, ZZ"
+                    />
+                  </div>
+                </div>
 
-        <div class="form-group">
-          <label class="form-label">平均 <span class="optional">(可选)</span></label>
-          <input
-            v-model="form.averageTime"
-            type="text"
-            class="time-input"
-            placeholder="输入平均成绩，如 10.56 或 58.90"
-            :class="{ 'has-error': averageTimeError }"
-            @input="handleAverageTimeInput"
-            @blur="validateAverageTime"
-          />
-          <span v-if="averageTimeError" class="form-error">{{ averageTimeError }}</span>
-          <span class="form-hint">单次或平均至少填写一项。</span>
-        </div>
-      </AppSectionCard>
+                <div v-if="editHasPreview" class="preview-section compact">
+                  <div class="preview-grid">
+                    <div v-if="editPreviewSingle !== null" class="preview-item">
+                      <span class="preview-label">单次预览</span>
+                      <span class="preview-value">{{ formatPreview(editPreviewSingle) }}</span>
+                    </div>
+                    <div v-if="editPreviewAverage !== null" class="preview-item">
+                      <span class="preview-label">平均预览</span>
+                      <span class="preview-value">{{ formatPreview(editPreviewAverage) }}</span>
+                    </div>
+                  </div>
+                </div>
 
-      <AppSectionCard title="补充信息 (可选)">
-        <div class="form-row">
+                <AppStatusBlock v-if="editError" variant="error" layout="banner" :message="editError" />
+
+                <div class="edit-form-actions">
+                  <button type="submit" class="submit-btn secondary" :disabled="isSavingEdit || !editHasValidData">
+                    {{ isSavingEdit ? '保存中...' : '保存修改' }}
+                  </button>
+                  <button type="button" class="ghost-btn" :disabled="isSavingEdit" @click="resetEditState">
+                    取消
+                  </button>
+                </div>
+              </form>
+            </article>
+          </div>
+        </template>
+      </section>
+
+      <form class="submit-form" @submit.prevent="handleSubmit">
+        <section class="plain-section">
+          <h2 class="plain-section-title">项目</h2>
           <div class="form-group">
-            <label class="form-label">使用魔方</label>
-            <input
-              v-model="form.cube"
-              type="text"
-              class="form-input"
-              placeholder="如：RS3M V5"
-            />
+            <AppSelect v-model="form.event" :options="submitEventOptions" />
           </div>
+        </section>
 
-          <div class="form-group">
-            <label class="form-label">解法</label>
-            <input
-              v-model="form.method"
-              type="text"
-              class="form-input"
-              placeholder="如：CFOP, Roux, ZZ"
-            />
-          </div>
-        </div>
-      </AppSectionCard>
-
-      <AppSectionCard v-if="hasPreview || submitError || submitSuccess" title="成绩预览">
-        <div v-if="hasPreview" class="preview-section">
-          <div class="preview-grid">
-            <div v-if="previewSingle !== null" class="preview-item">
-              <span class="preview-label">单次预览</span>
-              <span class="preview-value">{{ formatPreview(previewSingle) }}</span>
+        <section class="plain-section">
+          <h2 class="plain-section-title">成绩</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">单次 <span class="optional">(可选)</span></label>
+              <input
+                v-model="form.singleTime"
+                type="text"
+                class="time-input"
+                placeholder="输入单次成绩，如 12.34 或 1:23.45"
+                :class="{ 'has-error': singleTimeError }"
+                @input="handleSingleTimeInput"
+                @blur="validateSingleTime"
+              />
+              <span v-if="singleTimeError" class="form-error">{{ singleTimeError }}</span>
             </div>
-            <div v-if="previewAverage !== null" class="preview-item">
-              <span class="preview-label">平均预览</span>
-              <span class="preview-value">{{ formatPreview(previewAverage) }}</span>
+
+            <div class="form-group">
+              <label class="form-label">平均 <span class="optional">(可选)</span></label>
+              <input
+                v-model="form.averageTime"
+                type="text"
+                class="time-input"
+                placeholder="输入平均成绩，如 10.56 或 58.90"
+                :class="{ 'has-error': averageTimeError }"
+                @input="handleAverageTimeInput"
+                @blur="validateAverageTime"
+              />
+              <span v-if="averageTimeError" class="form-error">{{ averageTimeError }}</span>
+              <span class="form-hint">单次或平均至少填写一项。</span>
             </div>
           </div>
-        </div>
+        </section>
 
-        <AppStatusBlock v-if="submitError" variant="error" layout="banner" :message="submitError" />
-        <AppStatusBlock v-if="submitSuccess" variant="success" layout="banner" :message="submitSuccessMessage" />
-      </AppSectionCard>
+        <section class="plain-section">
+          <h2 class="plain-section-title">补充信息 <span class="optional">(可选)</span></h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">使用魔方</label>
+              <input
+                v-model="form.cube"
+                type="text"
+                class="form-input"
+                placeholder="如：RS3M V5"
+              />
+            </div>
 
-      <AppFormActions>
-        <button type="submit" class="submit-btn" :disabled="isSubmitting || !hasValidData">
-          {{ isSubmitting ? '提交中...' : '提交成绩' }}
-        </button>
-      </AppFormActions>
-    </form>
+            <div class="form-group">
+              <label class="form-label">解法</label>
+              <input
+                v-model="form.method"
+                type="text"
+                class="form-input"
+                placeholder="如：CFOP, Roux, ZZ"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section v-if="hasPreview || submitError || submitSuccess" class="plain-section">
+          <h2 class="plain-section-title">成绩预览</h2>
+          <div v-if="hasPreview" class="preview-section">
+            <div class="preview-grid">
+              <div v-if="previewSingle !== null" class="preview-item">
+                <span class="preview-label">单次预览</span>
+                <span class="preview-value">{{ formatPreview(previewSingle) }}</span>
+              </div>
+              <div v-if="previewAverage !== null" class="preview-item">
+                <span class="preview-label">平均预览</span>
+                <span class="preview-value">{{ formatPreview(previewAverage) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <AppStatusBlock v-if="submitError" variant="error" layout="banner" :message="submitError" />
+          <AppStatusBlock v-if="submitSuccess" variant="success" layout="banner" :message="submitSuccessMessage" />
+        </section>
+
+        <AppFormActions>
+          <button type="submit" class="submit-btn" :disabled="isSubmitting || !hasValidData">
+            {{ isSubmitting ? '提交中...' : '提交成绩' }}
+          </button>
+        </AppFormActions>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -255,7 +262,6 @@
 import { computed, onMounted, ref } from 'vue'
 import AppFormActions from '@/components/common/AppFormActions.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
-import AppSectionCard from '@/components/common/AppSectionCard.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useEventsStore } from '../stores/events'
@@ -662,8 +668,33 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
-  max-width: 880px;
-  margin: 0 auto;
+}
+
+.submit-record-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.manage-records-section,
+.plain-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.plain-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.plain-section-title {
+  font-family: var(--font-heading);
+  font-size: 1.06rem;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .page-manage-btn,
@@ -817,11 +848,11 @@ onMounted(async () => {
 }
 
 .submit-form {
-  padding: 1.1rem;
-  background: color-mix(in srgb, var(--color-bg-secondary) 78%, transparent);
-  border-radius: 28px;
-  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .form-group {
@@ -982,8 +1013,8 @@ onMounted(async () => {
     gap: var(--space-lg);
   }
 
-  .submit-form {
-    padding: 0.9rem;
+  .submit-record-body {
+    gap: var(--space-lg);
   }
 
   .form-row,

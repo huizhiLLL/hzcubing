@@ -56,7 +56,7 @@
             @click="closeMobileMenu"
           >
             <span class="nav-icon" v-html="adminIcon"></span>
-            <span v-if="!isCollapsed" class="nav-label">整活项目管理</span>
+            <span v-if="!isCollapsed" class="nav-label">项目管理</span>
           </router-link>
           <button class="nav-item" @click="handleLogout">
             <span class="nav-icon" v-html="logoutIcon"></span>
@@ -307,7 +307,7 @@ onUnmounted(() => {
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   overflow-y: auto;
 }
 
@@ -316,7 +316,7 @@ onUnmounted(() => {
   border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .nav-item {
