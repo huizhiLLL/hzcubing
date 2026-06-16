@@ -190,7 +190,7 @@ onUnmounted(() => {
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary) 10%, transparent) 0, transparent 28%),
     linear-gradient(180deg, color-mix(in srgb, var(--color-bg-secondary) 88%, transparent), transparent 30%);
-  --sidebar-width: 268px;
+  --sidebar-width: 188px;
   --sidebar-collapsed-width: 88px;
   --layout-gutter: 24px;
   --content-max-width: 1280px;
@@ -204,7 +204,7 @@ onUnmounted(() => {
   width: var(--sidebar-width);
   background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-  border-radius: 30px;
+  border-radius: 24px;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(18px);
   display: flex;
@@ -228,7 +228,7 @@ onUnmounted(() => {
   align-items: stretch;
   justify-content: space-between;
   gap: var(--space-md);
-  padding: 20px 18px 18px;
+  padding: 18px 12px 16px;
   border-bottom: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   min-height: 112px;
 }
@@ -236,13 +236,13 @@ onUnmounted(() => {
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   color: var(--color-text);
   font-weight: 600;
   font-size: 1.125rem;
   min-width: 0;
-  padding: 10px 12px;
-  border-radius: 20px;
+  padding: 10px 8px;
+  border-radius: 18px;
   transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
@@ -274,11 +274,13 @@ onUnmounted(() => {
   align-self: flex-start;
   width: 40px;
   height: 40px;
+  margin-left: 0;
   color: var(--color-text-secondary);
   border-radius: 14px;
   background: color-mix(in srgb, var(--color-bg-tertiary) 84%, transparent);
   transition:
     transform var(--transition-fast),
+    margin-left var(--transition-fast),
     background-color var(--transition-fast),
     color var(--transition-fast);
 }
@@ -290,25 +292,26 @@ onUnmounted(() => {
 }
 
 .sidebar-collapsed .sidebar-header {
-  align-items: center;
+  align-items: stretch;
   padding-left: 12px;
   padding-right: 12px;
 }
 
 .sidebar-collapsed .logo {
-  justify-content: center;
-  width: 100%;
-  padding-left: 0;
+  justify-content: flex-start;
+  width: auto;
+  padding-left: 14px;
   padding-right: 0;
 }
 
 .sidebar-collapsed .collapse-btn {
-  align-self: center;
+  align-self: flex-start;
+  margin-left: 12px;
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: 16px 12px;
+  padding: 14px 10px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -316,7 +319,7 @@ onUnmounted(() => {
 }
 
 .sidebar-footer {
-  padding: 14px 12px 16px;
+  padding: 12px 10px 14px;
   border-top: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   display: flex;
   flex-direction: column;
@@ -326,16 +329,18 @@ onUnmounted(() => {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 10px;
   min-height: 46px;
-  padding: 10px 13px;
+  padding: 10px;
   color: var(--color-text-secondary);
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid transparent;
   transition:
     background-color var(--transition-fast),
     color var(--transition-fast),
     border-color var(--transition-fast),
+    padding var(--transition-fast),
     transform var(--transition-fast);
   font-size: 0.9375rem;
   font-family: var(--font-body);
@@ -377,9 +382,8 @@ onUnmounted(() => {
 }
 
 .sidebar-collapsed .nav-item {
-  justify-content: center;
   min-height: 48px;
-  padding: 10px;
+  padding: 10px 21px;
   border-radius: 18px;
 }
 
@@ -474,7 +478,7 @@ onUnmounted(() => {
     left: 12px;
     top: 12px;
     bottom: 12px;
-    width: min(320px, calc(100vw - 24px));
+    width: min(224px, calc(100vw - 24px));
     transform: translateX(calc(-100% - 16px));
   }
 
