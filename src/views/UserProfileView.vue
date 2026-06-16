@@ -13,7 +13,6 @@
           <div class="identity-copy">
             <div class="identity-topline">
               <div>
-                <p class="profile-kicker">个人主页</p>
                 <h1 class="profile-name">{{ userData.nickname }}</h1>
               </div>
 

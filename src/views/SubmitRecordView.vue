@@ -82,8 +82,21 @@
               <form v-if="editingRecordId === record._id" class="edit-record-form" @submit.prevent="handleUpdateRecord">
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">项目</label>
-                    <AppSelect v-model="editForm.event" :options="submitEventOptions" />
+                    <label class="form-label">项目分类</label>
+                    <AppSelect
+                      :model-value="editForm.eventCategory"
+                      :options="eventCategoryOptions"
+                      @update:model-value="handleEditCategoryChange"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">具体项目</label>
+                    <AppSelect
+                      v-model="editForm.event"
+                      :options="editEventOptions"
+                      :disabled="!editForm.eventCategory"
+                    />
                   </div>
                 </div>
 
@@ -170,9 +183,24 @@
 
       <form v-else class="submit-form" @submit.prevent="handleSubmit">
         <section class="plain-section">
-          <h2 class="plain-section-title">项目</h2>
-          <div class="form-group">
-            <AppSelect v-model="form.event" :options="submitEventOptions" />
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">项目类别</label>
+              <AppSelect
+                :model-value="form.eventCategory"
+                :options="eventCategoryOptions"
+                @update:model-value="handleCategoryChange"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">具体项目</label>
+              <AppSelect
+                v-model="form.event"
+                :options="submitEventOptions"
+                :disabled="!form.eventCategory"
+              />
+            </div>
           </div>
         </section>
 
@@ -281,6 +309,7 @@ const router = useRouter()
 
 function createEmptyForm() {
   return {
+    eventCategory: '',
     event: '',
     singleTime: '',
     averageTime: '',
@@ -313,13 +342,14 @@ const editAverageTimeError = ref('')
 const editPreviewSingle = ref(null)
 const editPreviewAverage = ref(null)
 
-const submitEventOptions = computed(() => [
-  { label: '请选择项目', value: '', disabled: true },
-  ...eventsStore.allEvents.map((event) => ({
-    label: event.name,
-    value: event.id
-  }))
+const eventMap = computed(() => Object.fromEntries(eventsStore.allEvents.map((event) => [event.id, event])))
+const categoryLabelMap = computed(() => Object.fromEntries(eventsStore.categories.map((category) => [category.value, category.label])))
+const eventCategoryOptions = computed(() => [
+  { label: '请选择分类', value: '', disabled: true },
+  ...eventsStore.categories
 ])
+const submitEventOptions = computed(() => createEventOptions(form.value.eventCategory))
+const editEventOptions = computed(() => createEventOptions(editForm.value.eventCategory))
 
 const hasValidData = computed(() => isFormReady(form.value))
 const hasPreview = computed(() => previewSingle.value !== null || previewAverage.value !== null)
@@ -398,12 +428,18 @@ function syncTimeField(formValue, fieldName, errorRef, previewRef) {
 }
 
 function isFormReady(currentForm) {
-  return Boolean(currentForm.event && (currentForm.singleTime || currentForm.averageTime))
+  return Boolean(currentForm.eventCategory && currentForm.event && (currentForm.singleTime || currentForm.averageTime))
 }
 
 function buildRecordPayload(currentForm) {
   const singleResult = validateTimeValue(currentForm.singleTime)
   const averageResult = validateTimeValue(currentForm.averageTime)
+
+  if (!currentForm.eventCategory) {
+    return {
+      error: '请选择项目分类'
+    }
+  }
 
   if (!currentForm.event) {
     return {
@@ -462,6 +498,36 @@ function formatDate(value) {
 
 function getEventName(eventId) {
   return eventsStore.getEventName(eventId)
+}
+
+function getCategoryLabel(category) {
+  return categoryLabelMap.value[category] || category || '项目'
+}
+
+function getEventCategory(eventId) {
+  return eventMap.value[eventId]?.category || ''
+}
+
+function createEventOptions(category) {
+  const events = eventsStore.getEventsByCategory(category)
+
+  return [
+    { label: category ? '请选择项目' : '请先选择分类', value: '', disabled: true },
+    ...events.map((event) => ({
+      label: event.name,
+      value: event.id
+    }))
+  ]
+}
+
+function handleCategoryChange(category) {
+  form.value.eventCategory = category
+  form.value.event = ''
+}
+
+function handleEditCategoryChange(category) {
+  editForm.value.eventCategory = category
+  editForm.value.event = ''
 }
 
 function resetSubmitForm() {
@@ -559,6 +625,7 @@ function startEditingRecord(record) {
   editError.value = ''
   editingRecordId.value = record._id
   editForm.value = {
+    eventCategory: getEventCategory(record.event),
     event: record.event || '',
     singleTime: formatEditableTime(record.singleSeconds),
     averageTime: formatEditableTime(record.averageSeconds),

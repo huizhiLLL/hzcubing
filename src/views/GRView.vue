@@ -6,6 +6,7 @@
 
     <template v-else>
       <div class="category-tabs" role="tablist" aria-label="项目类型">
+        <span class="category-indicator" :style="{ transform: `translateX(${activeCategoryIndex * 100}%)` }"></span>
         <button
           v-for="category in categoryTabs"
           :key="category.value"
@@ -22,69 +23,71 @@
 
       <AppStatusBlock v-if="rows.length === 0" variant="empty" :message="`暂无${activeCategoryLabel}纪录数据`" />
 
-      <template v-else>
-        <div class="desktop-table">
-          <table>
-            <thead>
-              <tr>
-                <th>项目</th>
-                <th>选手</th>
-                <th>最佳单次</th>
-                <th>最佳平均</th>
-                <th>选手</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in rows" :key="row.event">
-                <td>
-                  <div class="event-cell">
-                    <span class="event-name">{{ row.eventName }}</span>
-                  </div>
-                </td>
-                <td>
-                  <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
-                    {{ row.bestSingleNickname || '—' }}
-                  </router-link>
-                  <span v-else class="muted">—</span>
-                </td>
-                <td>{{ formatTime(row.bestSingleSeconds) }}</td>
-                <td>{{ formatTime(row.bestAverageSeconds) }}</td>
-                <td>
-                  <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
-                    {{ row.bestAverageNickname || '—' }}
-                  </router-link>
-                  <span v-else class="muted">—</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <transition v-else name="content-fade" mode="out-in">
+        <div :key="activeCategory" class="gr-records">
+          <div class="desktop-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>项目</th>
+                  <th>选手</th>
+                  <th>最佳单次</th>
+                  <th>最佳平均</th>
+                  <th>选手</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in rows" :key="row.event">
+                  <td>
+                    <div class="event-cell">
+                      <span class="event-name">{{ row.eventName }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
+                      {{ row.bestSingleNickname || '—' }}
+                    </router-link>
+                    <span v-else class="muted">—</span>
+                  </td>
+                  <td>{{ formatTime(row.bestSingleSeconds) }}</td>
+                  <td>{{ formatTime(row.bestAverageSeconds) }}</td>
+                  <td>
+                    <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
+                      {{ row.bestAverageNickname || '—' }}
+                    </router-link>
+                    <span v-else class="muted">—</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <TransitionGroup tag="div" name="list-rise" class="mobile-cards">
+            <article v-for="row in rows" :key="row.event" class="gr-card">
+              <div class="card-head">
+                <span class="event-name">{{ row.eventName }}</span>
+                <span class="event-code">{{ row.event }}</span>
+              </div>
+
+              <div class="record-block compact">
+                <span class="record-label">最佳单次</span>
+                <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
+                  {{ row.bestSingleNickname || '—' }}
+                </router-link>
+                <span class="record-time">{{ formatTime(row.bestSingleSeconds) }}</span>
+              </div>
+
+              <div class="record-block compact">
+                <span class="record-label">最佳平均</span>
+                <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
+                  {{ row.bestAverageNickname || '—' }}
+                </router-link>
+                <span class="record-time">{{ formatTime(row.bestAverageSeconds) }}</span>
+              </div>
+            </article>
+          </TransitionGroup>
         </div>
-
-        <div class="mobile-cards">
-          <article v-for="row in rows" :key="row.event" class="gr-card">
-            <div class="card-head">
-              <span class="event-name">{{ row.eventName }}</span>
-              <span class="event-code">{{ row.event }}</span>
-            </div>
-
-            <div class="record-block compact">
-              <span class="record-label">最佳单次</span>
-              <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
-                {{ row.bestSingleNickname || '—' }}
-              </router-link>
-              <span class="record-time">{{ formatTime(row.bestSingleSeconds) }}</span>
-            </div>
-
-            <div class="record-block compact">
-              <span class="record-label">最佳平均</span>
-              <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
-                {{ row.bestAverageNickname || '—' }}
-              </router-link>
-              <span class="record-time">{{ formatTime(row.bestAverageSeconds) }}</span>
-            </div>
-          </article>
-        </div>
-      </template>
+      </transition>
     </template>
   </div>
 </template>
@@ -111,6 +114,7 @@ const categoryTabs = [
 const eventOrder = computed(() => eventsStore.allEvents.map(event => event.id))
 const eventCategoryMap = computed(() => Object.fromEntries(eventsStore.allEvents.map(event => [event.id, event.category])))
 const activeCategoryLabel = computed(() => categoryTabs.find(category => category.value === activeCategory.value)?.label || '')
+const activeCategoryIndex = computed(() => Math.max(categoryTabs.findIndex(category => category.value === activeCategory.value), 0))
 
 const rows = computed(() => {
   return [...bestRecords.value]
@@ -157,6 +161,7 @@ onMounted(loadGR)
 }
 
 .category-tabs {
+  position: relative;
   display: inline-flex;
   align-self: flex-start;
   padding: 4px;
@@ -165,7 +170,22 @@ onMounted(loadGR)
   background: var(--color-bg-secondary);
 }
 
+.category-indicator {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: calc(var(--radius-lg) - 4px);
+  background: var(--color-text);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  transition: transform var(--motion-panel);
+  pointer-events: none;
+}
+
 .category-tab {
+  position: relative;
+  z-index: 1;
   min-width: 72px;
   padding: 0.65rem 0.95rem;
   border-radius: calc(var(--radius-lg) - 4px);
@@ -173,15 +193,26 @@ onMounted(loadGR)
   font-weight: 600;
   font-size: 0.92rem;
   transition:
-    background-color var(--transition-fast),
+    transform var(--transition-fast),
     color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    text-shadow var(--transition-fast);
+}
+
+.category-tab:hover:not(.active) {
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .category-tab.active {
-  background: var(--color-text);
   color: var(--color-bg);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.category-tab:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.gr-records {
+  position: relative;
 }
 
 .desktop-table {
@@ -218,6 +249,10 @@ onMounted(loadGR)
   background: var(--color-bg-tertiary);
 }
 
+.desktop-table tr td {
+  transition: background-color var(--transition-fast);
+}
+
 .event-cell,
 .card-head {
   display: flex;
@@ -252,6 +287,16 @@ onMounted(loadGR)
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.gr-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-primary) 26%, var(--color-border));
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
 }
 
 .record-block.compact {

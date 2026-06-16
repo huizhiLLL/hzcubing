@@ -82,7 +82,11 @@
 
       <div class="page-content">
         <div class="content-shell">
-          <router-view />
+          <router-view v-slot="{ Component, route }">
+            <transition name="page-route" mode="out-in">
+              <component :is="Component" :key="route.path" class="page-motion" />
+            </transition>
+          </router-view>
         </div>
       </div>
     </main>
@@ -420,6 +424,7 @@ onUnmounted(() => {
 }
 
 .content-shell {
+  position: relative;
   min-height: calc(100vh - var(--layout-gutter) * 2 - 12px);
 }
 

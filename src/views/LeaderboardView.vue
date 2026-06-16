@@ -25,8 +25,9 @@
       </div>
 
       <div class="type-toggle">
-        <button class="type-btn" :class="{ active: type === 'single' }" @click="type = 'single'">单次</button>
-        <button class="type-btn" :class="{ active: type === 'average' }" @click="type = 'average'">平均</button>
+        <span class="type-indicator" :style="{ transform: `translateX(${type === 'average' ? 100 : 0}%)` }"></span>
+        <button class="type-btn" :class="{ active: type === 'single' }" @click="selectType('single')">单次</button>
+        <button class="type-btn" :class="{ active: type === 'average' }" @click="selectType('average')">平均</button>
       </div>
     </div>
 
@@ -46,18 +47,20 @@
             <th class="col-date">日期</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="(player, index) in sortedRecords" :key="player._id || index">
-            <td class="col-rank"><span class="rank-num">{{ index + 1 }}</span></td>
-            <td class="col-player">
-              <router-link :to="`/user/${player.profileUserNo}`" class="player-link">
-                {{ player.nickname }}
-              </router-link>
-            </td>
-            <td class="col-time">{{ formatTime(getTimeValue(player)) }}</td>
-            <td class="col-date">{{ formatDate(player.timestamp) }}</td>
-          </tr>
-        </tbody>
+        <Transition :name="`rank-slide-${rankMotionDirection}`" mode="out-in">
+          <tbody :key="rankMotionKey" class="rank-table-body">
+            <tr v-for="(player, index) in sortedRecords" :key="`${currentEvent}-${player._id || index}-${type}`">
+              <td class="col-rank"><span class="rank-num">{{ index + 1 }}</span></td>
+              <td class="col-player">
+                <router-link :to="`/user/${player.profileUserNo}`" class="player-link">
+                  {{ player.nickname }}
+                </router-link>
+              </td>
+              <td class="col-time">{{ formatTime(getTimeValue(player)) }}</td>
+              <td class="col-date">{{ formatDate(player.timestamp) }}</td>
+            </tr>
+          </tbody>
+        </Transition>
       </table>
     </div>
   </div>
@@ -80,6 +83,8 @@ const eventsStore = useEventsStore()
 const currentEvent = ref('333')
 const type = ref('single')
 const loading = ref(false)
+const rankMotionKey = ref(0)
+const rankMotionDirection = ref('forward')
 const maxVisibleTabs = 8
 
 const allEvents = computed(() => eventsStore.allEvents)
@@ -111,8 +116,15 @@ function formatDate(dateStr) {
 }
 
 function selectEvent(eventId) {
+  setEventMotionDirection(eventId)
   currentEvent.value = eventId
   router.replace({ query: { ...route.query, event: eventId } })
+}
+
+function selectType(nextType) {
+  if (nextType === type.value) return
+  rankMotionDirection.value = nextType === 'average' ? 'forward' : 'backward'
+  type.value = nextType
 }
 
 function handleOverflowSelect(eventId) {
@@ -120,10 +132,33 @@ function handleOverflowSelect(eventId) {
   selectEvent(eventId)
 }
 
+function getEventIndex(eventId) {
+  return allEvents.value.findIndex(event => event.id === eventId)
+}
+
+function setEventMotionDirection(nextEventId) {
+  if (nextEventId === currentEvent.value) return
+
+  const currentIndex = getEventIndex(currentEvent.value)
+  const nextIndex = getEventIndex(nextEventId)
+
+  if (currentIndex === -1 || nextIndex === -1) {
+    rankMotionDirection.value = 'forward'
+    return
+  }
+
+  rankMotionDirection.value = nextIndex > currentIndex ? 'forward' : 'backward'
+}
+
 watch(() => route.query.event, (newEvent) => {
   if (newEvent && allEvents.value.some(event => event.id === newEvent)) {
+    setEventMotionDirection(newEvent)
     currentEvent.value = newEvent
   }
+})
+
+watch([currentEvent, type], () => {
+  rankMotionKey.value += 1
 })
 
 onMounted(async () => {
@@ -153,6 +188,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  position: relative;
 }
 
 .filter-panel {
@@ -194,38 +230,76 @@ onMounted(async () => {
   color: var(--color-text-secondary);
   font-size: 0.92rem;
   white-space: nowrap;
-  transition: all var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .event-tab:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .event-tab.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+.event-tab:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .type-toggle {
+  position: relative;
   display: flex;
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  padding: 4px;
   overflow: hidden;
 }
 
+.type-indicator {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: calc((100% - 8px) / 2);
+  border-radius: calc(var(--radius-lg) - 4px);
+  background: var(--color-text);
+  transition: transform var(--motion-panel);
+  pointer-events: none;
+}
+
 .type-btn {
+  position: relative;
+  z-index: 1;
+  min-width: 64px;
   padding: 0.72rem 1rem;
   color: var(--color-text-secondary);
   font-weight: 500;
-  transition: all var(--transition-fast);
+  border-radius: calc(var(--radius-lg) - 4px);
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.type-btn:hover:not(.active) {
+  color: var(--color-primary);
 }
 
 .type-btn.active {
-  background: var(--color-text);
   color: var(--color-bg);
+}
+
+.type-btn:active {
+  transform: scale(0.98);
 }
 
 .player-link {
@@ -260,6 +334,40 @@ onMounted(async () => {
 
 .rank-table tr:last-child td {
   border-bottom: none;
+}
+
+.rank-table tr td {
+  transition: background-color var(--transition-fast);
+}
+
+.rank-table tr:hover td {
+  background: var(--color-bg-tertiary);
+}
+
+.rank-table-body {
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.rank-slide-forward-enter-active,
+.rank-slide-forward-leave-active,
+.rank-slide-backward-enter-active,
+.rank-slide-backward-leave-active {
+  transition:
+    opacity 170ms var(--motion-ease),
+    transform 170ms var(--motion-ease);
+}
+
+.rank-slide-forward-enter-from,
+.rank-slide-backward-leave-to {
+  opacity: 0;
+  transform: translateX(18px);
+}
+
+.rank-slide-forward-leave-to,
+.rank-slide-backward-enter-from {
+  opacity: 0;
+  transform: translateX(-18px);
 }
 
 .rank-num {
