@@ -167,7 +167,6 @@ onMounted(() => loadData(1))
 }
 
 .join-date,
-.email,
 .meta-label {
   color: var(--color-text-tertiary);
   font-size: 0.82rem;

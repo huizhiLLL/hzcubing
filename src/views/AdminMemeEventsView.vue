@@ -299,13 +299,6 @@ onMounted(loadEvents)
   gap: var(--space-md);
 }
 
-.plain-section-title {
-  font-family: var(--font-heading);
-  font-size: 1.06rem;
-  font-weight: 700;
-  letter-spacing: 0;
-}
-
 .section-actions {
   display: flex;
   align-items: center;
@@ -392,7 +385,6 @@ onMounted(loadEvents)
 }
 
 .form-hint,
-.event-code,
 .event-desc,
 .event-meta {
   color: var(--color-text-secondary);
@@ -451,8 +443,7 @@ onMounted(loadEvents)
 }
 
 .primary-btn,
-.ghost-btn,
-.danger-btn {
+.ghost-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -461,8 +452,7 @@ onMounted(loadEvents)
 }
 
 .primary-btn,
-.ghost-btn,
-.danger-btn {
+.ghost-btn {
   min-height: 44px;
   padding: 0.75rem 1rem;
 }
@@ -476,12 +466,6 @@ onMounted(loadEvents)
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   color: var(--color-text);
-}
-
-.danger-btn {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--color-error);
-  border: 1px solid rgba(239, 68, 68, 0.24);
 }
 
 .list-wrap {
@@ -509,12 +493,6 @@ onMounted(loadEvents)
   font-size: 1.1rem;
   font-weight: 700;
   line-height: 1.35;
-}
-
-.event-code {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  margin-top: 4px;
 }
 
 .event-desc {
@@ -622,8 +600,7 @@ onMounted(loadEvents)
   }
 
   .primary-btn,
-  .ghost-btn,
-  .danger-btn {
+  .ghost-btn {
     width: 100%;
   }
 }

@@ -350,14 +350,6 @@ onMounted(async () => {
   gap: var(--space-lg);
 }
 
-.profile-kicker {
-  margin-bottom: 0.35rem;
-  color: var(--color-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-}
-
 .profile-name {
   font-family: var(--font-heading);
   font-size: clamp(2rem, 3vw, 2.8rem);
@@ -712,8 +704,7 @@ onMounted(async () => {
     line-height: 1.5;
   }
 
-  .profile-meta,
-  .section-heading {
+  .profile-meta {
     justify-content: flex-start;
   }
 

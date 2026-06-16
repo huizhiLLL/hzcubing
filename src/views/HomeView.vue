@@ -449,19 +449,6 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, var(--group-accent) 14%, transparent);
 }
 
-.card-label {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.3rem 0.55rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--group-accent);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
 .featured-name {
   position: relative;
   z-index: 1;

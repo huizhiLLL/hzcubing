@@ -802,16 +802,8 @@ watch(isManagePage, async (nextIsManagePage) => {
   justify-content: flex-end;
 }
 
-.plain-section-title {
-  font-family: var(--font-heading);
-  font-size: 1.06rem;
-  font-weight: 700;
-  letter-spacing: 0;
-}
-
 .page-manage-btn,
-.ghost-btn,
-.danger-btn {
+.ghost-btn {
   border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
   border-radius: 16px;
   background: color-mix(in srgb, var(--color-bg-secondary) 90%, transparent);
@@ -833,8 +825,7 @@ watch(isManagePage, async (nextIsManagePage) => {
 }
 
 .page-manage-btn:hover:not(:disabled),
-.ghost-btn:hover:not(:disabled),
-.danger-btn:hover:not(:disabled) {
+.ghost-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
 }
@@ -845,16 +836,8 @@ watch(isManagePage, async (nextIsManagePage) => {
   border-color: color-mix(in srgb, var(--color-primary) 32%, transparent);
 }
 
-.danger-btn {
-  padding: 0.82rem 0.95rem;
-  color: var(--color-error);
-  border-color: color-mix(in srgb, var(--color-error) 26%, transparent);
-  background: color-mix(in srgb, var(--color-error) 8%, transparent);
-}
-
 .page-manage-btn:disabled,
-.ghost-btn:disabled,
-.danger-btn:disabled {
+.ghost-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
@@ -1240,7 +1223,6 @@ watch(isManagePage, async (nextIsManagePage) => {
 
   .page-manage-btn,
   .ghost-btn,
-  .danger-btn,
   .submit-btn {
     width: 100%;
   }
