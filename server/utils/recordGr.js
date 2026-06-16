@@ -6,8 +6,8 @@ export function formatRecordTime(seconds) {
   const numeric = Number(seconds)
   if (!Number.isFinite(numeric)) return null
 
-  const normalized = Math.trunc(numeric * 100) / 100
-  const totalCentiseconds = Math.trunc(normalized * 100)
+  const normalized = Math.trunc((numeric + Number.EPSILON) * 100) / 100
+  const totalCentiseconds = Math.trunc((normalized + Number.EPSILON) * 100)
   const h = Math.floor(totalCentiseconds / 360000)
   const m = Math.floor((totalCentiseconds % 360000) / 6000)
   const wholeSeconds = Math.floor((totalCentiseconds % 6000) / 100)

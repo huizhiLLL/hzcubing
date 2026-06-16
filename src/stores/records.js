@@ -47,7 +47,7 @@ export const useRecordsStore = defineStore('records', () => {
 
   function truncateToTwoDecimals(value) {
     if (value === null || value === undefined || isNaN(value)) return null
-    return Math.trunc(Number(value) * 100) / 100
+    return Math.trunc((Number(value) + Number.EPSILON) * 100) / 100
   }
 
   // Format time from seconds
@@ -55,7 +55,7 @@ export const useRecordsStore = defineStore('records', () => {
     const normalized = truncateToTwoDecimals(seconds)
     if (normalized === null) return null
 
-    const totalCentiseconds = Math.trunc(normalized * 100)
+    const totalCentiseconds = Math.trunc((normalized + Number.EPSILON) * 100)
     const h = Math.floor(totalCentiseconds / 360000)
     const m = Math.floor((totalCentiseconds % 360000) / 6000)
     const wholeSeconds = Math.floor((totalCentiseconds % 6000) / 100)
