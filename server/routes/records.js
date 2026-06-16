@@ -546,6 +546,7 @@ router.post('/', protect, recordValidation, async (req, res, next) => {
     const grMessages = buildGrNewsMessages({
       nickname: req.user.nickname,
       event: record.event,
+      record,
       grResult
     })
 

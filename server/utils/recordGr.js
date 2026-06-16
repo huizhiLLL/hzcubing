@@ -77,34 +77,48 @@ export function buildGrResult(record, previousRecords) {
   }
 }
 
-export function buildGrNewsMessages({ nickname, event, grResult }) {
+export function buildGrNewsMessages({ nickname, event, record, grResult }) {
   const messages = []
   const displayName = nickname || '未知用户'
   const eventName = event || '未知项目'
 
   if (grResult.isSingleGR) {
+    const newTimeText = formatRecordTime(record?.singleSeconds) || '-'
+    const newRecordLine = `新纪录：${displayName} ${newTimeText}`
+
     if (grResult.previousSingleBest) {
       const prevNickname = grResult.previousSingleBest.nickname || '未知用户'
       const prevTimeText = formatRecordTime(grResult.previousSingleBest.seconds) || '-'
       messages.push(
         `记录快讯！🎉恭喜 ${displayName} 刷新${eventName} 单次 GR！\n` +
+        `${newRecordLine}\n` +
         `原纪录：${prevNickname} ${prevTimeText}`
       )
     } else {
-      messages.push(`记录快讯！🎉恭喜 ${displayName} 拿下${eventName} 首个单次 GR！`)
+      messages.push(
+        `记录快讯！🎉恭喜 ${displayName} 拿下${eventName} 首个单次 GR！\n` +
+        newRecordLine
+      )
     }
   }
 
   if (grResult.isAverageGR) {
+    const newTimeText = formatRecordTime(record?.averageSeconds) || '-'
+    const newRecordLine = `新纪录：${displayName} ${newTimeText}`
+
     if (grResult.previousAverageBest) {
       const prevNickname = grResult.previousAverageBest.nickname || '未知用户'
       const prevTimeText = formatRecordTime(grResult.previousAverageBest.seconds) || '-'
       messages.push(
         `记录快讯！🎉恭喜 ${displayName} 刷新${eventName} 平均 GR！\n` +
+        `${newRecordLine}\n` +
         `原纪录：${prevNickname} ${prevTimeText}`
       )
     } else {
-      messages.push(`记录快讯！🎉恭喜 ${displayName} 拿下${eventName} 首个平均 GR！`)
+      messages.push(
+        `记录快讯！🎉恭喜 ${displayName} 拿下${eventName} 首个平均 GR！\n` +
+        newRecordLine
+      )
     }
   }
 
