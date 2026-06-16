@@ -2,7 +2,10 @@
   <header class="page-header" :class="{ 'has-aside': hasAside }">
     <div class="page-header-copy">
       <span v-if="eyebrow" class="page-eyebrow">{{ eyebrow }}</span>
-      <component :is="titleTag" class="page-title">{{ title }}</component>
+      <component :is="titleTag" class="page-title">
+        {{ title }}
+        <span v-if="meta" class="page-title-meta">{{ meta }}</span>
+      </component>
     </div>
     <div v-if="hasAside" class="page-header-aside">
       <slot name="aside" />
@@ -21,6 +24,10 @@ const props = defineProps({
   title: {
     type: String,
     required: true
+  },
+  meta: {
+    type: String,
+    default: ''
   },
   titleTag: {
     type: String,
@@ -65,6 +72,14 @@ const hasAside = computed(() => Boolean(slots.aside))
   font-weight: 700;
   margin-bottom: var(--space-xs);
   letter-spacing: 0;
+}
+
+.page-title-meta {
+  margin-left: 0.5rem;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .page-header-aside {

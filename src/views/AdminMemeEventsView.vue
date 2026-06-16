@@ -1,10 +1,6 @@
 <template>
   <div class="meme-events-admin">
-    <AppPageHeader title="项目管理">
-      <template #aside>
-        <span class="stats-pill">共 {{ memeEvents.length }} 个项目</span>
-      </template>
-    </AppPageHeader>
+    <AppPageHeader title="项目管理" :meta="`(${memeEvents.length} 个项目)`" />
 
     <AppStatusBlock
       v-if="!canManage"
@@ -443,8 +439,7 @@ onMounted(loadEvents)
 
 .primary-btn,
 .ghost-btn,
-.danger-btn,
-.stats-pill {
+.danger-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -476,15 +471,9 @@ onMounted(loadEvents)
   border: 1px solid rgba(239, 68, 68, 0.24);
 }
 
-.stats-pill,
 .status-pill {
   padding: 0.4rem 0.8rem;
   font-size: 0.85rem;
-}
-
-.stats-pill {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
 }
 
 .status-pill {
@@ -583,7 +572,6 @@ onMounted(loadEvents)
     border-radius: 20px;
   }
 
-  .stats-pill,
   .primary-btn,
   .ghost-btn,
   .danger-btn {

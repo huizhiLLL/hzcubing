@@ -2,35 +2,33 @@
   <div class="leaderboard">
     <AppPageHeader title="排行榜" />
 
-    <AppSectionCard title="筛选条件">
-      <div class="filter-panel">
-        <div class="event-selector-wrap">
-          <div class="event-selector">
-            <button
-              v-for="event in visibleEvents"
-              :key="event.id"
-              class="event-tab"
-              :class="{ active: currentEvent === event.id }"
-              @click="selectEvent(event.id)"
-            >
-              <span class="event-name">{{ event.name }}</span>
-            </button>
-          </div>
-          <div v-if="overflowEventOptions.length" class="event-overflow">
-            <AppSelect
-              :model-value="overflowSelection"
-              :options="overflowSelectOptions"
-              @update:model-value="handleOverflowSelect"
-            />
-          </div>
+    <div class="filter-panel">
+      <div class="event-selector-wrap">
+        <div class="event-selector">
+          <button
+            v-for="event in visibleEvents"
+            :key="event.id"
+            class="event-tab"
+            :class="{ active: currentEvent === event.id }"
+            @click="selectEvent(event.id)"
+          >
+            <span class="event-name">{{ event.name }}</span>
+          </button>
         </div>
-
-        <div class="type-toggle">
-          <button class="type-btn" :class="{ active: type === 'single' }" @click="type = 'single'">单次</button>
-          <button class="type-btn" :class="{ active: type === 'average' }" @click="type = 'average'">平均</button>
+        <div v-if="overflowEventOptions.length" class="event-overflow">
+          <AppSelect
+            :model-value="overflowSelection"
+            :options="overflowSelectOptions"
+            @update:model-value="handleOverflowSelect"
+          />
         </div>
       </div>
-    </AppSectionCard>
+
+      <div class="type-toggle">
+        <button class="type-btn" :class="{ active: type === 'single' }" @click="type = 'single'">单次</button>
+        <button class="type-btn" :class="{ active: type === 'average' }" @click="type = 'average'">平均</button>
+      </div>
+    </div>
 
     <AppStatusBlock
       v-if="!loading && sortedRecords.length === 0"
@@ -69,7 +67,6 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
-import AppSectionCard from '@/components/common/AppSectionCard.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useRecordsStore } from '../stores/records'

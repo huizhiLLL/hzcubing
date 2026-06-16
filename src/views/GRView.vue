@@ -4,70 +4,87 @@
 
     <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
-    <AppStatusBlock v-else-if="rows.length === 0" variant="empty" message="暂无纪录数据" />
-
     <template v-else>
-      <div class="desktop-table">
-        <table>
-          <thead>
-            <tr>
-              <th>项目</th>
-              <th>选手</th>
-              <th>最佳单次</th>
-              <th>最佳平均</th>
-              <th>选手</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in rows" :key="row.event">
-              <td>
-                <div class="event-cell">
-                  <span class="event-name">{{ row.eventName }}</span>
-                </div>
-              </td>
-              <td>
-                <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
-                  {{ row.bestSingleNickname || '—' }}
-                </router-link>
-                <span v-else class="muted">—</span>
-              </td>
-              <td>{{ formatTime(row.bestSingleSeconds) }}</td>
-              <td>{{ formatTime(row.bestAverageSeconds) }}</td>
-              <td>
-                <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
-                  {{ row.bestAverageNickname || '—' }}
-                </router-link>
-                <span v-else class="muted">—</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="category-tabs" role="tablist" aria-label="项目类型">
+        <button
+          v-for="category in categoryTabs"
+          :key="category.value"
+          type="button"
+          class="category-tab"
+          :class="{ active: activeCategory === category.value }"
+          role="tab"
+          :aria-selected="activeCategory === category.value"
+          @click="activeCategory = category.value"
+        >
+          {{ category.label }}
+        </button>
       </div>
 
-      <div class="mobile-cards">
-        <article v-for="row in rows" :key="row.event" class="gr-card">
-          <div class="card-head">
-            <span class="event-name">{{ row.eventName }}</span>
-            <span class="event-code">{{ row.event }}</span>
-          </div>
+      <AppStatusBlock v-if="rows.length === 0" variant="empty" :message="`暂无${activeCategoryLabel}纪录数据`" />
 
-          <div class="record-block compact">
-            <span class="record-label">最佳单次</span>
-            <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
-              {{ row.bestSingleNickname || '—' }}
-            </router-link>
-            <span class="record-time">{{ formatTime(row.bestSingleSeconds) }}</span>
-          </div>
+      <template v-else>
+        <div class="desktop-table">
+          <table>
+            <thead>
+              <tr>
+                <th>项目</th>
+                <th>选手</th>
+                <th>最佳单次</th>
+                <th>最佳平均</th>
+                <th>选手</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in rows" :key="row.event">
+                <td>
+                  <div class="event-cell">
+                    <span class="event-name">{{ row.eventName }}</span>
+                  </div>
+                </td>
+                <td>
+                  <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
+                    {{ row.bestSingleNickname || '—' }}
+                  </router-link>
+                  <span v-else class="muted">—</span>
+                </td>
+                <td>{{ formatTime(row.bestSingleSeconds) }}</td>
+                <td>{{ formatTime(row.bestAverageSeconds) }}</td>
+                <td>
+                  <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
+                    {{ row.bestAverageNickname || '—' }}
+                  </router-link>
+                  <span v-else class="muted">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-          <div class="record-block compact">
-            <span class="record-label">最佳平均</span>
-            <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
-              {{ row.bestAverageNickname || '—' }}
-            </router-link>
-            <span class="record-time">{{ formatTime(row.bestAverageSeconds) }}</span>
-          </div>
-        </article>
-      </div>
+        <div class="mobile-cards">
+          <article v-for="row in rows" :key="row.event" class="gr-card">
+            <div class="card-head">
+              <span class="event-name">{{ row.eventName }}</span>
+              <span class="event-code">{{ row.event }}</span>
+            </div>
+
+            <div class="record-block compact">
+              <span class="record-label">最佳单次</span>
+              <router-link v-if="row.bestSingleUserNo" :to="`/user/${row.bestSingleUserNo}`" class="user-link">
+                {{ row.bestSingleNickname || '—' }}
+              </router-link>
+              <span class="record-time">{{ formatTime(row.bestSingleSeconds) }}</span>
+            </div>
+
+            <div class="record-block compact">
+              <span class="record-label">最佳平均</span>
+              <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
+                {{ row.bestAverageNickname || '—' }}
+              </router-link>
+              <span class="record-time">{{ formatTime(row.bestAverageSeconds) }}</span>
+            </div>
+          </article>
+        </div>
+      </template>
     </template>
   </div>
 </template>
@@ -83,11 +100,21 @@ const recordsStore = useRecordsStore()
 const eventsStore = useEventsStore()
 const loading = ref(false)
 const bestRecords = ref([])
+const activeCategory = ref('official')
+
+const categoryTabs = [
+  { label: '官方', value: 'official' },
+  { label: '趣味', value: 'fun' },
+  { label: '整活', value: 'meme' }
+]
 
 const eventOrder = computed(() => eventsStore.allEvents.map(event => event.id))
+const eventCategoryMap = computed(() => Object.fromEntries(eventsStore.allEvents.map(event => [event.id, event.category])))
+const activeCategoryLabel = computed(() => categoryTabs.find(category => category.value === activeCategory.value)?.label || '')
 
 const rows = computed(() => {
   return [...bestRecords.value]
+    .filter(item => eventCategoryMap.value[item.event] === activeCategory.value)
     .map(item => ({
       ...item,
       eventName: eventsStore.getEventName(item.event)
@@ -127,6 +154,34 @@ onMounted(loadGR)
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+}
+
+.category-tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+}
+
+.category-tab {
+  min-width: 72px;
+  padding: 0.65rem 0.95rem;
+  border-radius: calc(var(--radius-lg) - 4px);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.category-tab.active {
+  background: var(--color-text);
+  color: var(--color-bg);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
 }
 
 .desktop-table {
@@ -226,6 +281,16 @@ onMounted(loadGR)
 }
 
 @media (max-width: 768px) {
+  .category-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .category-tab {
+    min-width: 0;
+  }
+
   .desktop-table {
     display: none;
   }
