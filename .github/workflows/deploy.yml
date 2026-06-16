@@ -22,3 +22,5 @@ jobs:
             set -e
             cd ${{ secrets.DEPLOY_PATH }}
             git pull --ff-only
+            pm2 restart hzcubing-api
+            pm2 save
