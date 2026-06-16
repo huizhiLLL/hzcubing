@@ -8,6 +8,10 @@ import {
   memeEventValidation,
   serializeEvent
 } from '../utils/memeEvents.js'
+import {
+  buildGrResult,
+  findPreviousGrRecords
+} from '../utils/recordGr.js'
 
 const router = express.Router()
 
@@ -450,18 +454,11 @@ router.post('/submit-record-by-qq', async (req, res, next) => {
     const normalizedSingleSeconds = singleSeconds !== null && singleSeconds !== undefined ? Number(singleSeconds) : null
     const normalizedAverageSeconds = averageSeconds !== null && averageSeconds !== undefined ? Number(averageSeconds) : null
 
-    const [previousSingleBestRecord, previousAverageBestRecord] = await Promise.all([
-      normalizedSingleSeconds !== null && Number.isFinite(normalizedSingleSeconds)
-        ? Record.findOne({ event, singleSeconds: { $ne: null } })
-          .sort({ singleSeconds: 1, timestamp: 1, _id: 1 })
-          .lean()
-        : null,
-      normalizedAverageSeconds !== null && Number.isFinite(normalizedAverageSeconds)
-        ? Record.findOne({ event, averageSeconds: { $ne: null } })
-          .sort({ averageSeconds: 1, timestamp: 1, _id: 1 })
-          .lean()
-        : null
-    ])
+    const previousGrRecords = await findPreviousGrRecords({
+      event,
+      singleSeconds: normalizedSingleSeconds,
+      averageSeconds: normalizedAverageSeconds
+    })
     
     // Create record
     const record = new Record({
@@ -476,12 +473,7 @@ router.post('/submit-record-by-qq', async (req, res, next) => {
     
     await record.save()
     
-    const isSingleGR = record.singleSeconds !== null && (
-      !previousSingleBestRecord || record.singleSeconds < previousSingleBestRecord.singleSeconds
-    )
-    const isAverageGR = record.averageSeconds !== null && (
-      !previousAverageBestRecord || record.averageSeconds < previousAverageBestRecord.averageSeconds
-    )
+    const grResult = buildGrResult(record, previousGrRecords)
     
     res.json({
       code: 200,
@@ -493,20 +485,10 @@ router.post('/submit-record-by-qq', async (req, res, next) => {
         event: record.event,
         singleSeconds: record.singleSeconds,
         averageSeconds: record.averageSeconds,
-        isSingleGR,
-        isAverageGR,
-        previousSingleBest: previousSingleBestRecord ? {
-          userId: previousSingleBestRecord.userId,
-          nickname: previousSingleBestRecord.nickname,
-          seconds: previousSingleBestRecord.singleSeconds,
-          timestamp: previousSingleBestRecord.timestamp
-        } : null,
-        previousAverageBest: previousAverageBestRecord ? {
-          userId: previousAverageBestRecord.userId,
-          nickname: previousAverageBestRecord.nickname,
-          seconds: previousAverageBestRecord.averageSeconds,
-          timestamp: previousAverageBestRecord.timestamp
-        } : null
+        isSingleGR: grResult.isSingleGR,
+        isAverageGR: grResult.isAverageGR,
+        previousSingleBest: grResult.previousSingleBest,
+        previousAverageBest: grResult.previousAverageBest
       }
     })
   } catch (error) {

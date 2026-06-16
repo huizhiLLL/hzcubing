@@ -4,6 +4,12 @@ import Record from '../models/Record.js'
 import User from '../models/User.js'
 import { protect, optionalAuth } from '../middleware/auth.js'
 import { findUserByIdentifier } from '../utils/userLookup.js'
+import { sendAstrBotMessages } from '../utils/astrbotNotifier.js'
+import {
+  buildGrNewsMessages,
+  buildGrResult,
+  findPreviousGrRecords
+} from '../utils/recordGr.js'
 
 const router = express.Router()
 
@@ -517,6 +523,12 @@ router.post('/', protect, recordValidation, async (req, res, next) => {
       })
     }
 
+    const previousGrRecords = await findPreviousGrRecords({
+      event,
+      singleSeconds,
+      averageSeconds
+    })
+
     const record = new Record({
       userId: req.user._id,
       nickname: req.user.nickname,
@@ -530,11 +542,26 @@ router.post('/', protect, recordValidation, async (req, res, next) => {
 
     await record.save()
 
+    const grResult = buildGrResult(record, previousGrRecords)
+    const grMessages = buildGrNewsMessages({
+      nickname: req.user.nickname,
+      event: record.event,
+      grResult
+    })
+
+    if (grMessages.length > 0) {
+      sendAstrBotMessages(grMessages).catch(error => {
+        console.error('AstrBot GR notification failed:', error)
+      })
+    }
+
     res.status(201).json({
       code: 200,
       message: 'Record created successfully',
       data: {
-        _id: record._id
+        _id: record._id,
+        isSingleGR: grResult.isSingleGR,
+        isAverageGR: grResult.isAverageGR
       }
     })
   } catch (error) {

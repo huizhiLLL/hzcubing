@@ -84,7 +84,7 @@ store 负责：
 - `server/routes/`：HTTP 路由与接口层。
 - `server/models/`：Mongoose 数据模型。
 - `server/middleware/`：鉴权、错误处理等中间件。
-- `server/utils/`：后端共享工具。
+- `server/utils/`：后端共享工具，包括用户查询、整活项目、GR 判断与 AstrBot 通知。
 
 ### 后端边界
 
@@ -94,7 +94,7 @@ store 负责：
 - 用户身份识别和管理员权限校验。
 - 成绩、用户、整活项目的数据读写。
 - 数据结构、字段白名单和核心业务规则校验。
-- 对外部 QQ / AstrBot 等入口进行安全约束。
+- 对外部 QQ / AstrBot 等入口进行安全约束，并在网站录入成绩刷新 GR 时通过 AstrBot Open API 发送记录快讯。
 - 为前端提供稳定 API 契约。
 
 路由层当前承担了较多业务逻辑。后续新增或重构复杂逻辑时，应优先下沉到 service 或独立工具模块，避免继续扩大 `routes/*.js`。
@@ -182,6 +182,19 @@ store 负责：
 首次部署需执行 `pm2 startup` 设置开机自启。
 
 远端服务器只用于临时脚本执行、数据库操作和运行状态排查。默认不在远端服务器长期修改代码。
+
+### AstrBot 通知配置
+
+网站端提交成绩后，后端会判断该成绩是否刷新对应项目的单次或平均 GR。刷新时通过 AstrBot Open API 发送“记录快讯”消息；通知发送失败只记录日志，不影响成绩提交成功。
+
+需要在后端运行环境配置：
+
+| 变量 | 说明 |
+|------|------|
+| `ASTRBOT_MESSAGE_URL` | AstrBot 发消息接口 URL，默认 `https://astrbot.huizhi.pro/api/v1/im/message` |
+| `ASTRBOT_API_KEY` | AstrBot Open API Key |
+| `ASTRBOT_MESSAGE_UMO` | 目标会话 UMO |
+| `ASTRBOT_MESSAGE_TIMEOUT_MS` | 通知请求超时时间，默认 5000ms |
 
 ## 开发约束
 
