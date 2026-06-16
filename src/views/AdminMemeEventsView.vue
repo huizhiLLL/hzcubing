@@ -30,8 +30,14 @@
                 <div>
                   <h3>{{ event.name }}</h3>
                 </div>
-                <span class="status-pill" :class="event.isActive ? 'is-active' : 'is-inactive'">
-                  {{ event.isActive ? '启用中' : '已停用' }}
+                <span
+                  class="status-dot"
+                  :class="event.isActive ? 'is-active' : 'is-inactive'"
+                  :aria-label="event.isActive ? '启用中' : '停用中'"
+                  :title="event.isActive ? '启用中' : '停用中'"
+                  role="img"
+                >
+                  <span class="sr-only">{{ event.isActive ? '启用中' : '停用中' }}</span>
                 </span>
               </div>
 
@@ -88,7 +94,7 @@
 
             <div class="form-group">
               <label class="form-label">代号</label>
-              <input v-model="form.eventCode" type="text" class="form-input code-input" placeholder="如 blind-foot-relay" :disabled="!!editingCode" />
+              <input v-model="form.eventCode" type="text" class="form-input code-input" placeholder="如 333" :disabled="!!editingCode" />
               <span class="form-hint">新增时可填写，编辑时暂时锁定，避免误改已有成绩关联</span>
             </div>
           </div>
@@ -479,32 +485,17 @@ onMounted(loadEvents)
   border: 1px solid rgba(239, 68, 68, 0.24);
 }
 
-.status-pill {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-}
-
-.status-pill {
-  border-radius: 999px;
-}
-
-.status-pill.is-active {
-  background: rgba(34, 197, 94, 0.14);
-  color: #15803d;
-}
-
-.status-pill.is-inactive {
-  background: var(--color-bg);
-  color: var(--color-text-secondary);
-}
-
 .list-wrap {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-md);
 }
 
 .event-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 176px;
   padding: var(--space-lg);
 }
 
@@ -518,6 +509,7 @@ onMounted(loadEvents)
   font-family: var(--font-heading);
   font-size: 1.1rem;
   font-weight: 700;
+  line-height: 1.35;
 }
 
 .event-code {
@@ -543,8 +535,50 @@ onMounted(loadEvents)
   margin-top: var(--space-md);
 }
 
+.status-dot {
+  position: relative;
+  display: inline-flex;
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.status-dot.is-active {
+  color: var(--color-success);
+  background: var(--color-success);
+}
+
+.status-dot.is-inactive {
+  color: var(--color-error);
+  background: var(--color-error);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1120px) {
+  .list-wrap {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .list-wrap {
     grid-template-columns: 1fr;
   }
 

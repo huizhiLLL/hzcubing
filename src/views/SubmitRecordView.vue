@@ -13,14 +13,31 @@
         v-if="isManagePage"
         class="manage-records-section"
       >
-          <div class="plain-section-header">
-            <h2 class="plain-section-title">已提交成绩管理</h2>
-          <AppIconButton
-            icon="refresh"
-            :label="manageLoading ? '刷新中' : '刷新列表'"
-            :loading="manageLoading"
-            @click="loadManagedRecords"
-          />
+        <div class="plain-section-header">
+          <div class="category-tabs" role="tablist" aria-label="项目类型">
+            <span class="category-indicator" :style="{ transform: `translateX(${activeManageCategoryIndex * 100}%)` }"></span>
+            <button
+              v-for="category in manageCategoryTabs"
+              :key="category.value"
+              type="button"
+              class="category-tab"
+              :class="{ active: activeManageCategory === category.value }"
+              role="tab"
+              :aria-selected="activeManageCategory === category.value"
+              @click="activeManageCategory = category.value"
+            >
+              {{ category.label }}
+            </button>
+          </div>
+
+          <div class="manage-header-actions">
+            <AppIconButton
+              icon="refresh"
+              :label="manageLoading ? '刷新中' : '刷新列表'"
+              :loading="manageLoading"
+              @click="loadManagedRecords"
+            />
+          </div>
         </div>
 
         <AppStatusBlock
@@ -39,8 +56,19 @@
             title="还没有可管理的成绩"
           />
 
+          <AppStatusBlock
+            v-else-if="filteredManagedRecords.length === 0"
+            variant="empty"
+            :title="`暂无${activeManageCategoryLabel}成绩`"
+          />
+
           <div v-else class="manage-record-list">
-            <article v-for="record in managedRecords" :key="record._id" class="manage-record-item">
+            <article
+              v-for="record in filteredManagedRecords"
+              :key="record._id"
+              class="manage-record-item"
+              :class="{ 'is-editing': editingRecordId === record._id }"
+            >
               <div class="manage-record-head">
                 <div class="manage-record-copy">
                   <h3 class="manage-record-title">{{ getEventName(record.event) }}</h3>
@@ -74,9 +102,9 @@
                 </span>
               </div>
 
-              <div class="manage-meta-grid">
-                <span class="manage-meta-item">魔方 {{ record.cube || '未填写' }}</span>
-                <span class="manage-meta-item">解法 {{ record.method || '未填写' }}</span>
+              <div v-if="record.cube || record.method" class="manage-meta-tags">
+                <span v-if="record.cube" class="manage-meta-tag">{{ record.cube }}</span>
+                <span v-if="record.method" class="manage-meta-tag">{{ record.method }}</span>
               </div>
 
               <form v-if="editingRecordId === record._id" class="edit-record-form" @submit.prevent="handleUpdateRecord">
@@ -341,6 +369,13 @@ const editSingleTimeError = ref('')
 const editAverageTimeError = ref('')
 const editPreviewSingle = ref(null)
 const editPreviewAverage = ref(null)
+const activeManageCategory = ref('official')
+
+const manageCategoryTabs = [
+  { label: '官方', value: 'official' },
+  { label: '趣味', value: 'fun' },
+  { label: '整活', value: 'meme' }
+]
 
 const eventMap = computed(() => Object.fromEntries(eventsStore.allEvents.map((event) => [event.id, event])))
 const categoryLabelMap = computed(() => Object.fromEntries(eventsStore.categories.map((category) => [category.value, category.label])))
@@ -357,6 +392,11 @@ const editHasValidData = computed(() => isFormReady(editForm.value))
 const editHasPreview = computed(() => editPreviewSingle.value !== null || editPreviewAverage.value !== null)
 const isManagePage = computed(() => route.name === 'SubmitRecordManage')
 const submitSuccessMessage = computed(() => '成绩提交成功，可继续提交下一条，或在右上角管理已提交成绩。')
+const activeManageCategoryLabel = computed(() => manageCategoryTabs.find(category => category.value === activeManageCategory.value)?.label || '')
+const activeManageCategoryIndex = computed(() => Math.max(manageCategoryTabs.findIndex(category => category.value === activeManageCategory.value), 0))
+const filteredManagedRecords = computed(() => (
+  managedRecords.value.filter(record => getEventCategory(record.event) === activeManageCategory.value)
+))
 
 function truncateToTwoDecimals(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return null
@@ -768,6 +808,12 @@ watch(isManagePage, async (nextIsManagePage) => {
   gap: var(--space-md);
 }
 
+.manage-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .plain-section-title {
   font-family: var(--font-heading);
   font-size: 1.06rem;
@@ -827,8 +873,8 @@ watch(isManagePage, async (nextIsManagePage) => {
 }
 
 .manage-record-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -840,6 +886,10 @@ watch(isManagePage, async (nextIsManagePage) => {
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
   background: color-mix(in srgb, var(--color-bg) 62%, var(--color-bg-secondary));
+}
+
+.manage-record-item.is-editing {
+  grid-column: 1 / -1;
 }
 
 .manage-record-head {
@@ -899,19 +949,23 @@ watch(isManagePage, async (nextIsManagePage) => {
   color: var(--color-text-secondary);
 }
 
-.manage-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+.manage-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
 }
 
-.manage-meta-item {
-  padding: 0.85rem 0.95rem;
-  border-radius: 16px;
+.manage-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.45rem 0.68rem;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--color-bg-secondary) 94%, transparent);
   color: var(--color-text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.5;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .edit-record-form,
@@ -927,6 +981,7 @@ watch(isManagePage, async (nextIsManagePage) => {
 }
 
 .submit-form {
+  width: min(100%, 760px);
   padding: 0;
   background: transparent;
   border: 0;
@@ -1087,22 +1142,103 @@ watch(isManagePage, async (nextIsManagePage) => {
   box-shadow: none;
 }
 
+.category-tabs {
+  position: relative;
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+}
+
+.category-indicator {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: calc(var(--radius-lg) - 4px);
+  background: var(--color-text);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  transition: transform var(--motion-panel);
+  pointer-events: none;
+}
+
+.category-tab {
+  position: relative;
+  z-index: 1;
+  min-width: 72px;
+  padding: 0.65rem 0.95rem;
+  border-radius: calc(var(--radius-lg) - 4px);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast),
+    text-shadow var(--transition-fast);
+}
+
+.category-tab:hover:not(.active) {
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.category-tab.active {
+  color: var(--color-bg);
+}
+
+.category-tab:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (max-width: 1120px) {
+  .manage-record-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .manage-record-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .submit-record {
     gap: var(--space-lg);
+  }
+
+  .submit-form {
+    width: 100%;
   }
 
   .submit-record-body {
     gap: var(--space-lg);
   }
 
-  .form-row,
-  .manage-meta-grid {
-    grid-template-columns: 1fr;
+  .plain-section-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .manage-record-head {
-    flex-direction: column;
+  .manage-header-actions {
+    justify-content: flex-start;
+  }
+
+  .category-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .category-tab {
+    min-width: 0;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
   }
 
   .edit-form-actions {
@@ -1110,8 +1246,8 @@ watch(isManagePage, async (nextIsManagePage) => {
   }
 
   .manage-record-actions {
-    width: 100%;
-    justify-content: flex-start;
+    flex: 0 0 auto;
+    justify-content: flex-end;
   }
 
   .page-manage-btn,
