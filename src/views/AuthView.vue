@@ -66,8 +66,6 @@
             />
           </div>
 
-          <AppStatusBlock v-if="error" variant="error" layout="banner" :message="error" />
-
           <AppFormActions align="between" class="auth-actions">
             <button type="submit" class="submit-btn" :disabled="isSubmitting">
               {{ isSubmitting ? '处理中...' : (isLogin ? '登录' : '注册') }}
@@ -91,12 +89,13 @@ import { useRouter, useRoute } from 'vue-router'
 import AppFormActions from '@/components/common/AppFormActions.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppSectionCard from '@/components/common/AppSectionCard.vue'
-import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
+import { useToastStore } from '@/stores/toast'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const toastStore = useToastStore()
 
 const isLogin = ref(true)
 const isSubmitting = ref(false)
@@ -120,11 +119,13 @@ const handleSubmit = async () => {
 
   if (!isLogin.value && form.value.password !== form.value.confirmPassword) {
     error.value = '两次输入的密码不一致'
+    toastStore.error(error.value)
     return
   }
 
   if (!isLogin.value && !form.value.nickname) {
     error.value = '请输入昵称'
+    toastStore.error(error.value)
     return
   }
 
@@ -147,6 +148,7 @@ const handleSubmit = async () => {
   } catch (e) {
     console.error('Auth error:', e)
     error.value = e.message || '操作失败，请重试'
+    toastStore.error(error.value)
   } finally {
     isSubmitting.value = false
   }

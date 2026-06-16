@@ -47,9 +47,6 @@
         />
 
         <template v-else>
-          <AppStatusBlock v-if="manageError" variant="error" layout="banner" :message="manageError" />
-          <AppStatusBlock v-if="manageSuccess" variant="success" layout="banner" :message="manageSuccess" />
-
           <AppStatusBlock
             v-if="!manageError && managedRecords.length === 0"
             variant="empty"
@@ -193,8 +190,6 @@
                   </div>
                 </div>
 
-                <AppStatusBlock v-if="editError" variant="error" layout="banner" :message="editError" />
-
                 <div class="edit-form-actions">
                   <button type="submit" class="submit-btn secondary" :disabled="isSavingEdit || !editHasValidData">
                     {{ isSavingEdit ? '保存中...' : '保存修改' }}
@@ -289,7 +284,7 @@
           </div>
         </section>
 
-        <section v-if="hasPreview || submitError || submitSuccess" class="plain-section">
+        <section v-if="hasPreview" class="plain-section">
           <div v-if="hasPreview" class="preview-section">
             <div class="preview-grid">
               <div v-if="previewSingle !== null" class="preview-item">
@@ -302,9 +297,6 @@
               </div>
             </div>
           </div>
-
-          <AppStatusBlock v-if="submitError" variant="error" layout="banner" :message="submitError" />
-          <AppStatusBlock v-if="submitSuccess" variant="success" layout="banner" :message="submitSuccessMessage" />
         </section>
 
         <AppFormActions>
@@ -327,11 +319,13 @@ import AppSelect from '@/components/common/AppSelect.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useEventsStore } from '../stores/events'
 import { useRecordsStore } from '../stores/records'
+import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
 
 const recordsStore = useRecordsStore()
 const eventsStore = useEventsStore()
 const userStore = useUserStore()
+const toastStore = useToastStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -351,7 +345,6 @@ const editForm = ref(createEmptyForm())
 
 const isSubmitting = ref(false)
 const submitError = ref('')
-const submitSuccess = ref(false)
 const singleTimeError = ref('')
 const averageTimeError = ref('')
 const previewSingle = ref(null)
@@ -359,7 +352,6 @@ const previewAverage = ref(null)
 
 const manageLoading = ref(false)
 const manageError = ref('')
-const manageSuccess = ref('')
 const managedRecords = ref([])
 const editingRecordId = ref('')
 const isSavingEdit = ref(false)
@@ -621,12 +613,6 @@ function validateEditAverageTime() {
 }
 
 async function loadManagedRecords(options = {}) {
-  const preserveMessage = options.preserveMessage === true
-
-  if (!preserveMessage) {
-    manageSuccess.value = ''
-  }
-
   manageError.value = ''
   manageLoading.value = true
 
@@ -640,6 +626,7 @@ async function loadManagedRecords(options = {}) {
   } catch (error) {
     managedRecords.value = []
     manageError.value = error.message || '加载已提交成绩失败，请重试'
+    toastStore.error(manageError.value)
   } finally {
     manageLoading.value = false
   }
@@ -661,7 +648,6 @@ function startEditingRecord(record) {
   }
 
   manageError.value = ''
-  manageSuccess.value = ''
   editError.value = ''
   editingRecordId.value = record._id
   editForm.value = {
@@ -680,7 +666,6 @@ function startEditingRecord(record) {
 
 async function handleSubmit() {
   submitError.value = ''
-  submitSuccess.value = false
   validateSingleTime()
   validateAverageTime()
 
@@ -688,6 +673,7 @@ async function handleSubmit() {
 
   if (error) {
     submitError.value = error
+    toastStore.error(error)
     return
   }
 
@@ -695,10 +681,11 @@ async function handleSubmit() {
 
   try {
     await recordsStore.createRecord(payload)
-    submitSuccess.value = true
+    toastStore.success(submitSuccessMessage.value)
     resetSubmitForm()
   } catch (err) {
     submitError.value = err.message || '提交失败，请重试'
+    toastStore.error(submitError.value)
   } finally {
     isSubmitting.value = false
   }
@@ -715,6 +702,7 @@ async function handleUpdateRecord() {
 
   if (error) {
     editError.value = error
+    toastStore.error(error)
     return
   }
 
@@ -722,11 +710,12 @@ async function handleUpdateRecord() {
 
   try {
     await recordsStore.updateRecord(editingRecordId.value, payload)
-    manageSuccess.value = '成绩已更新'
+    toastStore.success('成绩已更新')
     resetEditState()
     await loadManagedRecords({ preserveMessage: true })
   } catch (err) {
     editError.value = err.message || '修改失败，请重试'
+    toastStore.error(editError.value)
   } finally {
     isSavingEdit.value = false
   }
@@ -734,7 +723,6 @@ async function handleUpdateRecord() {
 
 async function handleDeleteRecord(record) {
   manageError.value = ''
-  manageSuccess.value = ''
 
   const confirmed = window.confirm(`确定删除「${getEventName(record.event)}」这条成绩吗？删除后不可恢复。`)
   if (!confirmed) return
@@ -743,7 +731,7 @@ async function handleDeleteRecord(record) {
 
   try {
     await recordsStore.deleteRecord(record._id)
-    manageSuccess.value = '成绩已删除'
+    toastStore.success('成绩已删除')
 
     if (editingRecordId.value === record._id) {
       resetEditState()
@@ -752,6 +740,7 @@ async function handleDeleteRecord(record) {
     await loadManagedRecords({ preserveMessage: true })
   } catch (err) {
     manageError.value = err.message || '删除失败，请重试'
+    toastStore.error(manageError.value)
   } finally {
     deletingRecordId.value = ''
   }
@@ -776,7 +765,6 @@ watch(isManagePage, async (nextIsManagePage) => {
   }
 
   manageError.value = ''
-  manageSuccess.value = ''
   resetEditState()
 })
 </script>

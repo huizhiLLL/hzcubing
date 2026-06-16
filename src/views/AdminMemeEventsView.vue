@@ -22,7 +22,6 @@
             />
           </div>
         </div>
-        <AppStatusBlock v-if="formSuccess" variant="success" layout="banner" :message="formSuccess" />
         <div class="list-wrap">
           <article v-for="event in memeEvents" :key="event.id" class="event-card">
             <div class="event-main">
@@ -109,8 +108,6 @@
             <span>{{ form.isActive ? '启用中' : '停用中' }}</span>
           </label>
 
-          <AppStatusBlock v-if="formError" variant="error" layout="banner" :message="formError" />
-
           <AppFormActions>
             <button type="button" class="ghost-btn" :disabled="submitting" @click="closeEditor">取消</button>
             <button class="primary-btn" :disabled="submitting" @click="handleSubmit">
@@ -130,10 +127,12 @@ import AppIconButton from '@/components/common/AppIconButton.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useEventsStore } from '@/stores/events'
+import { useToastStore } from '@/stores/toast'
 import { useUserStore } from '@/stores/user'
 
 const eventsStore = useEventsStore()
 const userStore = useUserStore()
+const toastStore = useToastStore()
 
 const form = reactive({
   eventName: '',
@@ -147,7 +146,6 @@ const isEditorOpen = ref(false)
 const submitting = ref(false)
 const deletingCode = ref('')
 const formError = ref('')
-const formSuccess = ref('')
 const editorTitleId = 'meme-event-editor-title'
 
 const canManage = computed(() => ['admin', 'super_admin'].includes(userStore.user?.role))
@@ -164,7 +162,6 @@ function resetForm() {
   form.isActive = true
   editingCode.value = ''
   formError.value = ''
-  formSuccess.value = ''
 }
 
 function openCreateModal() {
@@ -185,7 +182,6 @@ async function startEdit(event) {
   form.isActive = Boolean(event.isActive)
   editingCode.value = event.id
   formError.value = ''
-  formSuccess.value = ''
   isEditorOpen.value = true
 }
 
@@ -201,13 +197,14 @@ async function loadEvents() {
     await eventsStore.ensureMemeEventsLoaded({ force: true })
   } catch (err) {
     formError.value = err.message || '加载项目失败'
+    toastStore.error(formError.value)
   }
 }
 
 async function handleSubmit() {
   formError.value = ''
-  formSuccess.value = ''
   submitting.value = true
+  let successMessage = ''
 
   try {
     if (editingCode.value) {
@@ -216,21 +213,23 @@ async function handleSubmit() {
         description: form.description,
         isActive: form.isActive
       })
-      formSuccess.value = '项目已更新'
+      successMessage = '项目已更新'
     } else {
       await eventsStore.createMemeEvent({
         eventName: form.eventName,
         eventCode: form.eventCode,
         description: form.description
       })
-      formSuccess.value = '项目已创建'
+      successMessage = '项目已创建'
     }
 
     await loadEvents()
     resetForm()
     isEditorOpen.value = false
+    toastStore.success(successMessage || '保存成功')
   } catch (err) {
     formError.value = err.message || '保存失败'
+    toastStore.error(formError.value)
   } finally {
     submitting.value = false
   }
@@ -238,7 +237,6 @@ async function handleSubmit() {
 
 async function toggleStatus(event) {
   formError.value = ''
-  formSuccess.value = ''
 
   try {
     await eventsStore.updateMemeEvent(event.id, {
@@ -246,9 +244,10 @@ async function toggleStatus(event) {
       description: event.description || '',
       isActive: !event.isActive
     })
-    formSuccess.value = `项目已${event.isActive ? '停用' : '启用'}`
+    toastStore.success(`项目已${event.isActive ? '停用' : '启用'}`)
   } catch (err) {
     formError.value = err.message || '更新状态失败'
+    toastStore.error(formError.value)
   }
 }
 
@@ -257,15 +256,15 @@ async function handleDelete(event) {
   if (!confirmed) return
 
   formError.value = ''
-  formSuccess.value = ''
   deletingCode.value = event.id
 
   try {
     await eventsStore.deleteMemeEvent(event.id)
     if (editingCode.value === event.id) resetForm()
-    formSuccess.value = '项目已删除'
+    toastStore.success('项目已删除')
   } catch (err) {
     formError.value = err.message || '删除失败'
+    toastStore.error(formError.value)
   } finally {
     deletingCode.value = ''
   }

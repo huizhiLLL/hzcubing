@@ -1,15 +1,15 @@
 <template>
   <div class="settings">
-    <AppPageHeader eyebrow="个人资料" title="个人设置" title-tag="h1">
+    <AppPageHeader eyebrow="个人资料" title="编辑资料" title-tag="h1">
       <template #aside>
         <router-link v-if="profileLink" :to="profileLink" class="profile-link">
-          返回个人主页
+          返回
         </router-link>
       </template>
     </AppPageHeader>
 
     <div class="settings-sections">
-      <AppSectionCard title="基本信息">
+      <AppSectionCard title="">
         <div class="form-group">
           <label class="form-label">头像 <span class="optional">(可选)</span></label>
           <div class="avatar-editor">
@@ -30,7 +30,7 @@
                 <button type="button" class="secondary-btn" @click="openFilePicker">选择图片</button>
                 <button type="button" class="ghost-btn" :disabled="!form.avatar" @click="clearAvatar">移除头像</button>
               </div>
-              <span class="form-hint">支持 JPG、PNG、WebP、GIF，建议 1 MB 以内，保存后会直接写入资料。</span>
+              <span class="form-hint">支持 JPG、PNG、WebP、GIF</span>
               <span v-if="selectedAvatarName" class="avatar-file-name">{{ selectedAvatarName }}</span>
             </div>
           </div>
@@ -39,7 +39,7 @@
         <div class="form-group">
           <label class="form-label">邮箱</label>
           <input :value="userStore.user?.email" type="email" class="form-input" disabled />
-          <span class="form-hint">邮箱不可修改</span>
+          <span class="form-hint">不可修改</span>
         </div>
 
         <div class="form-group">
@@ -58,9 +58,6 @@
         </div>
       </AppSectionCard>
 
-      <AppStatusBlock v-if="error" variant="error" layout="banner" :message="error" />
-      <AppStatusBlock v-if="success" variant="success" layout="banner" message="保存成功！" />
-
       <AppFormActions>
         <button class="save-btn" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? '保存中...' : '保存修改' }}
@@ -75,17 +72,17 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import AppFormActions from '@/components/common/AppFormActions.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppSectionCard from '@/components/common/AppSectionCard.vue'
-import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { getAvatarGradient, getInitial } from '@/utils/avatar'
+import { useToastStore } from '@/stores/toast'
 import { useUserStore } from '../stores/user'
 
 const MAX_AVATAR_SIZE = 1024 * 1024
 
 const userStore = useUserStore()
+const toastStore = useToastStore()
 
 const isSaving = ref(false)
 const error = ref('')
-const success = ref(false)
 const fileInput = ref(null)
 const selectedAvatarName = ref('')
 const avatarDirty = ref(false)
@@ -133,7 +130,6 @@ function clearAvatar() {
   form.avatar = ''
   selectedAvatarName.value = ''
   avatarDirty.value = true
-  success.value = false
   error.value = ''
   resetFileInput()
 }
@@ -143,16 +139,17 @@ function handleAvatarChange(event) {
   if (!file) return
 
   error.value = ''
-  success.value = false
 
   if (!file.type.startsWith('image/')) {
     error.value = '请选择图片文件作为头像'
+    toastStore.error(error.value)
     resetFileInput()
     return
   }
 
   if (file.size > MAX_AVATAR_SIZE) {
     error.value = '头像图片请控制在 1 MB 以内'
+    toastStore.error(error.value)
     resetFileInput()
     return
   }
@@ -162,6 +159,7 @@ function handleAvatarChange(event) {
   reader.onload = () => {
     if (typeof reader.result !== 'string') {
       error.value = '头像读取失败，请换一张图片再试'
+      toastStore.error(error.value)
       return
     }
 
@@ -172,6 +170,7 @@ function handleAvatarChange(event) {
 
   reader.onerror = () => {
     error.value = '头像读取失败，请重试'
+    toastStore.error(error.value)
   }
 
   reader.readAsDataURL(file)
@@ -179,7 +178,6 @@ function handleAvatarChange(event) {
 
 const handleSave = async () => {
   error.value = ''
-  success.value = false
   isSaving.value = true
 
   try {
@@ -197,13 +195,11 @@ const handleSave = async () => {
     selectedAvatarName.value = ''
     avatarDirty.value = false
     resetFileInput()
-    success.value = true
-    setTimeout(() => {
-      success.value = false
-    }, 3000)
+    toastStore.success('保存成功！')
   } catch (err) {
     console.error('Save error:', err)
     error.value = err.message || '保存失败，请重试'
+    toastStore.error(error.value)
   } finally {
     isSaving.value = false
   }
