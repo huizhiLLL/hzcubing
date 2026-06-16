@@ -86,11 +86,12 @@
           <div class="activity-list">
             <article v-for="record in recentRecords" :key="record._id" class="activity-item">
               <div class="activity-left">
-                <span class="event-badge">{{ getEventName(record.event) }}</span>
-                <div class="activity-times">
-                  <span v-if="record.singleSeconds !== null" class="activity-time">单次 {{ formatTime(record.singleSeconds) }}</span>
-                  <span v-if="record.averageSeconds !== null" class="activity-time muted">平均 {{ formatTime(record.averageSeconds) }}</span>
-                </div>
+                <span class="activity-title">{{ getEventName(record.event) }}</span>
+              </div>
+              <div class="activity-times record-times">
+                <span v-if="record.singleSeconds !== null" class="activity-value">{{ formatTime(record.singleSeconds) }}</span>
+                <span v-if="record.singleSeconds !== null && record.averageSeconds !== null" class="activity-separator">/</span>
+                <span v-if="record.averageSeconds !== null" class="activity-value">{{ formatTime(record.averageSeconds) }}</span>
               </div>
               <span class="activity-date">{{ formatDate(record.timestamp) }}</span>
             </article>
@@ -101,13 +102,16 @@
           <div class="activity-list">
             <article v-for="event in createdMemeEvents" :key="event.id" class="activity-item">
               <div class="activity-left event-item-left">
-                <span class="event-badge">{{ event.name }}</span>
+                <span class="activity-title">{{ event.name }}</span>
                 <div class="activity-times">
-                  <span class="activity-time muted code-text">{{ event.id }}</span>
-                  <span v-if="event.description" class="activity-time muted">{{ event.description }}</span>
+                  <span class="activity-text code-text">{{ event.id }}</span>
+                  <span v-if="event.description" class="activity-text">{{ event.description }}</span>
                 </div>
               </div>
-              <span class="activity-date">{{ event.isActive ? '启用中' : '已停用' }}</span>
+              <span class="activity-status" :class="{ inactive: !event.isActive }">
+                <span class="status-dot"></span>
+                {{ event.isActive ? '启用中' : '已停用' }}
+              </span>
             </article>
           </div>
         </AppSectionCard>
@@ -542,24 +546,31 @@ onMounted(async () => {
 .activity-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
 }
 
 .activity-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 1fr) auto minmax(3.8rem, auto);
   align-items: center;
-  gap: var(--space-md);
-  padding: 0.95rem 1rem;
-  background: color-mix(in srgb, var(--color-bg-secondary) 96%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-  border-radius: 18px;
+  gap: var(--space-lg);
+  padding: 1rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+}
+
+.activity-item:first-child {
+  padding-top: 0;
+}
+
+.activity-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .activity-left {
   display: flex;
-  align-items: center;
-  gap: var(--space-md);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.38rem;
   min-width: 0;
 }
 
@@ -570,30 +581,82 @@ onMounted(async () => {
 .activity-times {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-sm);
+  align-items: baseline;
+  gap: 0.35rem 0.8rem;
 }
 
-.event-badge {
-  padding: 0.35rem 0.65rem;
-  background: color-mix(in srgb, var(--color-bg) 74%, var(--color-bg-secondary));
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 600;
+.record-times {
+  justify-content: center;
+  gap: 0.4rem;
   white-space: nowrap;
 }
 
-.activity-time {
-  font-family: var(--font-mono);
-  font-weight: 600;
+.activity-title {
+  color: var(--color-text-primary);
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
-.activity-time.muted,
-.activity-date {
+.activity-text {
+  color: var(--color-text-tertiary);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.activity-value {
+  font-family: var(--font-mono);
   color: var(--color-text-secondary);
+  font-size: 0.96rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.activity-separator {
+  color: var(--color-text-tertiary);
+  font-size: 0.9rem;
+}
+
+.activity-date {
+  flex: 0 0 auto;
+  justify-self: end;
+  color: var(--color-text-tertiary);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.activity-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  grid-column: 3;
+  justify-self: end;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.activity-status.inactive {
+  color: var(--color-text-tertiary);
+}
+
+.status-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--color-success);
+}
+
+.activity-status.inactive .status-dot {
+  background: var(--color-text-tertiary);
 }
 
 .code-text {
   font-family: var(--font-mono);
+  letter-spacing: 0;
 }
 
 .empty-panel {
@@ -609,29 +672,94 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .profile-identity {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
     align-items: center;
-    text-align: center;
+    gap: 0.9rem 1rem;
+    text-align: left;
+  }
+
+  .profile-avatar {
+    width: 74px;
+    height: 74px;
+    border-radius: 20px;
+  }
+
+  .identity-copy {
+    display: contents;
   }
 
   .identity-topline {
-    flex-direction: column;
+    grid-column: 2;
     align-items: center;
+    gap: 0.75rem;
+  }
+
+  .profile-name {
+    font-size: clamp(1.75rem, 7vw, 2.15rem);
+  }
+
+  .settings-link {
+    min-height: 38px;
+    padding: 0.55rem 0.75rem;
+    border-radius: 13px;
+    font-size: 0.88rem;
+  }
+
+  .profile-bio {
+    grid-column: 2;
+    margin-top: 0.15rem;
+    line-height: 1.5;
   }
 
   .profile-meta,
   .section-heading {
-    justify-content: center;
+    justify-content: flex-start;
+  }
+
+  .profile-meta {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.1rem;
+  }
+
+  .meta-pill {
+    width: 100%;
+    min-height: 32px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+  }
+
+  .meta-pill:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .pb-grid {
     grid-template-columns: 1fr;
   }
 
-  .activity-item,
   .activity-left {
-    flex-direction: column;
     align-items: flex-start;
+  }
+
+  .activity-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-md);
+  }
+
+  .record-times {
+    justify-content: flex-start;
+  }
+
+  .activity-date,
+  .activity-status {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    justify-self: end;
   }
 }
 </style>
