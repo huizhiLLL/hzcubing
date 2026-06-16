@@ -1,6 +1,6 @@
 <template>
   <div class="players">
-    <AppPageHeader title="选手总览" />
+    <AppPageHeader title="选手" />
 
     <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
