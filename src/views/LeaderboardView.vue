@@ -24,11 +24,12 @@
         </div>
       </div>
 
-      <div class="type-toggle">
-        <span class="type-indicator" :style="{ transform: `translateX(${type === 'average' ? 100 : 0}%)` }"></span>
-        <button class="type-btn" :class="{ active: type === 'single' }" @click="selectType('single')">单次</button>
-        <button class="type-btn" :class="{ active: type === 'average' }" @click="selectType('average')">平均</button>
-      </div>
+      <AppSegmentedControl
+        :model-value="type"
+        :options="typeOptions"
+        aria-label="成绩类型"
+        @update:model-value="selectType"
+      />
     </div>
 
     <AppStatusBlock
@@ -70,6 +71,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSegmentedControl from '@/components/common/AppSegmentedControl.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useRecordsStore } from '../stores/records'
@@ -86,6 +88,10 @@ const loading = ref(false)
 const rankMotionKey = ref(0)
 const rankMotionDirection = ref('forward')
 const maxVisibleTabs = 8
+const typeOptions = [
+  { label: '单次', value: 'single' },
+  { label: '平均', value: 'average' }
+]
 
 const allEvents = computed(() => eventsStore.allEvents)
 const visibleEvents = computed(() => allEvents.value.slice(0, maxVisibleTabs))
@@ -255,53 +261,6 @@ onMounted(async () => {
   transform: translateY(0) scale(0.98);
 }
 
-.type-toggle {
-  position: relative;
-  display: flex;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 4px;
-  overflow: hidden;
-}
-
-.type-indicator {
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  bottom: 4px;
-  width: calc((100% - 8px) / 2);
-  border-radius: calc(var(--radius-lg) - 4px);
-  background: var(--color-primary);
-  transition: transform var(--motion-panel);
-  pointer-events: none;
-}
-
-.type-btn {
-  position: relative;
-  z-index: 1;
-  min-width: 64px;
-  padding: 0.72rem 1rem;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  border-radius: calc(var(--radius-lg) - 4px);
-  transition:
-    transform var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.type-btn:hover:not(.active) {
-  color: var(--color-primary);
-}
-
-.type-btn.active {
-  color: var(--color-bg);
-}
-
-.type-btn:active {
-  transform: scale(0.98);
-}
-
 .player-link {
   font-weight: 600;
   color: var(--color-text);
@@ -425,15 +384,6 @@ td.col-date {
     padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-md);
     font-size: 0.9375rem;
-  }
-
-  .type-toggle {
-    align-self: flex-start;
-    border-radius: var(--radius-md);
-  }
-
-  .type-btn {
-    padding: var(--space-sm) var(--space-md);
   }
 
   .rank-table {

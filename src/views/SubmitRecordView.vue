@@ -14,21 +14,11 @@
         class="manage-records-section"
       >
         <div class="plain-section-header">
-          <div class="category-tabs" role="tablist" aria-label="项目类型">
-            <span class="category-indicator" :style="{ transform: `translateX(${activeManageCategoryIndex * 100}%)` }"></span>
-            <button
-              v-for="category in manageCategoryTabs"
-              :key="category.value"
-              type="button"
-              class="category-tab"
-              :class="{ active: activeManageCategory === category.value }"
-              role="tab"
-              :aria-selected="activeManageCategory === category.value"
-              @click="activeManageCategory = category.value"
-            >
-              {{ category.label }}
-            </button>
-          </div>
+          <AppSegmentedControl
+            v-model="activeManageCategory"
+            :options="manageCategoryTabs"
+            aria-label="项目类型"
+          />
 
           <div class="manage-header-actions">
             <AppIconButton
@@ -315,6 +305,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AppFormActions from '@/components/common/AppFormActions.vue'
 import AppIconButton from '@/components/common/AppIconButton.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSegmentedControl from '@/components/common/AppSegmentedControl.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useEventsStore } from '../stores/events'
@@ -385,7 +376,6 @@ const editHasPreview = computed(() => editPreviewSingle.value !== null || editPr
 const isManagePage = computed(() => route.name === 'SubmitRecordManage')
 const submitSuccessMessage = computed(() => '成绩提交成功，可继续提交下一条，或在右上角管理已提交成绩。')
 const activeManageCategoryLabel = computed(() => manageCategoryTabs.find(category => category.value === activeManageCategory.value)?.label || '')
-const activeManageCategoryIndex = computed(() => Math.max(manageCategoryTabs.findIndex(category => category.value === activeManageCategory.value), 0))
 const filteredManagedRecords = computed(() => (
   managedRecords.value.filter(record => getEventCategory(record.event) === activeManageCategory.value)
 ))
@@ -1113,57 +1103,6 @@ watch(isManagePage, async (nextIsManagePage) => {
   box-shadow: none;
 }
 
-.category-tabs {
-  position: relative;
-  display: inline-flex;
-  align-self: flex-start;
-  padding: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-secondary);
-}
-
-.category-indicator {
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  bottom: 4px;
-  width: calc((100% - 8px) / 3);
-  border-radius: calc(var(--radius-lg) - 4px);
-  background: var(--color-text);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
-  transition: transform var(--motion-panel);
-  pointer-events: none;
-}
-
-.category-tab {
-  position: relative;
-  z-index: 1;
-  min-width: 72px;
-  padding: 0.65rem 0.95rem;
-  border-radius: calc(var(--radius-lg) - 4px);
-  color: var(--color-text-secondary);
-  font-weight: 600;
-  font-size: 0.92rem;
-  transition:
-    transform var(--transition-fast),
-    color var(--transition-fast),
-    text-shadow var(--transition-fast);
-}
-
-.category-tab:hover:not(.active) {
-  color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
-.category-tab.active {
-  color: var(--color-bg);
-}
-
-.category-tab:active {
-  transform: translateY(0) scale(0.98);
-}
-
 @media (max-width: 1120px) {
   .manage-record-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1196,16 +1135,6 @@ watch(isManagePage, async (nextIsManagePage) => {
 
   .manage-header-actions {
     justify-content: flex-start;
-  }
-
-  .category-tabs {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .category-tab {
-    min-width: 0;
   }
 
   .form-row {

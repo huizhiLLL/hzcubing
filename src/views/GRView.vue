@@ -5,21 +5,11 @@
     <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
     <template v-else>
-      <div class="category-tabs" role="tablist" aria-label="项目类型">
-        <span class="category-indicator" :style="{ transform: `translateX(${activeCategoryIndex * 100}%)` }"></span>
-        <button
-          v-for="category in categoryTabs"
-          :key="category.value"
-          type="button"
-          class="category-tab"
-          :class="{ active: activeCategory === category.value }"
-          role="tab"
-          :aria-selected="activeCategory === category.value"
-          @click="activeCategory = category.value"
-        >
-          {{ category.label }}
-        </button>
-      </div>
+      <AppSegmentedControl
+        v-model="activeCategory"
+        :options="categoryTabs"
+        aria-label="项目类型"
+      />
 
       <AppStatusBlock v-if="rows.length === 0" variant="empty" :message="`暂无${activeCategoryLabel}纪录数据`" />
 
@@ -95,6 +85,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSegmentedControl from '@/components/common/AppSegmentedControl.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
@@ -114,7 +105,6 @@ const categoryTabs = [
 const eventOrder = computed(() => eventsStore.allEvents.map(event => event.id))
 const eventCategoryMap = computed(() => Object.fromEntries(eventsStore.allEvents.map(event => [event.id, event.category])))
 const activeCategoryLabel = computed(() => categoryTabs.find(category => category.value === activeCategory.value)?.label || '')
-const activeCategoryIndex = computed(() => Math.max(categoryTabs.findIndex(category => category.value === activeCategory.value), 0))
 
 const rows = computed(() => {
   return [...bestRecords.value]
@@ -158,57 +148,6 @@ onMounted(loadGR)
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
-}
-
-.category-tabs {
-  position: relative;
-  display: inline-flex;
-  align-self: flex-start;
-  padding: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-secondary);
-}
-
-.category-indicator {
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  bottom: 4px;
-  width: calc((100% - 8px) / 3);
-  border-radius: calc(var(--radius-lg) - 4px);
-  background: var(--color-text);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
-  transition: transform var(--motion-panel);
-  pointer-events: none;
-}
-
-.category-tab {
-  position: relative;
-  z-index: 1;
-  min-width: 72px;
-  padding: 0.65rem 0.95rem;
-  border-radius: calc(var(--radius-lg) - 4px);
-  color: var(--color-text-secondary);
-  font-weight: 600;
-  font-size: 0.92rem;
-  transition:
-    transform var(--transition-fast),
-    color var(--transition-fast),
-    text-shadow var(--transition-fast);
-}
-
-.category-tab:hover:not(.active) {
-  color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
-.category-tab.active {
-  color: var(--color-bg);
-}
-
-.category-tab:active {
-  transform: translateY(0) scale(0.98);
 }
 
 .gr-records {
@@ -326,16 +265,6 @@ onMounted(loadGR)
 }
 
 @media (max-width: 768px) {
-  .category-tabs {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .category-tab {
-    min-width: 0;
-  }
-
   .desktop-table {
     display: none;
   }
