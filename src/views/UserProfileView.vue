@@ -83,6 +83,9 @@
         :class="{ 'single-column': createdMemeEvents.length === 0 || recentRecords.length === 0 }"
       >
         <AppSectionCard v-if="recentRecords.length > 0" class="activity-panel" title="最近提交">
+          <template v-if="isCurrentUser" #aside>
+            <AppButton variant="secondary" to="/submit/manage">管理成绩</AppButton>
+          </template>
           <div class="activity-list">
             <article v-for="record in recentRecords" :key="record._id" class="activity-item">
               <div class="activity-left">

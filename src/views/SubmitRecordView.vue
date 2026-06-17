@@ -3,7 +3,7 @@
     <AppPageHeader :title="isManagePage ? '管理成绩' : '提交成绩'">
       <template #aside>
         <button type="button" class="page-manage-btn" :class="{ active: isManagePage }" @click="handleHeaderAction">
-          {{ isManagePage ? '返回' : '管理成绩' }}
+          {{ isManagePage ? '返回提交' : '管理我的成绩' }}
         </button>
       </template>
     </AppPageHeader>
