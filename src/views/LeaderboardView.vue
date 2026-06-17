@@ -38,6 +38,17 @@
       :message="`暂无${currentEventName}数据`"
     />
 
+    <div class="leaderboard-toolbar">
+      <input
+        v-model="searchKeyword"
+        type="search"
+        class="search-input"
+        placeholder="搜索选手昵称"
+        aria-label="搜索选手昵称"
+      />
+      <AppButton v-if="myUserNo" variant="secondary" @click="scrollToMe">定位到我</AppButton>
+    </div>
+
     <div v-if="!loading && sortedRecords.length > 0">
       <div class="rank-table desktop-only">
         <table>
@@ -51,7 +62,12 @@
           </thead>
           <Transition :name="`rank-slide-${rankMotionDirection}`" mode="out-in">
             <tbody :key="rankMotionKey" class="rank-table-body">
-              <tr v-for="(player, index) in sortedRecords" :key="`${currentEvent}-${player._id || index}-${type}`">
+              <tr
+                v-for="(player, index) in displayRecords"
+                :key="`${currentEvent}-${player._id || index}-${type}`"
+                :class="{ 'is-me': myUserNo && String(player.profileUserNo) === String(myUserNo) }"
+                :ref="el => setRowRef(el, player)"
+              >
                 <td class="col-rank"><span class="rank-num" :class="index < 3 ? `rank-${index + 1}` : ''">{{ index + 1 }}</span></td>
                 <td class="col-player">
                   <router-link :to="`/user/${player.profileUserNo}`" class="player-link">
@@ -68,9 +84,11 @@
 
       <div class="rank-cards mobile-only">
         <article
-          v-for="(player, index) in sortedRecords"
+          v-for="(player, index) in displayRecords"
           :key="`m-${currentEvent}-${player._id || index}-${type}`"
           class="rank-card"
+          :class="{ 'is-me': myUserNo && String(player.profileUserNo) === String(myUserNo) }"
+          :ref="el => setRowRef(el, player)"
         >
           <span class="rank-card-num">{{ index + 1 }}</span>
           <router-link :to="`/user/${player.profileUserNo}`" class="rank-card-name">
@@ -80,26 +98,39 @@
         </article>
       </div>
     </div>
+
+    <AppStatusBlock
+      v-if="!loading && sortedRecords.length > 0 && displayRecords.length === 0"
+      variant="empty"
+      message="没有匹配的选手"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppButton from '@/components/common/AppButton.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppSegmentedControl from '@/components/common/AppSegmentedControl.vue'
 import AppSelect from '@/components/common/AppSelect.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
+import { useToastStore } from '../stores/toast'
+import { useUserStore } from '../stores/user'
 
 const route = useRoute()
 const router = useRouter()
 const recordsStore = useRecordsStore()
 const eventsStore = useEventsStore()
+const toastStore = useToastStore()
+const userStore = useUserStore()
 
 const currentEvent = ref('333')
 const type = ref('single')
+const searchKeyword = ref('')
+const myRowEl = ref(null)
 const loading = ref(false)
 const rankMotionKey = ref(0)
 const rankMotionDirection = ref('forward')
@@ -118,9 +149,16 @@ const overflowSelectOptions = computed(() => [
   ...overflowEventOptions.value.map(event => ({ label: event.name, value: event.id }))
 ])
 const currentEventName = computed(() => eventsStore.getEventName(currentEvent.value))
+const myUserNo = computed(() => userStore.user?.userNo || userStore.user?.id || null)
 
 const sortedRecords = computed(() => {
   return recordsStore.getLeaderboardRecords(currentEvent.value, type.value, 100)
+})
+
+const displayRecords = computed(() => {
+  const kw = searchKeyword.value.trim().toLowerCase()
+  if (!kw) return sortedRecords.value
+  return sortedRecords.value.filter(p => (p.nickname || '').toLowerCase().includes(kw))
 })
 
 function getTimeValue(player) {
@@ -138,8 +176,23 @@ function formatDate(dateStr) {
   return date.getFullYear() === new Date().getFullYear() ? md : `${date.getFullYear()}/${md}`
 }
 
+function setRowRef(el, player) {
+  if (el && myUserNo.value && String(player.profileUserNo) === String(myUserNo.value)) {
+    myRowEl.value = el
+  }
+}
+
+function scrollToMe() {
+  if (myRowEl.value?.scrollIntoView) {
+    myRowEl.value.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  } else {
+    toastStore.show({ message: '你还没有该项目的成绩', variant: 'info' })
+  }
+}
+
 function selectEvent(eventId) {
   setEventMotionDirection(eventId)
+  myRowEl.value = null
   currentEvent.value = eventId
   router.replace({ query: { ...route.query, event: eventId } })
 }
@@ -147,6 +200,7 @@ function selectEvent(eventId) {
 function selectType(nextType) {
   if (nextType === type.value) return
   rankMotionDirection.value = nextType === 'average' ? 'forward' : 'backward'
+  myRowEl.value = null
   type.value = nextType
 }
 
@@ -176,6 +230,7 @@ function setEventMotionDirection(nextEventId) {
 watch(() => route.query.event, (newEvent) => {
   if (newEvent && allEvents.value.some(event => event.id === newEvent)) {
     setEventMotionDirection(newEvent)
+    myRowEl.value = null
     currentEvent.value = newEvent
   }
 })
@@ -224,6 +279,30 @@ onMounted(async () => {
 
 .desktop-only { display: block; }
 .mobile-only { display: none; }
+
+.leaderboard-toolbar {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.92rem;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
 
 .event-selector-wrap {
   display: flex;
@@ -323,6 +402,14 @@ onMounted(async () => {
   background: var(--color-bg-tertiary);
 }
 
+.rank-table tr.is-me td {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.rank-table tr.is-me td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
 .rank-table-body {
   transform-origin: center;
   will-change: transform, opacity;
@@ -392,6 +479,11 @@ td.col-date {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-bg-secondary);
+}
+
+.rank-card.is-me {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-secondary));
 }
 
 .rank-card-num {
