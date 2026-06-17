@@ -132,7 +132,7 @@ const logoutIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
 const navItems = [
   { path: '/', label: '首页', icon: homeIcon },
   { path: '/leaderboard', label: '排行榜', icon: leaderboardIcon },
-  { path: '/gr', label: 'GR', icon: grIcon },
+  { path: '/gr', label: '纪录', icon: grIcon },
   { path: '/players', label: '选手', icon: recordIcon },
   { path: '/submit', label: '提交成绩', icon: submitIcon }
 ]
