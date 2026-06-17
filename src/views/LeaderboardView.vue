@@ -301,8 +301,8 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 
-.desktop-only { display: block; }
-.mobile-only { display: none; }
+.rank-table.desktop-only { display: block; }
+.rank-cards.mobile-only { display: none; }
 
 .leaderboard-toolbar {
   display: flex;
@@ -552,8 +552,8 @@ td.col-date {
 }
 
 @media (max-width: 768px) {
-  .desktop-only { display: none; }
-  .mobile-only { display: block; }
+  .rank-table.desktop-only { display: none; }
+  .rank-cards.mobile-only { display: flex; }
 
   .filter-panel {
     align-items: stretch;
