@@ -20,10 +20,10 @@
               <thead>
                 <tr>
                   <th>项目</th>
-                  <th>选手</th>
+                  <th>单次保持者</th>
                   <th>最佳单次</th>
+                  <th>平均保持者</th>
                   <th>最佳平均</th>
-                  <th>选手</th>
                 </tr>
               </thead>
               <tbody>
@@ -40,13 +40,13 @@
                     <span v-else class="muted">—</span>
                   </td>
                   <td>{{ formatTime(row.bestSingleSeconds) }}</td>
-                  <td>{{ formatTime(row.bestAverageSeconds) }}</td>
                   <td>
                     <router-link v-if="row.bestAverageUserNo" :to="`/user/${row.bestAverageUserNo}`" class="user-link">
                       {{ row.bestAverageNickname || '—' }}
                     </router-link>
                     <span v-else class="muted">—</span>
                   </td>
+                  <td>{{ formatTime(row.bestAverageSeconds) }}</td>
                 </tr>
               </tbody>
             </table>
