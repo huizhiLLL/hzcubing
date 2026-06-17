@@ -43,7 +43,7 @@ const hasHeaderAside = computed(() => Boolean(slots.aside))
   border-radius: var(--radius-2xl);
   border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
   background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 .variant-subtle {
