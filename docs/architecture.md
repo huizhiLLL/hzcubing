@@ -160,6 +160,8 @@ store 负责：
 - `npm run preview`
 - `npm run deploy`
 
+前端使用 Vue Router history 模式，刷新非首页路由时必须由静态托管层回退到 `index.html`。当前通过 `public/_redirects` 提供 SPA fallback 规则，构建后会复制到 `dist/_redirects`。
+
 后端位于 `server/`，使用独立依赖和脚本：
 
 - `npm run dev` — 开发启动（`node --watch`）
