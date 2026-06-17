@@ -181,12 +181,12 @@
                 </div>
 
                 <div class="edit-form-actions">
-                  <button type="submit" class="submit-btn secondary" :disabled="isSavingEdit || !editHasValidData">
+                  <AppButton variant="primary" type="submit" :disabled="isSavingEdit || !editHasValidData">
                     {{ isSavingEdit ? '保存中...' : '保存修改' }}
-                  </button>
-                  <button type="button" class="ghost-btn" :disabled="isSavingEdit" @click="resetEditState">
+                  </AppButton>
+                  <AppButton variant="ghost" :disabled="isSavingEdit" @click="resetEditState">
                     取消
-                  </button>
+                  </AppButton>
                 </div>
               </form>
             </article>
@@ -290,9 +290,9 @@
         </section>
 
         <AppFormActions>
-          <button type="submit" class="submit-btn" :disabled="isSubmitting || !hasValidData">
+          <AppButton variant="primary" type="submit" :disabled="isSubmitting || !hasValidData">
             {{ isSubmitting ? '提交中...' : '提交成绩' }}
-          </button>
+          </AppButton>
         </AppFormActions>
       </form>
     </div>
@@ -302,6 +302,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppButton from '@/components/common/AppButton.vue'
 import AppFormActions from '@/components/common/AppFormActions.vue'
 import AppIconButton from '@/components/common/AppIconButton.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
@@ -792,8 +793,7 @@ watch(isManagePage, async (nextIsManagePage) => {
   justify-content: flex-end;
 }
 
-.page-manage-btn,
-.ghost-btn {
+.page-manage-btn {
   border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
   border-radius: 16px;
   background: color-mix(in srgb, var(--color-bg-secondary) 90%, transparent);
@@ -809,13 +809,11 @@ watch(isManagePage, async (nextIsManagePage) => {
     opacity var(--transition-fast);
 }
 
-.page-manage-btn,
-.ghost-btn {
+.page-manage-btn {
   padding: 0.82rem 1rem;
 }
 
-.page-manage-btn:hover:not(:disabled),
-.ghost-btn:hover:not(:disabled) {
+.page-manage-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--color-primary) 36%, var(--color-border));
 }
@@ -826,8 +824,7 @@ watch(isManagePage, async (nextIsManagePage) => {
   border-color: color-mix(in srgb, var(--color-primary) 32%, transparent);
 }
 
-.page-manage-btn:disabled,
-.ghost-btn:disabled {
+.page-manage-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
@@ -1064,45 +1061,6 @@ watch(isManagePage, async (nextIsManagePage) => {
   gap: 0.8rem;
 }
 
-.submit-btn {
-  min-width: 176px;
-  padding: 1rem 1.4rem;
-  border: none;
-  border-radius: 18px;
-  background: var(--color-text);
-  color: var(--color-bg);
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
-  transition:
-    transform var(--transition-fast),
-    opacity var(--transition-fast),
-    background var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: var(--color-primary);
-  box-shadow: 0 18px 34px color-mix(in srgb, var(--color-primary) 28%, transparent);
-}
-
-.submit-btn.secondary {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.submit-btn.secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-primary) 82%, black);
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 @media (max-width: 1120px) {
   .manage-record-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1150,9 +1108,11 @@ watch(isManagePage, async (nextIsManagePage) => {
     justify-content: flex-end;
   }
 
-  .page-manage-btn,
-  .ghost-btn,
-  .submit-btn {
+  .page-manage-btn {
+    width: 100%;
+  }
+
+  .edit-form-actions :deep(.app-btn) {
     width: 100%;
   }
 }

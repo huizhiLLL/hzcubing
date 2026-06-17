@@ -16,13 +16,13 @@
                 <h1 class="profile-name">{{ userData.nickname }}</h1>
               </div>
 
-              <router-link
+              <AppButton
                 v-if="isCurrentUser"
+                variant="primary"
                 to="/settings"
-                class="settings-link"
               >
                 编辑资料
-              </router-link>
+              </AppButton>
             </div>
 
             <p v-if="userData.bio" class="profile-bio">{{ userData.bio }}</p>
@@ -131,6 +131,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import AppButton from '@/components/common/AppButton.vue'
 import AppSectionCard from '@/components/common/AppSectionCard.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { useUserStore } from '../stores/user'
@@ -363,26 +364,6 @@ onMounted(async () => {
   max-width: 760px;
   color: var(--color-text-secondary);
   line-height: 1.7;
-}
-
-.settings-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 46px;
-  padding: 0.85rem 1.05rem;
-  border-radius: 16px;
-  background: var(--color-text);
-  color: var(--color-bg);
-  font-weight: 600;
-  white-space: nowrap;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
-  transition: transform var(--transition-fast), background var(--transition-fast);
-}
-
-.settings-link:hover {
-  transform: translateY(-1px);
-  background: var(--color-primary);
 }
 
 .profile-meta {
@@ -691,7 +672,7 @@ onMounted(async () => {
     font-size: clamp(1.75rem, 7vw, 2.15rem);
   }
 
-  .settings-link {
+  .identity-topline :deep(.app-btn) {
     min-height: 38px;
     padding: 0.55rem 0.75rem;
     border-radius: 13px;

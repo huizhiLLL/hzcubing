@@ -67,9 +67,9 @@
           </div>
 
           <AppFormActions align="between" class="auth-actions">
-            <button type="submit" class="submit-btn" :disabled="isSubmitting">
+            <AppButton variant="primary" type="submit" :disabled="isSubmitting" block>
               {{ isSubmitting ? '处理中...' : (isLogin ? '登录' : '注册') }}
-            </button>
+            </AppButton>
           </AppFormActions>
         </form>
 
@@ -86,6 +86,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import AppButton from '@/components/common/AppButton.vue'
 import AppFormActions from '@/components/common/AppFormActions.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppSectionCard from '@/components/common/AppSectionCard.vue'
@@ -232,34 +233,6 @@ const handleSubmit = async () => {
   margin-top: 0.35rem;
 }
 
-.submit-btn {
-  min-width: 148px;
-  padding: 1rem 1.4rem;
-  border-radius: 18px;
-  background: var(--color-text);
-  color: var(--color-bg);
-  font-weight: 600;
-  font-size: 0.95rem;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
-  transition:
-    transform var(--transition-fast),
-    opacity var(--transition-fast),
-    background var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: var(--color-primary);
-  box-shadow: 0 18px 34px color-mix(in srgb, var(--color-primary) 28%, transparent);
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 .auth-footer {
   padding-top: 0.4rem;
   border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
@@ -286,9 +259,5 @@ const handleSubmit = async () => {
     padding: 1.25rem;
   }
 
-  .submit-btn {
-    max-width: none;
-    width: 100%;
-  }
 }
 </style>

@@ -2,9 +2,7 @@
   <div class="settings">
     <AppPageHeader eyebrow="个人资料" title="编辑资料" title-tag="h1">
       <template #aside>
-        <router-link v-if="profileLink" :to="profileLink" class="profile-link">
-          返回
-        </router-link>
+        <AppButton v-if="profileLink" variant="secondary" :to="profileLink">返回</AppButton>
       </template>
     </AppPageHeader>
 
@@ -27,8 +25,8 @@
                 @change="handleAvatarChange"
               />
               <div class="avatar-action-row">
-                <button type="button" class="secondary-btn" @click="openFilePicker">选择图片</button>
-                <button type="button" class="ghost-btn" :disabled="!form.avatar" @click="clearAvatar">移除头像</button>
+                <AppButton variant="primary" @click="openFilePicker">选择图片</AppButton>
+                <AppButton variant="ghost" :disabled="!form.avatar" @click="clearAvatar">移除头像</AppButton>
               </div>
               <span class="form-hint">支持 JPG、PNG、WebP、GIF</span>
               <span v-if="selectedAvatarName" class="avatar-file-name">{{ selectedAvatarName }}</span>
@@ -59,9 +57,9 @@
       </AppSectionCard>
 
       <AppFormActions>
-        <button class="save-btn" :disabled="isSaving" @click="handleSave">
+        <AppButton variant="primary" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? '保存中...' : '保存修改' }}
-        </button>
+        </AppButton>
       </AppFormActions>
     </div>
   </div>
@@ -69,6 +67,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import AppButton from '@/components/common/AppButton.vue'
 import AppFormActions from '@/components/common/AppFormActions.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
 import AppSectionCard from '@/components/common/AppSectionCard.vue'
@@ -212,27 +211,6 @@ const handleSave = async () => {
   margin: 0 auto;
 }
 
-.profile-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0.85rem 1.1rem;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-  color: var(--color-text);
-  font-weight: 600;
-  white-space: nowrap;
-  transition: border-color var(--transition-fast), transform var(--transition-fast), color var(--transition-fast);
-}
-
-.profile-link:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 32%, var(--color-border));
-  color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
 .settings-sections {
   display: flex;
   flex-direction: column;
@@ -352,77 +330,6 @@ const handleSave = async () => {
   word-break: break-all;
 }
 
-.secondary-btn,
-.ghost-btn {
-  min-height: 44px;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-lg);
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition:
-    transform var(--transition-fast),
-    border-color var(--transition-fast),
-    background-color var(--transition-fast),
-    color var(--transition-fast),
-    opacity var(--transition-fast);
-}
-
-.secondary-btn {
-  background: var(--color-text);
-  color: var(--color-bg);
-}
-
-.secondary-btn:hover {
-  transform: translateY(-1px);
-  background: var(--color-primary);
-}
-
-.ghost-btn {
-  background: transparent;
-  color: var(--color-text-secondary);
-  border: 1px solid color-mix(in srgb, var(--color-border) 92%, transparent);
-}
-
-.ghost-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  color: var(--color-primary);
-  border-color: color-mix(in srgb, var(--color-primary) 32%, var(--color-border));
-}
-
-.ghost-btn:disabled,
-.secondary-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.save-btn {
-  min-width: 168px;
-  padding: 1rem 1.4rem;
-  border-radius: 18px;
-  background: var(--color-text);
-  color: var(--color-bg);
-  font-weight: 600;
-  font-size: 0.95rem;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
-  transition:
-    transform var(--transition-fast),
-    opacity var(--transition-fast),
-    background var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.save-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: var(--color-primary);
-  box-shadow: 0 18px 34px color-mix(in srgb, var(--color-primary) 28%, transparent);
-}
-
-.save-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -446,10 +353,7 @@ const handleSave = async () => {
     width: 100%;
   }
 
-  .profile-link,
-  .secondary-btn,
-  .ghost-btn,
-  .save-btn {
+  .avatar-action-row :deep(.app-btn) {
     width: 100%;
   }
 }

@@ -12,12 +12,8 @@
           "知识即为力量，记录即是见证"<br />
         </p>
         <div class="hero-actions">
-          <router-link to="/leaderboard" class="btn btn-primary">
-            查看榜单
-          </router-link>
-          <router-link to="/submit" class="btn btn-secondary">
-            提交成绩
-          </router-link>
+          <AppButton variant="primary" to="/leaderboard">查看榜单</AppButton>
+          <AppButton variant="secondary" to="/submit">提交成绩</AppButton>
         </div>
       </div>
     </section>
@@ -93,6 +89,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, watch } from 'vue'
+import AppButton from '@/components/common/AppButton.vue'
 import { useRecordsStore } from '../stores/records'
 import { useEventsStore } from '../stores/events'
 
@@ -231,41 +228,6 @@ onBeforeUnmount(() => {
 .hero-actions {
   display: flex;
   gap: var(--space-md);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-md) var(--space-xl);
-  border-radius: var(--radius-lg);
-  font-weight: 500;
-  font-size: 1rem;
-  letter-spacing: 0.02em;
-  transition: all var(--transition-normal);
-  cursor: pointer;
-}
-
-.btn-primary {
-  background: var(--color-text);
-  color: var(--color-bg);
-}
-
-.btn-primary:hover {
-  background: var(--color-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.btn-secondary {
-  background: var(--color-bg-secondary);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-}
-
-.btn-secondary:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
 }
 
 .stats-bar {
