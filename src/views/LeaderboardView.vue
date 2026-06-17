@@ -372,6 +372,14 @@ onMounted(async () => {
 
 .rank-num {
   font-weight: 600;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+td.col-time,
+td.col-date {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 900px) {
