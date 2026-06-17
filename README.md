@@ -1,6 +1,6 @@
 # hzcubing
 
-面向魔方玩家的社群成绩系统，提供成绩提交、榜单查看、选手主页、历史记录，以及官方 / 趣味 / 整活项目展示。
+面向魔方玩家的社群成绩系统，提供成绩提交、榜单查看、选手主页、历史记录，以及官方 / 趣味 / 整活项目展示
 
 前端使用 Vue 3 + Pinia + Vue Router + Vite，后端使用 Express + MongoDB。
 
@@ -25,47 +25,6 @@ server/     Express API 与 MongoDB 数据层
 public/     静态资源
 docs/       项目文档
 ```
-
-## 前端运行
-
-在项目根目录安装依赖并启动：
-
-```bash
-npm install
-npm run dev
-```
-
-常用脚本：
-
-```bash
-npm run build
-npm run preview
-npm run deploy
-```
-
-## 后端运行
-
-后端位于 `server/`，需要配置 MongoDB、JWT 等运行环境变量。
-
-```bash
-cd server
-npm install
-npm run dev
-```
-
-生产启动：
-
-```bash
-npm start
-```
-
-## 文档
-
-- `docs/project.md`：项目定位与当前状态
-- `docs/architecture.md`：架构边界与开发约束
-- `docs/roadmap.md`：后续计划与技术决策
-- `docs/api.md`：后端接口清单
-
 ## License
 
 MIT
