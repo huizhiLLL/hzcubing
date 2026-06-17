@@ -25,13 +25,23 @@
 
           <div class="form-group">
             <label class="form-label">密码</label>
-            <input
-              v-model="form.password"
-              type="password"
-              class="form-input"
-              placeholder="输入密码"
-              required
-            />
+            <div class="password-field">
+              <input
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                class="form-input"
+                placeholder="输入密码"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showPassword ? '隐藏密码' : '显示密码'"
+                @click="showPassword = !showPassword"
+              >
+                {{ showPassword ? '隐藏' : '显示' }}
+              </button>
+            </div>
           </div>
 
           <div v-if="!isLogin" class="form-group">
@@ -64,10 +74,11 @@
               placeholder="再次输入密码"
               required
             />
+            <span v-if="passwordMismatch" class="field-error">两次输入的密码不一致</span>
           </div>
 
           <AppFormActions align="between" class="auth-actions">
-            <AppButton variant="primary" type="submit" :disabled="isSubmitting" block>
+            <AppButton variant="primary" type="submit" :disabled="isSubmitting || passwordMismatch" block>
               {{ isSubmitting ? '处理中...' : (isLogin ? '登录' : '注册') }}
             </AppButton>
           </AppFormActions>
@@ -84,7 +95,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppButton from '@/components/common/AppButton.vue'
 import AppFormActions from '@/components/common/AppFormActions.vue'
@@ -100,6 +111,7 @@ const toastStore = useToastStore()
 
 const isLogin = ref(true)
 const isSubmitting = ref(false)
+const showPassword = ref(false)
 const error = ref('')
 
 const form = ref({
@@ -109,6 +121,12 @@ const form = ref({
   qqId: '',
   confirmPassword: ''
 })
+
+const passwordMismatch = computed(() =>
+  !isLogin.value &&
+  form.value.confirmPassword.length > 0 &&
+  form.value.password !== form.value.confirmPassword
+)
 
 const toggleMode = () => {
   isLogin.value = !isLogin.value
@@ -227,6 +245,25 @@ const handleSubmit = async () => {
   border-color: var(--color-primary);
   background: var(--color-bg-secondary);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.password-field { position: relative; }
+.password-field .form-input { padding-right: 4rem; }
+.password-toggle {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.3rem 0.5rem;
+  color: var(--color-text-tertiary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.password-toggle:hover { color: var(--color-primary); }
+
+.field-error {
+  color: var(--color-error);
+  font-size: 0.85rem;
 }
 
 .auth-actions {
