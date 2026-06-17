@@ -134,7 +134,8 @@ function formatTime(seconds) {
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-  return `${date.getMonth() + 1}/${date.getDate()}`
+  const md = `${date.getMonth() + 1}/${date.getDate()}`
+  return date.getFullYear() === new Date().getFullYear() ? md : `${date.getFullYear()}/${md}`
 }
 
 function selectEvent(eventId) {
