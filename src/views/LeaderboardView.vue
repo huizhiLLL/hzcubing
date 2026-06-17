@@ -50,7 +50,7 @@
         <Transition :name="`rank-slide-${rankMotionDirection}`" mode="out-in">
           <tbody :key="rankMotionKey" class="rank-table-body">
             <tr v-for="(player, index) in sortedRecords" :key="`${currentEvent}-${player._id || index}-${type}`">
-              <td class="col-rank"><span class="rank-num">{{ index + 1 }}</span></td>
+              <td class="col-rank"><span class="rank-num" :class="index < 3 ? `rank-${index + 1}` : ''">{{ index + 1 }}</span></td>
               <td class="col-player">
                 <router-link :to="`/user/${player.profileUserNo}`" class="player-link">
                   {{ player.nickname }}
@@ -375,6 +375,22 @@ onMounted(async () => {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
+
+.rank-num.rank-1,
+.rank-num.rank-2,
+.rank-num.rank-3 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  color: white;
+}
+
+.rank-num.rank-1 { background: var(--color-gold); }
+.rank-num.rank-2 { background: var(--color-silver); }
+.rank-num.rank-3 { background: var(--color-bronze); }
 
 td.col-time,
 td.col-date {
