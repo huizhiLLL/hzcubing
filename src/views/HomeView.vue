@@ -523,6 +523,10 @@ onBeforeUnmount(() => {
     flex-direction: column;
   }
 
+  .stats-bar {
+    gap: var(--space-lg);
+  }
+
   .event-salon {
     grid-template-columns: 1fr;
   }
