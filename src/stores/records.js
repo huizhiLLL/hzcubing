@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { recordAPI } from '@/api'
+import { recordAPI, statsAPI } from '@/api'
 import { buildEventRankMaps, getLeaderboardRecordsForEvent } from '@/utils/recordRanking'
 
 export const useRecordsStore = defineStore('records', () => {
   const records = ref([])
+  const homeSummaryData = ref({
+    totalRecords: 0,
+    totalUsers: 0
+  })
   const bestRecords = ref({})
   const recentBreaks = ref([])
   const isLoading = ref(false)
@@ -26,10 +30,20 @@ export const useRecordsStore = defineStore('records', () => {
         .filter(Boolean)
     ).size
   })
-  const homeSummary = computed(() => ({
-    totalRecords: records.value.length,
-    totalUsers: uniqueUserCount.value
-  }))
+  const homeSummary = computed(() => homeSummaryData.value)
+
+  async function fetchHomeSummary() {
+    const result = await statsAPI.getSummary()
+    if (result.code === 200) {
+      homeSummaryData.value = {
+        totalRecords: result.data?.totalRecords || 0,
+        totalUsers: result.data?.totalUsers || 0
+      }
+      return homeSummaryData.value
+    }
+
+    throw new Error(result.message || 'Failed to fetch home summary')
+  }
 
   async function refreshCachedRecords() {
     if (!lastFetchKey.value) return
@@ -335,6 +349,7 @@ export const useRecordsStore = defineStore('records', () => {
     homeSummary,
     isLoading,
     error,
+    fetchHomeSummary,
     fetchRecords,
     ensureRecordsLoaded,
     fetchUserRecords,

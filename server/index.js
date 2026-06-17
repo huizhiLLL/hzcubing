@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js'
 import userRoutes from './routes/users.js'
 import recordRoutes from './routes/records.js'
 import memeEventRoutes from './routes/memeEvents.js'
+import statsRoutes from './routes/stats.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 dotenv.config()
@@ -50,6 +51,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/records', recordRoutes)
 app.use('/api/meme-events', memeEventRoutes)
+app.use('/api/stats', statsRoutes)
 
 // Error handling middleware
 app.use(errorHandler)

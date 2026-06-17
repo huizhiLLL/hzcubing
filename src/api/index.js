@@ -82,9 +82,14 @@ export const memeEventAPI = {
   delete: (eventCode) => api.delete(`/meme-events/${eventCode}`)
 }
 
+export const statsAPI = {
+  getSummary: () => api.get('/stats/summary')
+}
+
 export default {
   auth: authAPI,
   user: userAPI,
   record: recordAPI,
-  memeEvent: memeEventAPI
+  memeEvent: memeEventAPI,
+  stats: statsAPI
 }

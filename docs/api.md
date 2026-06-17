@@ -18,6 +18,16 @@
 |---|---|---|---|---|
 | GET | `/health` | Public | 服务健康检查 | 无 |
 
+## Stats
+
+| 方法 | 路径 | 鉴权 | 说明 | 参数 |
+|---|---|---|---|---|
+| GET | `/stats/summary` | Public | 首页轻量统计 | 无 |
+
+返回要点：
+
+- 首页统计返回 `totalRecords`、`totalUsers`
+
 ## Auth
 
 | 方法 | 路径 | 鉴权 | 说明 | 参数 |

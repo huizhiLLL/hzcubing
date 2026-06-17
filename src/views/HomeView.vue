@@ -145,7 +145,7 @@ watch(
 onMounted(async () => {
   try {
     await Promise.all([
-      recordsStore.ensureRecordsLoaded({ pageSize: 2000 }),
+      recordsStore.fetchHomeSummary(),
       eventsStore.ensureMemeEventsLoaded()
     ])
   } catch (err) {
