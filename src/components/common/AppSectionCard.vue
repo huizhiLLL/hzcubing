@@ -40,7 +40,7 @@ const hasHeaderAside = computed(() => Boolean(slots.aside))
   flex-direction: column;
   gap: var(--space-lg);
   padding: 1.35rem 1.4rem;
-  border-radius: 22px;
+  border-radius: var(--radius-2xl);
   border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
   background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);

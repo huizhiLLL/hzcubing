@@ -208,7 +208,7 @@ onUnmounted(() => {
   width: var(--sidebar-width);
   background: color-mix(in srgb, var(--color-bg-secondary) 92%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(18px);
   display: flex;
@@ -280,7 +280,7 @@ onUnmounted(() => {
   height: 40px;
   margin-left: 0;
   color: var(--color-text-secondary);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--color-bg-tertiary) 84%, transparent);
   transition:
     transform var(--transition-fast),
@@ -338,7 +338,7 @@ onUnmounted(() => {
   min-height: 46px;
   padding: 10px;
   color: var(--color-text-secondary);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid transparent;
   transition:
     background-color var(--transition-fast),

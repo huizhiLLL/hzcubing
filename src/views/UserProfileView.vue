@@ -317,7 +317,7 @@ onMounted(async () => {
 .profile-avatar {
   width: 104px;
   height: 104px;
-  border-radius: 28px;
+  border-radius: var(--radius-3xl);
   display: flex;
   align-items: center;
   justify-content: center;

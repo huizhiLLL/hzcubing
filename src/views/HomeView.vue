@@ -338,7 +338,7 @@ onBeforeUnmount(() => {
   min-height: 100%;
   padding: 1.15rem;
   border: 1px solid var(--color-border);
-  border-radius: 28px;
+  border-radius: var(--radius-3xl);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--group-accent) 13%, transparent) 0, transparent 36%),
     color-mix(in srgb, var(--color-bg-secondary) 94%, transparent);
@@ -429,7 +429,7 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   justify-content: flex-end;
   padding: 1.25rem;
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, white 28%, transparent), transparent 52%),
     linear-gradient(135deg, color-mix(in srgb, var(--group-accent) 16%, transparent), color-mix(in srgb, var(--color-bg-secondary) 94%, transparent));

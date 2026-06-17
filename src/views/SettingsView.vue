@@ -245,14 +245,14 @@ const handleSave = async () => {
   gap: 1rem;
   padding: 1rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
-  border-radius: 22px;
+  border-radius: var(--radius-2xl);
   background: color-mix(in srgb, var(--color-bg-secondary) 82%, transparent);
 }
 
 .avatar-preview {
   width: 96px;
   height: 96px;
-  border-radius: 28px;
+  border-radius: var(--radius-3xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -356,7 +356,7 @@ const handleSave = async () => {
 .ghost-btn {
   min-height: 44px;
   padding: 0.75rem 1rem;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   font-size: 0.9rem;
   font-weight: 600;
   transition:
