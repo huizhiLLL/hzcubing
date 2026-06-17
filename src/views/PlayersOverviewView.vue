@@ -47,6 +47,7 @@
       </div>
     </template>
 
+    <AppStatusBlock v-else-if="loadError" class="page-status" variant="error" title="加载失败" message="选手数据加载失败，请稍后重试" />
     <AppStatusBlock v-else class="page-status" variant="empty" message="暂无选手数据" />
   </div>
 </template>
@@ -62,6 +63,7 @@ const overviewPageCache = new Map()
 
 const users = ref([])
 const loading = ref(false)
+const loadError = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(1)
 
@@ -98,11 +100,13 @@ async function loadData(page = 1) {
   const cachedResult = overviewPageCache.get(cacheKey)
 
   if (cachedResult) {
+    loadError.value = false
     applyOverviewResult(cachedResult, page)
     return
   }
 
   loading.value = true
+  loadError.value = false
   try {
     const usersResult = await userAPI.getOverview({ page, pageSize: PAGE_SIZE })
     if (usersResult.code === 200) {
@@ -113,6 +117,7 @@ async function loadData(page = 1) {
     console.error('Failed to load data:', err)
     users.value = []
     totalPages.value = 1
+    loadError.value = true
   } finally {
     loading.value = false
   }
