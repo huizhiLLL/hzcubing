@@ -296,6 +296,17 @@
         </AppFormActions>
       </form>
     </div>
+
+    <AppConfirmDialog
+      :open="confirmOpen"
+      title="删除成绩"
+      :message="pendingDeleteRecord ? `确定删除「${getEventName(pendingDeleteRecord.event)}」这条成绩吗？删除后不可恢复。` : ''"
+      confirm-text="删除"
+      cancel-text="取消"
+      variant="danger"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
   </div>
 </template>
 
@@ -303,6 +314,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/common/AppButton.vue'
+import AppConfirmDialog from '@/components/common/AppConfirmDialog.vue'
 import AppFormActions from '@/components/common/AppFormActions.vue'
 import AppIconButton from '@/components/common/AppIconButton.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
@@ -348,6 +360,8 @@ const managedRecords = ref([])
 const editingRecordId = ref('')
 const isSavingEdit = ref(false)
 const deletingRecordId = ref('')
+const confirmOpen = ref(false)
+const pendingDeleteRecord = ref(null)
 const editError = ref('')
 const editSingleTimeError = ref('')
 const editAverageTimeError = ref('')
@@ -712,11 +726,21 @@ async function handleUpdateRecord() {
   }
 }
 
-async function handleDeleteRecord(record) {
+function handleDeleteRecord(record) {
   manageError.value = ''
+  pendingDeleteRecord.value = record
+  confirmOpen.value = true
+}
 
-  const confirmed = window.confirm(`确定删除「${getEventName(record.event)}」这条成绩吗？删除后不可恢复。`)
-  if (!confirmed) return
+function cancelDelete() {
+  confirmOpen.value = false
+  pendingDeleteRecord.value = null
+}
+
+async function confirmDelete() {
+  const record = pendingDeleteRecord.value
+  confirmOpen.value = false
+  if (!record) return
 
   deletingRecordId.value = record._id
 
@@ -734,6 +758,7 @@ async function handleDeleteRecord(record) {
     toastStore.error(manageError.value)
   } finally {
     deletingRecordId.value = ''
+    pendingDeleteRecord.value = null
   }
 }
 
