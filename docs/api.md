@@ -1,6 +1,6 @@
 # 后端接口文档
 
-更新时间：2026-06-16
+更新时间：2026-06-17
 
 ## 说明
 
@@ -26,7 +26,8 @@
 
 返回要点：
 
-- 首页统计返回 `totalRecords`、`totalUsers`
+- 返回 `totalRecords`、`totalUsers`
+- `totalUsers` 只统计状态为 `active` 的用户
 
 ## Auth
 
@@ -61,7 +62,10 @@
 返回要点：
 
 - 用户列表返回 `id`、`userNo`、`_id`、`nickname`、`avatar`、`role`、`email`、`createdAt`
-- 用户概览返回 `profileUserNo`、`nickname`、`createdAt`、`recordCount`、`events`；`sort` 支持 `latest`、`mostRecords`、`mostEvents`
+- 用户概览只返回状态为 `active` 的用户
+- 用户概览返回 `profileUserNo`、`nickname`、`createdAt`、`recordCount`、`events`
+- 用户概览 `keyword` 按昵称模糊搜索
+- 用户概览 `sort` 支持 `latest`、`mostRecords`、`mostEvents`
 - 用户详情返回 `bio`、`wcaId`、`status`、`createdAt`、`updatedAt` 等资料字段
 
 ## Records
@@ -84,8 +88,9 @@
 
 - 列表接口返回成绩数组和分页字段
 - 成绩项包含 `_id`、`profileUserNo`、`nickname`、`event`、`singleSeconds`、`averageSeconds`、`cube`、`method`、`timestamp`
-- 全站最佳返回每个项目的单次/平均最佳、所属用户编号、昵称和时间
-- 单项目榜单按用户取最佳成绩并排序，`type` 支持 `single`、`average`，`limit` 最大 200，`keyword` 按昵称搜索
+- 全站最佳返回每个项目的单次 / 平均最佳、所属用户编号、昵称和时间
+- 单项目榜单在数据库侧按用户取最佳成绩并排序，`type` 支持 `single`、`average`
+- 单项目榜单 `limit` 默认 100、最大 200，`keyword` 按用户昵称搜索后再返回该搜索范围内的最佳成绩
 - GR 历程返回 `event`、`single`、`average`
 - 新增成绩返回 `_id`、`isSingleGR`、`isAverageGR`
 - 更新和删除成绩只返回操作结果信息
