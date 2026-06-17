@@ -212,6 +212,25 @@ export const useRecordsStore = defineStore('records', () => {
     }
   }
 
+  async function fetchLeaderboardRecords(params = {}) {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const result = await recordAPI.getLeaderboard(params)
+      if (result.code === 200) {
+        return result.data || []
+      } else {
+        throw new Error(result.message || 'Failed to fetch leaderboard records')
+      }
+    } catch (err) {
+      error.value = err.message || 'Failed to fetch leaderboard records'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // Fetch recent record breaks
   async function fetchRecentBreaks(params = {}) {
     isLoading.value = true
@@ -356,6 +375,7 @@ export const useRecordsStore = defineStore('records', () => {
     fetchUserBest,
     fetchUserHistory,
     fetchBestRecords,
+    fetchLeaderboardRecords,
     fetchRecentBreaks,
     createRecord,
     updateRecord,

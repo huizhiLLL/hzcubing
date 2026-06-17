@@ -69,6 +69,7 @@ export const recordAPI = {
   getUserBest: (userId, params) => api.get(`/records/user/${userId}/best`, { params }),
   getUserHistory: (userId, params) => api.get(`/records/user/${userId}/history`, { params }),
   getBest: (params) => api.get('/records/best', { params }),
+  getLeaderboard: (params) => api.get('/records/leaderboard', { params }),
   getRecentBreaks: (params) => api.get('/records/recent-breaks', { params }),
   create: (data) => api.post('/records', data),
   update: (id, data) => api.put(`/records/${id}`, data),

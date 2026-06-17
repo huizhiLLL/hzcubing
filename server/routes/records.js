@@ -349,6 +349,112 @@ router.get('/best', optionalAuth, async (req, res, next) => {
   }
 })
 
+// @route   GET /api/records/leaderboard
+// @desc    Get leaderboard records for one event
+// @access  Public
+router.get('/leaderboard', optionalAuth, async (req, res, next) => {
+  try {
+    const { event, type = 'single', limit = 100, keyword = '' } = req.query
+    const eventId = String(event || '').trim()
+    const timeField = type === 'average' ? 'averageSeconds' : 'singleSeconds'
+    const limitNum = Math.min(200, Math.max(1, parseInt(limit) || 100))
+    const normalizedKeyword = String(keyword || '').trim()
+
+    if (!eventId) {
+      return res.status(400).json({
+        code: 400,
+        message: 'Event is required'
+      })
+    }
+
+    const pipeline = [
+      {
+        $match: {
+          event: eventId,
+          [timeField]: { $ne: null }
+        }
+      },
+      {
+        $sort: {
+          [timeField]: 1,
+          timestamp: -1,
+          _id: 1
+        }
+      },
+      {
+        $group: {
+          _id: '$userId',
+          bestRecord: { $first: '$$ROOT' }
+        }
+      }
+    ]
+
+    if (normalizedKeyword) {
+      pipeline.push({
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user'
+        }
+      })
+      pipeline.push({
+        $unwind: '$user'
+      })
+      pipeline.push({
+        $match: {
+          'user.nickname': { $regex: normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
+        }
+      })
+    }
+
+    pipeline.push(
+      {
+        $replaceRoot: { newRoot: '$bestRecord' }
+      },
+      {
+        $sort: {
+          [timeField]: 1,
+          timestamp: -1,
+          _id: 1
+        }
+      },
+      {
+        $limit: limitNum
+      }
+    )
+
+    const records = await Record.aggregate(pipeline)
+
+    const userIds = [...new Set(records.map(record => record.userId).filter(Boolean))]
+    const users = await User.find({ _id: { $in: userIds } }).select('nickname userNo').lean()
+    const userMap = new Map(users.map(u => [u._id.toString(), u]))
+
+    const data = records.map(record => {
+      const user = userMap.get(record.userId.toString())
+      return {
+        _id: record._id,
+        profileUserNo: user?.userNo || null,
+        nickname: user?.nickname || record.nickname || 'Anonymous',
+        event: record.event,
+        singleSeconds: record.singleSeconds,
+        averageSeconds: record.averageSeconds,
+        cube: record.cube,
+        method: record.method,
+        timestamp: record.timestamp
+      }
+    })
+
+    res.json({
+      code: 200,
+      message: 'Success',
+      data
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
 // @route   GET /api/records/gr-history/:event
 // @desc    Get GR break history for one event
 // @access  Public

@@ -71,6 +71,7 @@
 | GET | `/records` | Public | 成绩列表 | query：`event?`、`page?`、`pageSize?` |
 | GET | `/records/user/:userId` | Public | 某用户成绩列表 | path：`userId`；query：`event?`、`page?`、`pageSize?` |
 | GET | `/records/best` | Public | 全站分项目最佳 | query：`event?` |
+| GET | `/records/leaderboard` | Public | 单项目榜单 | query：`event`、`type?`、`limit?`、`keyword?` |
 | GET | `/records/gr-history/:event` | Public | 单项目 GR 历程 | path：`event` |
 | GET | `/records/user/:userId/best` | Public | 某用户个人最佳 | path：`userId`；query：`event?` |
 | GET | `/records/user/:userId/history` | Public | 某用户成绩时间线 | path：`userId`；query：`event?`、`page?`、`pageSize?` |
@@ -84,6 +85,7 @@
 - 列表接口返回成绩数组和分页字段
 - 成绩项包含 `_id`、`profileUserNo`、`nickname`、`event`、`singleSeconds`、`averageSeconds`、`cube`、`method`、`timestamp`
 - 全站最佳返回每个项目的单次/平均最佳、所属用户编号、昵称和时间
+- 单项目榜单按用户取最佳成绩并排序，`type` 支持 `single`、`average`，`limit` 最大 200，`keyword` 按昵称搜索
 - GR 历程返回 `event`、`single`、`average`
 - 新增成绩返回 `_id`、`isSingleGR`、`isAverageGR`
 - 更新和删除成绩只返回操作结果信息

@@ -35,7 +35,7 @@
     <AppStatusBlock
       v-if="!loading && sortedRecords.length === 0"
       variant="empty"
-      :message="`暂无${currentEventName}数据`"
+      :message="hasSearchKeyword ? '没有匹配的选手' : `暂无${currentEventName}数据`"
     />
 
     <div class="leaderboard-toolbar">
@@ -99,16 +99,11 @@
       </div>
     </div>
 
-    <AppStatusBlock
-      v-if="!loading && sortedRecords.length > 0 && displayRecords.length === 0"
-      variant="empty"
-      message="没有匹配的选手"
-    />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppButton from '@/components/common/AppButton.vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
@@ -130,11 +125,13 @@ const userStore = useUserStore()
 const currentEvent = ref('333')
 const type = ref('single')
 const searchKeyword = ref('')
+const leaderboardRecords = ref([])
 const myRowEl = ref(null)
 const loading = ref(false)
 const rankMotionKey = ref(0)
 const rankMotionDirection = ref('forward')
 const maxVisibleTabs = 8
+let isBootstrapping = true
 const typeOptions = [
   { label: '单次', value: 'single' },
   { label: '平均', value: 'average' }
@@ -150,16 +147,11 @@ const overflowSelectOptions = computed(() => [
 ])
 const currentEventName = computed(() => eventsStore.getEventName(currentEvent.value))
 const myUserNo = computed(() => userStore.user?.userNo || userStore.user?.id || null)
+const hasSearchKeyword = computed(() => searchKeyword.value.trim().length > 0)
+let searchTimer = null
 
-const sortedRecords = computed(() => {
-  return recordsStore.getLeaderboardRecords(currentEvent.value, type.value, 100)
-})
-
-const displayRecords = computed(() => {
-  const kw = searchKeyword.value.trim().toLowerCase()
-  if (!kw) return sortedRecords.value
-  return sortedRecords.value.filter(p => (p.nickname || '').toLowerCase().includes(kw))
-})
+const sortedRecords = computed(() => leaderboardRecords.value)
+const displayRecords = computed(() => sortedRecords.value)
 
 function getTimeValue(player) {
   return type.value === 'single' ? player.singleSeconds : player.averageSeconds
@@ -187,6 +179,25 @@ function scrollToMe() {
     myRowEl.value.scrollIntoView({ behavior: 'smooth', block: 'center' })
   } else {
     toastStore.show({ message: '你还没有该项目的成绩', variant: 'info' })
+  }
+}
+
+async function loadLeaderboard() {
+  loading.value = true
+  myRowEl.value = null
+
+  try {
+    leaderboardRecords.value = await recordsStore.fetchLeaderboardRecords({
+      event: currentEvent.value,
+      type: type.value,
+      limit: 100,
+      keyword: searchKeyword.value.trim()
+    })
+  } catch (err) {
+    console.error('Failed to load leaderboard:', err)
+    leaderboardRecords.value = []
+  } finally {
+    loading.value = false
   }
 }
 
@@ -237,15 +248,21 @@ watch(() => route.query.event, (newEvent) => {
 
 watch([currentEvent, type], () => {
   rankMotionKey.value += 1
+  if (isBootstrapping) return
+  loadLeaderboard()
+})
+
+watch(searchKeyword, () => {
+  window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => {
+    loadLeaderboard()
+  }, 300)
 })
 
 onMounted(async () => {
   loading.value = true
   try {
-    await Promise.all([
-      recordsStore.ensureRecordsLoaded({ pageSize: 2000 }),
-      eventsStore.ensureMemeEventsLoaded()
-    ])
+    await eventsStore.ensureMemeEventsLoaded()
 
     const initialEvent = route.query.event
     if (initialEvent && allEvents.value.some(event => event.id === initialEvent)) {
@@ -253,11 +270,18 @@ onMounted(async () => {
     } else {
       currentEvent.value = allEvents.value[0]?.id || '333'
     }
+
+    await loadLeaderboard()
   } catch (err) {
     console.error('Failed to load records:', err)
   } finally {
+    isBootstrapping = false
     loading.value = false
   }
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(searchTimer)
 })
 </script>
 
