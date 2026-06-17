@@ -38,31 +38,47 @@
       :message="`暂无${currentEventName}数据`"
     />
 
-    <div v-if="!loading && sortedRecords.length > 0" class="rank-table">
-      <table>
-        <thead>
-          <tr>
-            <th class="col-rank">排名</th>
-            <th class="col-player">选手</th>
-            <th class="col-time">成绩</th>
-            <th class="col-date">日期</th>
-          </tr>
-        </thead>
-        <Transition :name="`rank-slide-${rankMotionDirection}`" mode="out-in">
-          <tbody :key="rankMotionKey" class="rank-table-body">
-            <tr v-for="(player, index) in sortedRecords" :key="`${currentEvent}-${player._id || index}-${type}`">
-              <td class="col-rank"><span class="rank-num" :class="index < 3 ? `rank-${index + 1}` : ''">{{ index + 1 }}</span></td>
-              <td class="col-player">
-                <router-link :to="`/user/${player.profileUserNo}`" class="player-link">
-                  {{ player.nickname }}
-                </router-link>
-              </td>
-              <td class="col-time">{{ formatTime(getTimeValue(player)) }}</td>
-              <td class="col-date">{{ formatDate(player.timestamp) }}</td>
+    <div v-if="!loading && sortedRecords.length > 0">
+      <div class="rank-table desktop-only">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-rank">排名</th>
+              <th class="col-player">选手</th>
+              <th class="col-time">成绩</th>
+              <th class="col-date">日期</th>
             </tr>
-          </tbody>
-        </Transition>
-      </table>
+          </thead>
+          <Transition :name="`rank-slide-${rankMotionDirection}`" mode="out-in">
+            <tbody :key="rankMotionKey" class="rank-table-body">
+              <tr v-for="(player, index) in sortedRecords" :key="`${currentEvent}-${player._id || index}-${type}`">
+                <td class="col-rank"><span class="rank-num" :class="index < 3 ? `rank-${index + 1}` : ''">{{ index + 1 }}</span></td>
+                <td class="col-player">
+                  <router-link :to="`/user/${player.profileUserNo}`" class="player-link">
+                    {{ player.nickname }}
+                  </router-link>
+                </td>
+                <td class="col-time">{{ formatTime(getTimeValue(player)) }}</td>
+                <td class="col-date">{{ formatDate(player.timestamp) }}</td>
+              </tr>
+            </tbody>
+          </Transition>
+        </table>
+      </div>
+
+      <div class="rank-cards mobile-only">
+        <article
+          v-for="(player, index) in sortedRecords"
+          :key="`m-${currentEvent}-${player._id || index}-${type}`"
+          class="rank-card"
+        >
+          <span class="rank-card-num">{{ index + 1 }}</span>
+          <router-link :to="`/user/${player.profileUserNo}`" class="rank-card-name">
+            {{ player.nickname }}
+          </router-link>
+          <span class="rank-card-time">{{ formatTime(getTimeValue(player)) }}</span>
+        </article>
+      </div>
     </div>
   </div>
 </template>
@@ -204,6 +220,9 @@ onMounted(async () => {
   gap: var(--space-md);
   flex-wrap: wrap;
 }
+
+.desktop-only { display: block; }
+.mobile-only { display: none; }
 
 .event-selector-wrap {
   display: flex;
@@ -357,6 +376,46 @@ td.col-date {
   font-variant-numeric: tabular-nums;
 }
 
+.rank-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.rank-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+}
+
+.rank-card-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 1.5rem;
+}
+
+.rank-card-name {
+  font-weight: 600;
+  color: var(--color-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-card-time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  justify-self: end;
+}
+
 @media (max-width: 900px) {
   .event-selector-wrap {
     width: 100%;
@@ -376,6 +435,9 @@ td.col-date {
 }
 
 @media (max-width: 768px) {
+  .desktop-only { display: none; }
+  .mobile-only { display: block; }
+
   .filter-panel {
     align-items: stretch;
   }
@@ -384,16 +446,6 @@ td.col-date {
     padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-md);
     font-size: 0.9375rem;
-  }
-
-  .rank-table {
-    border-radius: var(--radius-lg);
-    overflow-x: auto;
-  }
-
-  .rank-table th,
-  .rank-table td {
-    padding: var(--space-sm) var(--space-xs);
   }
 
   .rank-num {
