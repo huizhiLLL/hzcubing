@@ -45,13 +45,13 @@
 |---|---|---|---|---|
 | PUT | `/users/profile` | Private | 更新当前用户资料 | body：`nickname?`、`bio?`、`wcaId?`、`avatar?` |
 | GET | `/users` | Public | 用户列表 | query：`page?`、`pageSize?` |
-| GET | `/users/overview` | Public | 用户概览卡片 | query：`page?`、`pageSize?` |
+| GET | `/users/overview` | Public | 用户概览卡片 | query：`page?`、`pageSize?`、`keyword?`、`sort?` |
 | GET | `/users/:id` | Public | 通过用户编号或 MongoDB ID 查询用户 | path：`id` |
 
 返回要点：
 
 - 用户列表返回 `id`、`userNo`、`_id`、`nickname`、`avatar`、`role`、`email`、`createdAt`
-- 用户概览返回 `profileUserNo`、`nickname`、`createdAt`、`recordCount`、`events`
+- 用户概览返回 `profileUserNo`、`nickname`、`createdAt`、`recordCount`、`events`；`sort` 支持 `latest`、`mostRecords`、`mostEvents`
 - 用户详情返回 `bio`、`wcaId`、`status`、`createdAt`、`updatedAt` 等资料字段
 
 ## Records

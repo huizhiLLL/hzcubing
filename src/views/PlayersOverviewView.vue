@@ -4,7 +4,22 @@
 
     <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
 
-    <template v-else-if="playerSummary.length > 0">
+    <div class="players-toolbar">
+      <input
+        v-model="keyword"
+        type="search"
+        class="search-input"
+        placeholder="搜索选手昵称"
+        aria-label="搜索选手昵称"
+      />
+      <AppSegmentedControl
+        v-model="sort"
+        :options="sortOptions"
+        aria-label="排序方式"
+      />
+    </div>
+
+    <template v-if="!loading && playerSummary.length > 0">
       <div class="player-grid">
         <article v-for="player in playerSummary" :key="player.profileUserNo" class="player-card">
           <div class="player-head">
@@ -47,14 +62,15 @@
       </div>
     </template>
 
-    <AppStatusBlock v-else-if="loadError" class="page-status" variant="error" title="加载失败" message="选手数据加载失败，请稍后重试" />
-    <AppStatusBlock v-else class="page-status" variant="empty" message="暂无选手数据" />
+    <AppStatusBlock v-else-if="!loading && loadError" class="page-status" variant="error" title="加载失败" message="选手数据加载失败，请稍后重试" />
+    <AppStatusBlock v-else-if="!loading" class="page-status" variant="empty" message="暂无选手数据" />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppPageHeader from '@/components/common/AppPageHeader.vue'
+import AppSegmentedControl from '@/components/common/AppSegmentedControl.vue'
 import AppStatusBlock from '@/components/common/AppStatusBlock.vue'
 import { userAPI } from '@/api'
 
@@ -64,11 +80,20 @@ const overviewPageCache = new Map()
 const users = ref([])
 const loading = ref(false)
 const loadError = ref(false)
+const keyword = ref('')
+const sort = ref('latest')
 const currentPage = ref(1)
 const totalPages = ref(1)
+let keywordTimer = null
+
+const sortOptions = [
+  { label: '最新', value: 'latest' },
+  { label: '成绩最多', value: 'mostRecords' },
+  { label: '项目最多', value: 'mostEvents' }
+]
 
 const playerSummary = computed(() => {
-  return [...users.value].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+  return users.value
 })
 
 const pageNumbers = computed(() => {
@@ -96,7 +121,8 @@ function applyOverviewResult(result, fallbackPage) {
 }
 
 async function loadData(page = 1) {
-  const cacheKey = `${page}:${PAGE_SIZE}`
+  const normalizedKeyword = keyword.value.trim()
+  const cacheKey = `${page}:${PAGE_SIZE}:${normalizedKeyword}:${sort.value}`
   const cachedResult = overviewPageCache.get(cacheKey)
 
   if (cachedResult) {
@@ -108,7 +134,12 @@ async function loadData(page = 1) {
   loading.value = true
   loadError.value = false
   try {
-    const usersResult = await userAPI.getOverview({ page, pageSize: PAGE_SIZE })
+    const usersResult = await userAPI.getOverview({
+      page,
+      pageSize: PAGE_SIZE,
+      keyword: normalizedKeyword,
+      sort: sort.value
+    })
     if (usersResult.code === 200) {
       overviewPageCache.set(cacheKey, usersResult)
       applyOverviewResult(usersResult, page)
@@ -128,7 +159,22 @@ function goToPage(page) {
   loadData(page)
 }
 
+watch(keyword, () => {
+  window.clearTimeout(keywordTimer)
+  keywordTimer = window.setTimeout(() => {
+    loadData(1)
+  }, 300)
+})
+
+watch(sort, () => {
+  loadData(1)
+})
+
 onMounted(() => loadData(1))
+
+onBeforeUnmount(() => {
+  window.clearTimeout(keywordTimer)
+})
 </script>
 
 <style scoped>
@@ -136,6 +182,30 @@ onMounted(() => loadData(1))
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
+}
+
+.players-toolbar {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.92rem;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
 .player-grid {
@@ -249,5 +319,12 @@ onMounted(() => loadData(1))
 .page-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .players-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>

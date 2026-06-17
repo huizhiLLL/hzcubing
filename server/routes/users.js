@@ -8,6 +8,10 @@ import { findUserByIdentifier } from '../utils/userLookup.js'
 const router = express.Router()
 const MAX_AVATAR_LENGTH = 2 * 1024 * 1024
 
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function isSupportedAvatar(value) {
   if (value === undefined || value === null || value === '') return true
   if (typeof value !== 'string') return false
@@ -142,54 +146,121 @@ router.get('/', optionalAuth, async (req, res, next) => {
 // @access  Public
 router.get('/overview', optionalAuth, async (req, res, next) => {
   try {
-    const { page = 1, pageSize = 12 } = req.query
+    const { page = 1, pageSize = 12, keyword = '', sort = 'latest' } = req.query
     const pageNum = Math.max(1, parseInt(page))
     const pageSizeNum = Math.min(100, Math.max(1, parseInt(pageSize)))
     const skip = (pageNum - 1) * pageSizeNum
+    const normalizedKeyword = String(keyword || '').trim()
+    const userMatch = { status: 'active' }
 
-    const [users, total] = await Promise.all([
-      User.find({ status: 'active' })
-        .select('userNo nickname createdAt')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(pageSizeNum)
-        .lean(),
-      User.countDocuments({ status: 'active' })
+    if (normalizedKeyword) {
+      userMatch.nickname = { $regex: escapeRegex(normalizedKeyword), $options: 'i' }
+    }
+
+    const sortMode = ['latest', 'mostRecords', 'mostEvents'].includes(sort) ? sort : 'latest'
+
+    if (sortMode === 'latest') {
+      const [users, total] = await Promise.all([
+        User.find(userMatch)
+          .select('userNo nickname createdAt')
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(pageSizeNum)
+          .lean(),
+        User.countDocuments(userMatch)
+      ])
+
+      const userObjectIds = users.map(user => user._id).filter(Boolean)
+      const recordStats = userObjectIds.length
+        ? await Record.aggregate([
+            {
+              $match: {
+                userId: { $in: userObjectIds }
+              }
+            },
+            {
+              $group: {
+                _id: '$userId',
+                recordCount: { $sum: 1 },
+                events: { $addToSet: '$event' }
+              }
+            }
+          ])
+        : []
+
+      const statsMap = new Map(recordStats.map(stat => [String(stat._id), stat]))
+
+      return res.json({
+        code: 200,
+        message: 'Success',
+        data: users.map(user => {
+          const stats = statsMap.get(String(user._id))
+          return {
+            profileUserNo: user.userNo,
+            nickname: user.nickname,
+            createdAt: user.createdAt,
+            recordCount: stats?.recordCount || 0,
+            events: Array.isArray(stats?.events) ? stats.events : []
+          }
+        }),
+        page: pageNum,
+        pageSize: pageSizeNum,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSizeNum))
+      })
+    }
+
+    const overviewRows = await User.aggregate([
+      { $match: userMatch },
+      {
+        $lookup: {
+          from: 'records',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'records'
+        }
+      },
+      {
+        $addFields: {
+          recordCount: { $size: '$records' },
+          events: { $setUnion: ['$records.event', []] }
+        }
+      },
+      {
+        $addFields: {
+          eventCount: { $size: '$events' }
+        }
+      },
+      {
+        $facet: {
+          data: [
+            { $sort: sortMode === 'mostEvents' ? { eventCount: -1, recordCount: -1, createdAt: -1 } : { recordCount: -1, eventCount: -1, createdAt: -1 } },
+            { $skip: skip },
+            { $limit: pageSizeNum },
+            {
+              $project: {
+                profileUserNo: '$userNo',
+                nickname: 1,
+                createdAt: 1,
+                recordCount: 1,
+                events: 1
+              }
+            }
+          ],
+          total: [
+            { $count: 'count' }
+          ]
+        }
+      }
     ])
 
-    const userObjectIds = users.map(user => user._id).filter(Boolean)
-    const recordStats = userObjectIds.length
-      ? await Record.aggregate([
-          {
-            $match: {
-              userId: { $in: userObjectIds }
-            }
-          },
-          {
-            $group: {
-              _id: '$userId',
-              recordCount: { $sum: 1 },
-              events: { $addToSet: '$event' }
-            }
-          }
-        ])
-      : []
-
-    const statsMap = new Map(recordStats.map(stat => [String(stat._id), stat]))
+    const result = overviewRows[0] || { data: [], total: [] }
+    const total = result.total[0]?.count || 0
 
     res.json({
       code: 200,
       message: 'Success',
-      data: users.map(user => {
-        const stats = statsMap.get(String(user._id))
-        return {
-          profileUserNo: user.userNo,
-          nickname: user.nickname,
-          createdAt: user.createdAt,
-          recordCount: stats?.recordCount || 0,
-          events: Array.isArray(stats?.events) ? stats.events : []
-        }
-      }),
+      data: result.data || [],
       page: pageNum,
       pageSize: pageSizeNum,
       total,
