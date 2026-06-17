@@ -134,6 +134,18 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 键盘焦点环（仅键盘操作时出现，不影响鼠标点击） */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 鼠标点击时不显示焦点环 */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 button:not(:disabled),
 a {
   touch-action: manipulation;
