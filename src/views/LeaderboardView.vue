@@ -272,7 +272,7 @@ onMounted(async () => {
   bottom: 4px;
   width: calc((100% - 8px) / 2);
   border-radius: calc(var(--radius-lg) - 4px);
-  background: var(--color-text);
+  background: var(--color-primary);
   transition: transform var(--motion-panel);
   pointer-events: none;
 }
