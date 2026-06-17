@@ -27,6 +27,8 @@
           :to="item.path"
           class="nav-item"
           :class="{ active: isActive(item.path) }"
+          :title="item.label"
+          :aria-label="item.label"
           @click="closeMobileMenu"
         >
           <span class="nav-icon" v-html="item.icon"></span>
@@ -35,7 +37,7 @@
       </nav>
 
       <div class="sidebar-footer">
-        <button class="nav-item" @click="toggleTheme">
+        <button class="nav-item" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'" :aria-label="isDark ? '浅色模式' : '深色模式'">
           <span class="nav-icon" v-html="isDark ? sunIcon : moonIcon"></span>
           <span v-if="!isCollapsed" class="nav-label">{{ isDark ? '浅色模式' : '深色模式' }}</span>
         </button>
@@ -53,17 +55,19 @@
             to="/admin/meme-events"
             class="nav-item"
             :class="{ active: isActive('/admin/meme-events') }"
+            title="项目管理"
+            aria-label="项目管理"
             @click="closeMobileMenu"
           >
             <span class="nav-icon" v-html="adminIcon"></span>
             <span v-if="!isCollapsed" class="nav-label">项目管理</span>
           </router-link>
-          <button class="nav-item" @click="handleLogout">
+          <button class="nav-item" @click="handleLogout" title="退出登录" aria-label="退出登录">
             <span class="nav-icon" v-html="logoutIcon"></span>
             <span v-if="!isCollapsed" class="nav-label">退出登录</span>
           </button>
         </template>
-        <router-link v-else to="/auth" class="nav-item" @click="closeMobileMenu">
+        <router-link v-else to="/auth" class="nav-item" @click="closeMobileMenu" title="登录 / 注册" aria-label="登录 / 注册">
           <span class="nav-icon" v-html="loginIcon"></span>
           <span v-if="!isCollapsed" class="nav-label">登录 / 注册</span>
         </router-link>
