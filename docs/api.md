@@ -90,9 +90,11 @@
 - 成绩项包含 `_id`、`profileUserNo`、`nickname`、`event`、`singleSeconds`、`averageSeconds`、`cube`、`method`、`timestamp`
 - 全站最佳返回每个项目的单次 / 平均最佳、所属用户编号、昵称和时间
 - 单项目榜单在数据库侧按用户取最佳成绩并排序，`type` 支持 `single`、`average`
-- 单项目榜单 `limit` 默认 100、最大 200，`keyword` 按用户昵称搜索后再返回该搜索范围内的最佳成绩
+- 单项目榜单返回完整成绩项数组（字段同成绩列表），`limit` 默认 100、最大 200，`keyword` 按用户昵称搜索后再返回该搜索范围内的最佳成绩
 - GR 历程返回 `event`、`single`、`average`
-- 新增成绩返回 `_id`、`isSingleGR`、`isAverageGR`
+- 新增成绩（私有接口）返回 `_id`、`isSingleGR`、`isAverageGR`
+- 通过 QQ 提交成绩返回 `_id`、`userId`、`nickname`、`event`、`singleSeconds`、`averageSeconds`、`isSingleGR`、`isAverageGR`、`previousSingleBest`、`previousAverageBest`
+- `previousSingleBest` 和 `previousAverageBest` 结构：`{ userId, nickname, seconds, timestamp }` 或 `null`
 - 更新和删除成绩只返回操作结果信息
 
 ## Meme Events
