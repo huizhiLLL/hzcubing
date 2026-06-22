@@ -1,23 +1,25 @@
 <template>
   <div class="players">
-    <AppPageHeader title="选手" />
+    <AppPageHeader title="选手">
+      <template #aside>
+        <div class="players-toolbar">
+          <input
+            v-model="keyword"
+            type="search"
+            class="search-input"
+            placeholder="搜索选手昵称"
+            aria-label="搜索选手昵称"
+          />
+          <AppSegmentedControl
+            v-model="sort"
+            :options="sortOptions"
+            aria-label="排序方式"
+          />
+        </div>
+      </template>
+    </AppPageHeader>
 
     <AppStatusBlock v-if="loading" variant="loading" message="加载中..." />
-
-    <div class="players-toolbar">
-      <input
-        v-model="keyword"
-        type="search"
-        class="search-input"
-        placeholder="搜索选手昵称"
-        aria-label="搜索选手昵称"
-      />
-      <AppSegmentedControl
-        v-model="sort"
-        :options="sortOptions"
-        aria-label="排序方式"
-      />
-    </div>
 
     <template v-if="!loading && playerSummary.length > 0">
       <div class="player-grid">
@@ -188,6 +190,7 @@ onBeforeUnmount(() => {
   display: flex;
   gap: var(--space-sm);
   align-items: center;
+  width: min(520px, 100%);
 }
 
 .search-input {
