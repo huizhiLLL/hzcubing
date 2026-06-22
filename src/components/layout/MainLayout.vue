@@ -9,7 +9,7 @@
     <aside class="sidebar" :class="{ 'mobile-open': isMobileMenuOpen }">
       <div class="sidebar-header">
         <router-link to="/" class="logo" @click="handleLogoClick">
-          <img src="@/assets/favicon.ico" alt="hzcubing" class="nav-logo" />
+          <img src="@/assets/logo.png" alt="hzcubing" class="nav-logo" />
           <span v-if="!isCollapsed" class="logo-text">hzcubing</span>
         </router-link>
         <button class="collapse-btn" @click="toggleSidebar">
