@@ -12,6 +12,16 @@ import { errorHandler } from './middleware/errorHandler.js'
 
 dotenv.config()
 
+// Global error handlers to prevent process crashes
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err.message)
+  console.error(err.stack)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason?.message || reason)
+})
+
 const app = express()
 const PORT = process.env.PORT || 3001
 
@@ -30,7 +40,7 @@ app.use(cors({
     if (corsOrigins.indexOf(origin) !== -1) {
       callback(null, true)
     } else {
-      callback(new Error('Not allowed by CORS'))
+      callback(null, false)
     }
   },
   credentials: true
