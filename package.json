@@ -13,6 +13,7 @@
     "db:local": "wrangler d1 migrations apply DB --local"
   },
   "dependencies": {
+    "@lucide/vue": "^1.80.0",
     "axios": "^1.13.6",
     "hono": "^4.13.22",
     "pinia": "^3.0.4",

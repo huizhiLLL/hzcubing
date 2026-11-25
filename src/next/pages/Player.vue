@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from '@lucide/vue'
+import IconButton from '../components/IconButton.vue'
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { api, day, label, message, send, session, time, type Best, type Player, type RecordInfo } from '../api'
@@ -54,7 +56,7 @@ function remove(id: string) {
   <template v-if="profile && !loading">
     <header class="page-heading">
       <div class="player-heading"><img v-if="profile.user.avatar" class="avatar" :src="profile.user.avatar" width="48" height="48" alt=""><div><h1>{{ profile.user.nickname }}</h1><p>{{ profile.user.wcaId || `#${profile.user.userNo}` }}</p></div></div>
-      <RouterLink v-if="own" class="button primary" to="/submit">录入成绩</RouterLink>
+      <RouterLink v-if="own" class="icon-action" to="/submit" aria-label="录入成绩" title="录入成绩"><Plus aria-hidden="true" /></RouterLink>
     </header>
     <p v-if="profile.user.bio">{{ profile.user.bio }}</p>
     <section class="section">
@@ -68,9 +70,17 @@ function remove(id: string) {
       <h2>成绩记录</h2>
       <p v-if="!profile.records.length" class="notice">暂无成绩。</p>
       <div v-else class="table-wrap"><table><thead><tr><th scope="col">项目</th><th scope="col" class="numeric">单次</th><th scope="col" class="numeric">平均</th><th scope="col" class="date-col">日期</th><th v-if="own" scope="col">操作</th></tr></thead>
-        <tbody><tr v-for="item in profile.records" :key="item.id"><td>{{ label(item.event) }}</td><td class="numeric">{{ time(item.singleSeconds) }}</td><td class="numeric">{{ time(item.averageSeconds) }}</td><td class="date-col">{{ day(item.timestamp) }}</td><td v-if="own"><RouterLink :to="{ path: '/submit', query: { edit: item.id } }">编辑</RouterLink> <button type="button" class="text-button" :disabled="pending" @click="remove(item.id)">删除</button></td></tr></tbody>
+        <tbody><tr v-for="item in profile.records" :key="item.id"><td>{{ label(item.event) }}</td><td class="numeric">{{ time(item.singleSeconds) }}</td><td class="numeric">{{ time(item.averageSeconds) }}</td><td class="date-col">{{ day(item.timestamp) }}</td><td v-if="own">
+          <div class="record-actions">
+            <RouterLink class="icon-action" :to="{ path: '/submit', query: { edit: item.id } }" aria-label="编辑成绩" title="编辑成绩"><Pencil aria-hidden="true" /></RouterLink>
+            <IconButton class="danger-action" label="删除成绩" :disabled="pending" @click="remove(item.id)"><Trash2 /></IconButton>
+          </div>
+        </td></tr></tbody>
       </table></div>
-      <div v-if="page > 1 || profile.more" class="actions pagination"><button :disabled="page === 1" @click="page--">上一页</button><button :disabled="!profile.more" @click="page++">下一页</button></div>
+      <div v-if="page > 1 || profile.more" class="actions pagination" role="group" aria-label="翻页">
+        <IconButton label="上一页" :disabled="page === 1" @click="page--"><ChevronLeft /></IconButton>
+        <IconButton label="下一页" :disabled="!profile.more" @click="page++"><ChevronRight /></IconButton>
+      </div>
     </section>
     <section v-if="own" class="section form-panel">
       <h2>个人资料</h2>

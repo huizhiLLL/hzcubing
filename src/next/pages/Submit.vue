@@ -51,8 +51,8 @@ async function save() {
     <p v-if="error" class="notice error" role="alert">{{ error }}</p>
     <form v-if="session && (!id || editable)" class="fields" @submit.prevent="save">
       <label>项目<select v-model="fields.event" required><option v-for="event in eventList.filter(row => row.active || row.code === fields.event)" :key="event.code" :value="event.code">{{ event.name }}</option></select></label>
-      <div class="field-pair"><label>单次<input v-model.trim="fields.singleSeconds" placeholder="例如 12.34" inputmode="decimal"></label><label>平均<input v-model.trim="fields.averageSeconds" placeholder="例如 13.45" inputmode="decimal"></label></div>
-      <label>原始成绩<input v-model.trim="solves" placeholder="用空格隔开，支持 DNF"></label>
+      <div class="field-pair"><label>单次<input v-model.trim="fields.singleSeconds" placeholder="12.34" inputmode="decimal"></label><label>平均<input v-model.trim="fields.averageSeconds" placeholder="13.45" inputmode="decimal"></label></div>
+      <label>原始成绩<input v-model.trim="solves" placeholder="12.34 13.45 DNF"></label>
       <div class="field-pair"><label>器材<input v-model.trim="fields.cube" maxlength="100"></label><label>方法<input v-model.trim="fields.method" maxlength="100"></label></div>
       <label>比赛<input v-model.trim="fields.competition" maxlength="100"></label>
       <button class="primary" :disabled="busy">{{ busy ? '保存中…' : '保存成绩' }}</button>

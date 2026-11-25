@@ -29,6 +29,6 @@ async function submit() {
       <p v-if="error" class="notice error" role="alert">{{ error }}</p>
       <button type="submit" class="primary" :disabled="busy">{{ busy ? '处理中…' : registering ? '创建账号' : '登录' }}</button>
     </form>
-    <button class="text-button switch-auth" type="button" :disabled="busy" @click="registering = !registering; error = ''">{{ registering ? '已有账号？登录' : '还没有账号？注册' }}</button>
+    <button class="text-button switch-auth" type="button" :disabled="busy" @click="registering = !registering; error = ''">{{ registering ? '登录' : '注册' }}</button>
   </section>
 </template>

@@ -6,7 +6,7 @@
 
 | 目录 | 职责 |
 | --- | --- |
-| `src/next/` | Vue 3、Vue Router、Vite 与 TypeScript。页面通过同域 `/api` 访问 Worker。普通 CSS 只用于页面骨架。 |
+| `src/next/` | Vue 3、Vue Router、Vite 与 TypeScript。页面通过同域 `/api` 访问 Worker。普通 CSS 负责布局和交互样式，通用图标统一从 `@lucide/vue` 按需导入。 |
 | `worker/` | Hono API、会话、权限、项目、选手、成绩、群纪录、QQ 及媒体请求。 |
 | `migrations/` | D1 表、项目种子、会话和速率计数。 |
 | `scripts/migration/` | 快照备份、BSON、D1 和 R2 之间的转换与校验。 |

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Pencil, X } from '@lucide/vue'
+import IconButton from '../components/IconButton.vue'
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { categories, eventList, loadEvents, message, send, session, type EventInfo } from '../api'
@@ -32,13 +34,19 @@ async function save() {
       <label>描述<textarea v-model.trim="fields.description" maxlength="500" rows="2"></textarea></label>
       <label class="check"><input v-model="fields.active" type="checkbox">启用</label>
       <p v-if="error" class="notice error" role="alert">{{ error }}</p>
-      <div class="actions"><button class="primary" :disabled="busy">保存</button><button v-if="current" type="button" @click="edit()">取消编辑</button></div>
+      <div class="actions"><button class="primary" :disabled="busy">保存</button><IconButton v-if="current" label="取消编辑" @click="edit()"><X /></IconButton></div>
     </form>
   </section>
   <section v-for="group in groups.filter(group => group.items.length)" :key="group.name" class="section">
     <h2>{{ group.name }}项目</h2>
-    <ul class="quick-grid">
-      <li v-for="event in group.items" :key="event.code"><RouterLink :to="{ path: '/leaderboard', query: { event: event.code } }"><strong>{{ event.name }}</strong><span>{{ event.active ? event.code : '已停用' }}</span></RouterLink><button v-if="canManage && event.category === 'meme'" class="text-button" type="button" @click="edit(event)">编辑项目</button></li>
+    <ul class="directory-list">
+      <li v-for="event in group.items" :key="event.code">
+        <RouterLink class="directory-link" :to="{ path: '/leaderboard', query: { event: event.code } }">
+          <strong>{{ event.name }}</strong>
+          <small v-if="!event.active || event.code !== event.name">{{ event.active ? event.code : '已停用' }}</small>
+        </RouterLink>
+        <IconButton v-if="canManage && event.category === 'meme'" :label="`编辑${event.name}`" @click="edit(event)"><Pencil /></IconButton>
+      </li>
     </ul>
   </section>
 </template>

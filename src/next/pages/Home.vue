@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ListOrdered, Plus } from '@lucide/vue'
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { api, eventList, message } from '../api'
@@ -13,10 +14,11 @@ onMounted(async () => {
 <template>
   <section class="home-intro">
     <div>
-      <p class="overline">HZCUBING · 魔方社区</p>
       <h1>魔方成绩册</h1>
-      <p class="lead">录下每一次进步，看看群友们拧得有多快。</p>
-      <div class="actions"><RouterLink class="button primary" to="/leaderboard">查看榜单 <span aria-hidden="true">↗</span></RouterLink><RouterLink class="button" to="/submit">录入成绩</RouterLink></div>
+      <div class="actions home-actions">
+        <RouterLink class="button primary action-label" to="/leaderboard"><ListOrdered aria-hidden="true" />榜单</RouterLink>
+        <RouterLink class="icon-action" to="/submit" aria-label="录入成绩" title="录入成绩"><Plus aria-hidden="true" /></RouterLink>
+      </div>
     </div>
     <dl v-if="summary" class="summary-grid" aria-label="社区统计">
       <div><dt>成绩</dt><dd>{{ summary.records.toLocaleString() }}</dd></div>
@@ -26,10 +28,16 @@ onMounted(async () => {
     <p v-else-if="error" class="notice error" role="alert">{{ error }}</p>
   </section>
   <section class="section">
-    <div class="section-head"><h2>常用项目</h2><RouterLink to="/events">全部项目 ↗</RouterLink></div>
-    <ul class="quick-grid">
+    <div class="section-head">
+      <h2>项目榜单</h2>
+      <RouterLink class="text-link" to="/events">全部项目</RouterLink>
+    </div>
+    <ul class="directory-list">
       <li v-for="event in eventList.filter(row => row.category === 'official').slice(0, 8)" :key="event.code">
-        <RouterLink :to="{ path: '/leaderboard', query: { event: event.code } }"><strong>{{ event.name }}</strong><span>{{ event.code }}</span></RouterLink>
+        <RouterLink class="directory-link" :to="{ path: '/leaderboard', query: { event: event.code } }">
+          <strong>{{ event.name }}</strong>
+          <small>{{ event.code }}</small>
+        </RouterLink>
       </li>
     </ul>
   </section>

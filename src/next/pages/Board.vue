@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Plus, Search } from '@lucide/vue'
+import IconButton from '../components/IconButton.vue'
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { api, categories, day, eventList, message, time, type RecordInfo } from '../api'
@@ -29,17 +31,20 @@ watch([event, metric, query, () => props.historyMode], async ([code, kind, term,
 </script>
 
 <template>
-  <header class="page-heading"><h1>{{ historyMode ? '群纪录' : '成绩榜单' }}</h1><RouterLink class="button primary" to="/submit">录入成绩</RouterLink></header>
+  <header class="page-heading"><h1>{{ historyMode ? '群纪录' : '成绩榜单' }}</h1><RouterLink class="icon-action" to="/submit" aria-label="录入成绩" title="录入成绩"><Plus aria-hidden="true" /></RouterLink></header>
   <div class="toolbar">
     <label>项目 <select :value="event" @change="update('event', ($event.target as HTMLSelectElement).value)">
       <optgroup v-for="group in groups" :key="group.label" :label="group.label"><option v-for="item in group.events" :key="item.code" :value="item.code">{{ item.name }}</option></optgroup>
     </select></label>
     <div class="segments" aria-label="成绩类型"><button type="button" :aria-pressed="metric === 'single'" @click="update('type', 'single')">单次</button><button type="button" :aria-pressed="metric === 'average'" @click="update('type', 'average')">平均</button></div>
-    <form v-if="!historyMode" class="search" @submit.prevent="query = search"><label>选手 <input v-model="search" type="search" maxlength="50" placeholder="搜索昵称"></label><button>搜索</button></form>
+    <form v-if="!historyMode" class="search" role="search" @submit.prevent="query = search">
+      <input v-model="search" aria-label="选手昵称" type="search" maxlength="50" placeholder="选手昵称">
+      <IconButton type="submit" label="搜索"><Search /></IconButton>
+    </form>
   </div>
   <p v-if="loading" class="notice" role="status">正在加载成绩…</p>
   <p v-else-if="error" class="notice error" role="alert">{{ error }}</p>
-  <p v-else-if="!rows.length" class="notice">这个项目还没有符合条件的成绩。</p>
+  <p v-else-if="!rows.length" class="notice">暂无成绩。</p>
   <div v-else class="table-wrap"><table>
     <thead><tr><th v-if="!historyMode" scope="col" class="rank">排名</th><th scope="col">选手</th><th scope="col" class="numeric">成绩</th><th scope="col" class="secondary-col">器材</th><th scope="col" class="date-col">日期</th></tr></thead>
     <tbody><tr v-for="row in rows" :key="row.id">
