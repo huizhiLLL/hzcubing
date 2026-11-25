@@ -111,7 +111,7 @@ records.post('/', async c => {
   if (endpoint && token && umo && (result.isSingleGR || result.isAverageGR)) {
     const detail = [result.isSingleGR ? `单次 ${result.singleSeconds}` : '', result.isAverageGR ? `平均 ${result.averageSeconds}` : ''].filter(Boolean).join('，')
     const message = `${result.nickname} 刷新 ${result.event} 群纪录：${detail}`
-    c.executionCtx.waitUntil(fetch(endpoint, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(3000),
+    c.executionCtx.waitUntil(fetch(endpoint, { method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(3000),
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ umo, message }),
     }).then(response => { if (!response.ok) console.warn('AstrBot notification rejected') }).catch(() => console.warn('AstrBot notification unavailable')))
   }

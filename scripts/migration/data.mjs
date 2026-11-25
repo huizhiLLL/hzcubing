@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { join } from 'node:path'
 import { deserialize } from 'bson'
 import { STATIC_EVENTS } from '../../src/config/events.js'
 
@@ -10,7 +10,10 @@ export const imageTypes = {
 }
 
 export function readBson(directory, collection) {
-  const file = readFileSync(join(directory, `${collection}.bson`))
+  return decodeBson(readFileSync(join(directory, `${collection}.bson`)), collection)
+}
+
+export function decodeBson(file, collection) {
   const documents = []
   for (let offset = 0; offset < file.length;) {
     const size = file.readInt32LE(offset)
@@ -33,8 +36,13 @@ const stringId = value => {
   throw new Error('Missing or invalid source ID')
 }
 const millis = value => {
-  if (!(value instanceof Date) || !Number.isFinite(value.getTime())) throw new Error('Invalid source date')
-  return value.getTime()
+  const isoUtc = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+  const isCanonical = typeof value === 'string' && isoUtc.test(value)
+  const date = isCanonical ? new Date(value) : value
+  if (!(date instanceof Date) || !Number.isFinite(date.getTime()) || (isCanonical && date.toISOString() !== value)) {
+    throw new Error('Invalid source date')
+  }
+  return date.getTime()
 }
 const number = value => {
   if (value == null) return null
@@ -124,7 +132,7 @@ export function manifest({ tables, avatars, historicalPrecision, sequence }) {
   }
 }
 
-export function verify(database, output, expected) {
+export function verify(database, output, expected, loadAvatar = key => readFileSync(join(output, key))) {
   for (const [table, { count, digest }] of Object.entries(expected.tables)) {
     const rows = database.prepare(`SELECT ${columns(table).join(', ')} FROM ${table}`).all()
     if (rows.length !== count || digestRows(rows.map(row => Object.values(row))) !== digest) throw new Error(`Data mismatch: ${table}`)
@@ -133,7 +141,7 @@ export function verify(database, output, expected) {
   const sequence = database.prepare("SELECT seq FROM sqlite_sequence WHERE name = 'users'").get()?.seq ?? 0
   if (sequence !== expected.sequence) throw new Error('User sequence mismatch')
   for (const image of expected.avatars) {
-    const bytes = readFileSync(join(output, 'avatars', image.key.split('/')[1], basename(image.key)))
+    const bytes = loadAvatar(image.key)
     if (bytes.length !== image.bytes || sha256(bytes) !== image.sha256) throw new Error('Avatar checksum mismatch')
   }
 }

@@ -10,7 +10,7 @@ const stamps = { createdAt: date, updatedAt: date }
 
 test('retains account identifiers, raw decimals, historical events and the source counter', () => {
   const data = convert({
-    users: [{ _id: 'user-a', userNo: 5, email: 'test@example.com', nickname: "U'昵称", password: pwd, qqId: '12345', ...stamps }],
+    users: [{ _id: 'user-a', userNo: 5, email: 'test@example.com', nickname: "U'昵称", password: pwd, qqId: '12345', ...stamps, createdAt: date.toISOString() }],
     records: [{ _id: 'record-a', userId: 'user-a', event: '历史编码A', nickname: '旧昵称', singleSeconds: 3.1415, timestamp: date, ...stamps }],
     events: [], counter: { seq: 8 },
   })

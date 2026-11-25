@@ -39,7 +39,7 @@ async function passwordService(c: AppContext, route: 'hash' | 'verify', password
     const base = new URL(c.env.PASSWORD_SERVICE_URL)
     if (base.protocol !== 'https:' && !(c.env.DEV_PASSWORD_HTTP === '1' && base.hostname === '127.0.0.1')) throw new Error('HTTPS required')
     response = await fetch(new URL(`${base.pathname.replace(/\/$/, '')}/${route}`, base), {
-      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(3500),
+      method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(3500),
       headers: { Authorization: `Bearer ${c.env.PASSWORD_SERVICE_SECRET}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ password, hash }),
     })
