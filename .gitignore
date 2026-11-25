@@ -40,3 +40,5 @@ server/scripts/
 .vscode/
 tmp/
 output/
+# Migration artifacts contain personal data
+/migration-data/
