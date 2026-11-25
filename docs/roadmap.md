@@ -67,6 +67,8 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 - `hzcubing-next-preview` 已部署到 Workers Free，使用独立 D1 和 R2。合成快照已完成远程上传、导入、导出和逐项校验。预览开启停写，可查看站点和合成榜单。
 - VPS2 已安装密码服务和专用 Tunnel 连接器。现有 OAuth 创建 `password.hzcubing.fun` 的 DNS 记录时返回 `403`。在 Cloudflare 的 `hzcubing.fun` 区域添加代理 CNAME，目标为 `8f1cc72e-a9dc-4d72-9cac-d86479b2a1fd.cfargotunnel.com`。生效后在隔离预览环境核对 Worker 通过正式 HTTPS 地址调用密码服务。
 
+- AstrBot 插件的新版适配在其原仓库的 `codex/cloudflare-api` 分支，已用 VPS2 上同一镜像验证预览环境的群纪录、群纪录历史、榜单和项目查询。部署插件时设置 `HZCUBING_BOT_SECRET`，使其匹配 Worker 的 `BOT_SECRET`。`/绑定` 查询绑定状态，新绑定在个人主页完成。
+
 Windows 下可用 `scripts/migration/backup-vps2.ps1` 从 VPS2 拉取 gzip MongoDB 归档到当前用户的本机加密存储。Windows DPAPI 文件由生成它的用户账户解密。停写窗口开启后生成新的归档，并在独立 MongoDB 恢复以取得四份 BSON 文件。确认最终快照可恢复后再发布。
 
 ```sh
