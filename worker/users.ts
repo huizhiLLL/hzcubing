@@ -8,23 +8,38 @@ export const players = new Hono<App>()
 players.get('/', async c => {
   const search = text(c.req.query('q'), 50)
   const page = Math.max(1, Math.min(1000, Number(c.req.query('page')) || 1)) | 0
-  const { results } = await c.env.DB.prepare(`SELECT * FROM users WHERE status='active'
-    AND (instr(lower(nickname),lower(?))>0 OR instr(lower(wca_id),lower(?))>0)
-    ORDER BY user_no LIMIT 31 OFFSET ?`).bind(search, search, (page - 1) * 30).all<User>()
-  return c.json({ users: results.slice(0, 30).map(publicUser), more: results.length > 30 })
+  const sort = c.req.query('sort')
+  const order = sort === 'mostRecords' ? 'record_count DESC,' : sort === 'mostEvents' ? 'event_count DESC,' : ''
+  const { results } = await c.env.DB.prepare(`SELECT u.*, COUNT(r.id) AS record_count, COUNT(DISTINCT r.event) AS event_count,
+      json_group_array(DISTINCT r.event) FILTER (WHERE r.event IS NOT NULL) AS event_codes
+    FROM users u LEFT JOIN records r ON r.user_id=u.id WHERE u.status='active'
+    AND (instr(lower(u.nickname),lower(?))>0 OR instr(lower(u.wca_id),lower(?))>0)
+    GROUP BY u.id ORDER BY ${order} u.created_at DESC,u.user_no DESC LIMIT 31 OFFSET ?`)
+    .bind(search, search, (page - 1) * 30).all<User & { created_at: number; record_count: number; event_count: number; event_codes: string }>()
+  return c.json({ users: results.slice(0, 30).map(user => ({
+    ...publicUser(user), createdAt: user.created_at, recordCount: user.record_count, eventCount: user.event_count, events: JSON.parse(user.event_codes) as string[],
+  })), more: results.length > 30 })
 })
 players.get('/:userNo', async c => {
   const userNo = Number(c.req.param('userNo'))
   if (!Number.isSafeInteger(userNo) || userNo < 1) fail(404, '找不到该选手')
-  const user = await c.env.DB.prepare('SELECT * FROM users WHERE user_no=?').bind(userNo).first<User>()
+  const user = await c.env.DB.prepare('SELECT * FROM users WHERE user_no=?').bind(userNo).first<User & { created_at: number }>()
   if (!user) fail(404, '找不到该选手')
   const page = Math.max(1, Math.min(1000, Number(c.req.query('page')) || 1)) | 0
-  const [history, best] = await c.env.DB.batch<RecordRow>([
-    c.env.DB.prepare(`${recordSelect} WHERE r.user_id=? ORDER BY r.timestamp DESC,r.id LIMIT 31 OFFSET ?`).bind(user.id, (page - 1) * 30),
-    c.env.DB.prepare(`SELECT event, MIN(single_seconds) AS single_seconds, MIN(average_seconds) AS average_seconds
-      FROM records WHERE user_id=? GROUP BY event ORDER BY event`).bind(user.id),
+  const category = text(c.req.query('category'), 20)
+  const projects = c.env.DB.prepare(`SELECT code,name,active FROM events WHERE category='meme' AND created_by=? ORDER BY created_at DESC,code`)
+  const [createdProjects, [history, best]] = await Promise.all([
+    projects.bind(user.id).all<{ code: string; name: string; active: number }>(),
+    c.env.DB.batch<RecordRow>([
+      c.env.DB.prepare(`${recordSelect} WHERE r.user_id=? AND (?='' OR r.event IN (SELECT code FROM events WHERE category=?))
+        ORDER BY r.timestamp DESC,r.id LIMIT 31 OFFSET ?`).bind(user.id, category, category, (page - 1) * 30),
+      c.env.DB.prepare(`SELECT event, MIN(single_seconds) AS single_seconds, MIN(average_seconds) AS average_seconds
+        FROM records WHERE user_id=? GROUP BY event ORDER BY event`).bind(user.id),
+    ]),
   ])
-  return c.json({ user: publicUser(user), records: history.results.slice(0, 30).map(recordDto), more: history.results.length > 30,
+  return c.json({ user: { ...publicUser(user), createdAt: user.created_at },
+    createdProjects: createdProjects.results.map(row => ({ code: row.code, name: row.name, active: Boolean(row.active) })),
+    records: history.results.slice(0, 30).map(recordDto), more: history.results.length > 30,
     best: best.results.map(row => ({ event: row.event, singleSeconds: row.single_seconds, averageSeconds: row.average_seconds })) })
 })
 
@@ -61,6 +76,12 @@ profile.post('/qq', async c => {
   const id = qqId((await json(c)).qqId)
   await bindQQ(c.env.DB, user, id)
   return c.json({ qqBound: true })
+})
+
+profile.delete('/avatar', async c => {
+  const user = signedIn(c)
+  await c.env.DB.prepare('UPDATE users SET avatar_key=NULL,updated_at=? WHERE id=?').bind(Date.now(), user.id).run()
+  return c.body(null, 204)
 })
 
 const signatures = [

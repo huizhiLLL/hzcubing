@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import type { App, AppContext, User } from './types'
 import { digest, fail, json, publicUser, signedIn, text, uniqueError } from './http'
+import { qqId } from './users'
 
 const days30 = 30 * 86400
 const dummyHash = '$2a$10$T8W3d6s9bFmELCXEnbkO7uKZs9muUCcFzA2l0JgOaeFeNVF7CCIKq'
@@ -76,6 +77,7 @@ auth.post('/register', async c => {
   const data = await json(c)
   const { email, password } = credentials(data)
   const nickname = text(data.nickname, 50, true)
+  const qq = data.qqId == null || data.qqId === '' ? null : qqId(data.qqId)
   if (password.length < 6 || passwordBytes(password) > 72) fail(400, '密码至少 6 个字符，最多 72 字节')
   await rateLimit(c, 'register', email)
   const { hash } = await passwordService(c, 'hash', password)
@@ -84,15 +86,15 @@ auth.post('/register', async c => {
   const now = Date.now()
   let user: User | null
   try {
-    user = await c.env.DB.prepare(`INSERT INTO users (id,email,password_hash,nickname,created_at,updated_at)
-      VALUES (?,?,?,?,?,?) RETURNING *`).bind(id, email, hash, nickname, now, now).first<User>()
+    user = await c.env.DB.prepare(`INSERT INTO users (id,email,password_hash,nickname,qq_id,created_at,updated_at)
+      VALUES (?,?,?,?,?,?,?) RETURNING *`).bind(id, email, hash, nickname, qq, now, now).first<User>()
   } catch (error) {
-    if (uniqueError(error)) fail(409, '邮箱已注册')
+    if (uniqueError(error)) fail(409, qq ? '邮箱已注册或 QQ 号码已绑定' : '邮箱已注册')
     throw error
   }
   if (!user) throw new Error('User insert returned no row')
   await issueSession(c, id)
-  return c.json({ ...publicUser(user), role: user.role }, 201)
+  return c.json(account(user), 201)
 })
 
 auth.post('/login', async c => {
@@ -102,13 +104,14 @@ auth.post('/login', async c => {
   const { matches } = await passwordService(c, 'verify', password, user?.password_hash ?? dummyHash)
   if (!user || matches !== true || user.status !== 'active') fail(401, '邮箱或密码不正确，或账号不可用')
   await issueSession(c, user.id)
-  return c.json({ ...publicUser(user), role: user.role })
+  return c.json(account(user))
 })
 
-auth.get('/me', c => {
-  const user = signedIn(c)
-  return c.json({ ...publicUser(user), role: user.role, qqBound: Boolean(user.qq_id) })
-})
+function account(user: User) {
+  return { ...publicUser(user), email: user.email, role: user.role, qqBound: Boolean(user.qq_id) }
+}
+
+auth.get('/me', c => c.json(account(signedIn(c))))
 
 auth.post('/logout', async c => {
   const session = c.get('session')

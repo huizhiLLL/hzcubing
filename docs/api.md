@@ -8,12 +8,13 @@
 | --- | --- | --- |
 | `GET /api/health` | 公开 | Worker 健康检查。 |
 | `GET /api/summary` | 公开 | 账号、成绩与启用项目数量。 |
-| `POST /api/auth/register`、`POST /api/auth/login` | 同域 | 注册传 `email`、`password`、`nickname`，登录传邮箱与密码，成功设置会话。 |
-| `GET /api/auth/me`、`POST /api/auth/logout` | 登录 | 查询本人资料及角色，或撤销会话。 |
-| `GET /api/players?q=&page=` | 公开 | 以昵称或 WCA ID 搜索选手，每页 30 条。 |
-| `GET /api/players/:userNo?page=` | 公开 | 个人资料，全部个人最佳与分页历史。 |
+| `POST /api/auth/register`、`POST /api/auth/login` | 同域 | 注册传 `email`、`password`、`nickname`，登录传邮箱与密码，注册可选填 `qqId`，成功设置会话。 |
+| `GET /api/auth/me`、`POST /api/auth/logout` | 登录 | 查询本人资料、邮箱和角色，或撤销会话。 |
+| `GET /api/players?q=&page=&sort=` | 公开 | 以昵称或 WCA ID 搜索选手，返回加入时间、成绩数、项目数和项目编码，每页 30 条。`sort` 支持 `latest`、`mostRecords`、`mostEvents`。 |
+| `GET /api/players/:userNo?page=&category=` | 公开 | 返回个人资料、创建的整活项目、全部个人最佳和分页历史。可用 `category` 筛选历史成绩。 |
 | `PATCH /api/profile` | 登录 | 更新 `nickname`、`bio` 或 `wcaId`。 |
 | `PUT /api/profile/avatar` | 登录 | 上传 PNG、JPEG、GIF、WebP 或 AVIF，上限 2 MB。 |
+| `DELETE /api/profile/avatar` | 登录 | 解除当前头像的关联。 |
 | `POST /api/profile/qq` | 登录 | `qqId` 是字符串，绑定当前账号。 |
 | `GET /api/events` | 公开 | 项目编码、名称、分类、描述和状态。 |
 | `POST /api/events`、`PATCH /api/events/:code` | 管理员 | 创建或编辑整活项目，使用 `code`、`name`、`description`、`active`。编码为创建时确定。 |
