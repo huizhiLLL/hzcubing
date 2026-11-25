@@ -1,32 +1,56 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import type { Player } from '../api'
+import { day, type Player } from '../api'
 import { IconButton, Pagination, ResourceNotice } from '../components/Actions'
 import { Input } from '../components/ui/input'
-import { useResource } from '../site'
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '../components/ui/select'
+import { useResource, useSite } from '../site'
+
+const sortOptions = [
+  { label: '最新', value: 'latest' },
+  { label: '成绩最多', value: 'mostRecords' },
+  { label: '项目最多', value: 'mostEvents' },
+]
+type ListedPlayer = Player & { createdAt: number; recordCount: number; eventCount: number; events: string[] }
 
 export default function Players() {
-  const [filter, setFilter] = useState({ page: 1, q: '' })
-  const { page, q } = filter
-  const { data, loading, error } = useResource<{ users: Player[]; more: boolean }>(`/players?${new URLSearchParams({ page: String(page), q })}`)
+  const { events } = useSite()
+  const eventNames = new Map(events.map(event => [event.code, event.name]))
+  const [filter, setFilter] = useState({ page: 1, q: '', sort: 'latest' })
+  const { page, q, sort } = filter
+  const { data, loading, error } = useResource<{ users: ListedPlayer[]; more: boolean }>(`/players?${new URLSearchParams({ page: String(page), q, sort })}`)
   return <>
     <header className="page-heading"><h1>选手</h1></header>
-    <form className="search toolbar" role="search" onSubmit={submit => {
+    <div className="toolbar board-toolbar players-toolbar"><form className="search" role="search" onSubmit={submit => {
       submit.preventDefault()
-      setFilter({ page: 1, q: String(new FormData(submit.currentTarget).get('query') || '').trim() })
+      setFilter({ ...filter, page: 1, q: String(new FormData(submit.currentTarget).get('query') || '').trim() })
     }}>
-      <Input name="query" aria-label="昵称或 WCA ID" type="search" placeholder="昵称或 WCA ID" maxLength={50} />
+      <Input name="query" aria-label="昵称或 WCA ID" type="search" placeholder="搜索选手昵称" maxLength={50} />
       <IconButton type="submit" label="搜索"><Search /></IconButton>
     </form>
+      <Select items={sortOptions} value={sort} onValueChange={value => value && setFilter({ ...filter, page: 1, sort: value })}>
+        <SelectTrigger aria-label="排序方式"><SelectValue /></SelectTrigger>
+        <SelectPopup alignItemWithTrigger={false}>{sortOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectPopup>
+      </Select>
+    </div>
     {loading || error || !data?.users.length ? <ResourceNotice loading={loading} error={error} empty="未找到选手。" /> :
-      <ul className="directory-list">{data.users.map(player => <li key={player.userNo}>
-        <Link to={`/user/${player.userNo}`} className="directory-link player-link">
-          {player.avatar ? <img className="avatar" src={player.avatar} alt="" width={42} height={42} loading="lazy" /> :
-            <span className="avatar fallback" aria-hidden="true">{[...player.nickname][0]}</span>}
-          <span><strong>{player.nickname}</strong><small>{player.wcaId || `#${player.userNo}`}</small></span>
-        </Link>
-      </li>)}</ul>}
-    <Pagination page={page} more={Boolean(data?.more)} loading={loading} onPage={next => setFilter({ page: next, q })} />
+      <ul className="directory-list player-directory">{data.users.map(player => {
+        const projects = player.events.map(code => eventNames.get(code) ?? code).join(' · ')
+        return <li key={player.userNo}>
+          <Link to={`/user/${player.userNo}`} className="directory-link player-link">
+            {player.avatar ? <img className="avatar" src={player.avatar} alt="" width={42} height={42} loading="lazy" /> :
+              <span className="avatar fallback" aria-hidden="true">{[...player.nickname][0]}</span>}
+            <span className="player-summary">
+              <strong title={player.nickname}>{player.nickname}</strong>
+              <small title={player.wcaId || undefined}>{player.wcaId || `#${player.userNo}`}</small>
+              <small>加入于 {day(player.createdAt)}</small>
+              <small>{player.recordCount} 条成绩 · {player.eventCount} 项</small>
+              <small className="player-events" title={projects || undefined}>{projects}</small>
+            </span>
+          </Link>
+        </li>
+      })}</ul>}
+    <Pagination page={page} more={Boolean(data?.more)} loading={loading} onPage={next => setFilter({ ...filter, page: next })} />
   </>
 }

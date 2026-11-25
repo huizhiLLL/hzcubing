@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { message, send, type EventInfo, type RecordInfo } from '../api'
+import { categories, message, send, type EventInfo, type RecordInfo } from '../api'
 import { ResourceNotice } from '../components/Actions'
 import { ProjectSelect } from '../components/ProjectSelect'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '../components/ui/select'
 import { useResource, useSite } from '../site'
 
 export default function Submit() {
@@ -15,12 +16,16 @@ export default function Submit() {
   const { data, loading, error } = useResource<RecordInfo>(id && session ? `/records/${encodeURIComponent(id)}` : null)
   const denied = Boolean(data && data.userNo !== session?.userNo)
   const next = new URLSearchParams({ next: location.pathname + location.search })
-  return <section className="form-panel">
-    <h1>{id ? '编辑成绩' : '录入成绩'}</h1>
-    {sessionReady && !session && <Link to={`/auth?${next}`}>登录后录入成绩</Link>}
-    <ResourceNotice loading={loading || !sessionReady} error={denied ? '只能编辑自己的成绩' : error} />
-    {session && (!id || (data && !denied)) && <RecordForm key={id} record={data} events={events} userNo={session.userNo} />}
-  </section>
+  return <>
+    <header className="page-heading"><h1>{id ? '编辑成绩' : '提交成绩'}</h1>
+      {session && <Button variant="outline" render={<Link to="/submit/manage" />}>管理我的成绩</Button>}
+    </header>
+    <section className="form-panel">
+      {sessionReady && !session && <Link to={`/auth?${next}`}>登录后提交成绩</Link>}
+      <ResourceNotice loading={loading || !sessionReady} error={denied ? '只能编辑自己的成绩' : error} />
+      {session && (!id || (data && !denied)) && <RecordForm key={id} record={data} events={events} userNo={session.userNo} />}
+    </section>
+  </>
 }
 
 function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: EventInfo[]; userNo: number }) {
@@ -31,7 +36,12 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
   const initialSolves = record?.solves?.map(value => value ?? 'DNF').join(' ') ?? ''
   const initialEvent = record?.event ?? '333'
   const [selectedEvent, setSelectedEvent] = useState(initialEvent)
+  const [category, setCategory] = useState<string>()
+  const categoryId = useId()
   const options = events.filter(event => event.active || event.code === initialEvent)
+  const activeCategory = category ?? options.find(event => event.code === initialEvent)?.category ?? 'official'
+  const groups = Object.entries(categories).filter(([key]) => options.some(event => event.category === key))
+  const projectOptions = options.filter(event => event.category === activeCategory)
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const values = new FormData(event.currentTarget)
@@ -45,21 +55,34 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
     setError('')
     try {
       await send(record ? `/records/${encodeURIComponent(record.id)}` : '/records', record ? 'PATCH' : 'POST', payload)
-      navigate(`/user/${userNo}`)
+      navigate(record ? '/submit/manage' : `/user/${userNo}`)
     } catch (cause) { setError(message(cause)) }
     finally { setBusy(false) }
   }
   return <form className="fields" onSubmit={save}>
     <ResourceNotice error={error} />
-    <ProjectSelect events={options} name="event" required value={selectedEvent} onValueChange={setSelectedEvent} />
+    <div className="field-pair">
+      <div className="project-select-field">
+        <label htmlFor={categoryId}>项目分类</label>
+        <Select value={activeCategory} items={groups.map(([value, label]) => ({ value, label }))} onValueChange={value => {
+          if (!value) return
+          setCategory(value)
+          setSelectedEvent(options.find(event => event.category === value)?.code ?? '')
+        }}>
+          <SelectTrigger id={categoryId} className="w-full"><SelectValue /></SelectTrigger>
+          <SelectPopup alignItemWithTrigger={false}>{groups.map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectPopup>
+        </Select>
+      </div>
+      <ProjectSelect events={projectOptions} name="event" required value={selectedEvent} onValueChange={setSelectedEvent} />
+    </div>
     <div className="field-pair">
       <label>单次<Input name="singleSeconds" defaultValue={initialTimes.singleSeconds} placeholder="12.34" inputMode="decimal" /></label>
       <label>平均<Input name="averageSeconds" defaultValue={initialTimes.averageSeconds} placeholder="13.45" inputMode="decimal" /></label>
     </div>
     <label>原始成绩<Input name="solves" defaultValue={initialSolves} placeholder="12.34 13.45 DNF" /></label>
     <div className="field-pair">
-      <label>器材<Input name="cube" defaultValue={record?.cube ?? ''} maxLength={100} /></label>
-      <label>方法<Input name="method" defaultValue={record?.method ?? ''} maxLength={100} /></label>
+      <label>魔方<Input name="cube" defaultValue={record?.cube ?? ''} maxLength={100} /></label>
+      <label>解法<Input name="method" defaultValue={record?.method ?? ''} maxLength={100} /></label>
     </div>
     <label>比赛<Input name="competition" defaultValue={record?.competition ?? ''} maxLength={100} /></label>
     <Button type="submit" loading={busy}>保存成绩</Button>

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Pencil, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { categories, message, send, type EventInfo } from '../api'
 import { IconButton, ResourceNotice } from '../components/Actions'
 import { Button } from '../components/ui/button'
@@ -8,8 +8,8 @@ import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
 import { useSite } from '../site'
 
-export default function Events() {
-  const { session, events, refreshEvents } = useSite()
+export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
+  const { session, sessionReady, events, refreshEvents } = useSite()
   const [editing, setEditing] = useState<EventInfo>()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,9 +31,13 @@ export default function Events() {
     } catch (cause) { setError(message(cause)) }
     finally { setBusy(false) }
   }
+  if (adminOnly && !sessionReady) return <ResourceNotice loading />
+  if (adminOnly && !canManage) return <Navigate to={session ? '/' : '/auth?next=%2Fadmin%2Fmeme-events'} replace />
   return <>
-    <header className="page-heading"><h1>项目</h1></header>
-    {canManage && <section className="form-panel">
+    <header className="page-heading"><h1>{adminOnly ? '整活项目管理' : '项目'}</h1>
+      {!adminOnly && canManage && <Button variant="outline" render={<Link to="/admin/meme-events" />}>管理整活项目</Button>}
+    </header>
+    {adminOnly && <section className="form-panel">
       <h2>{editing ? '编辑整活项目' : '新增整活项目'}</h2>
       <form key={editing?.code ?? ''} className="fields" onSubmit={save}>
         <div className="field-pair">
@@ -50,6 +54,7 @@ export default function Events() {
       </form>
     </section>}
     {Object.entries(categories).map(([category, name]) => {
+      if (adminOnly && category !== 'meme') return null
       const items = events.filter(event => event.category === category)
       return items.length > 0 && <section key={category} className="section">
         <h2>{name}项目</h2>
@@ -58,7 +63,7 @@ export default function Events() {
             <strong>{event.name}</strong>
             {(!event.active || event.code !== event.name) && <small>{event.active ? event.code : '已停用'}</small>}
           </Link>
-          {canManage && category === 'meme' && <IconButton label={`编辑${event.name}`} disabled={busy} onClick={() => { setEditing(event); setError('') }}><Pencil /></IconButton>}
+          {adminOnly && category === 'meme' && <IconButton label={`编辑${event.name}`} disabled={busy} onClick={() => { setEditing(event); setError('') }}><Pencil /></IconButton>}
         </li>)}</ul>
       </section>
     })}

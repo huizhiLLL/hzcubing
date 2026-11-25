@@ -1,21 +1,18 @@
-import { useState } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { day, time, type RecordInfo } from '../api'
-import { ActionLink, IconButton, ResourceNotice } from '../components/Actions'
+import { ActionLink, ResourceNotice } from '../components/Actions'
 import { ProjectSelect } from '../components/ProjectSelect'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { useResource, useSite } from '../site'
 
 export default function Board({ historyMode = false }: { historyMode?: boolean }) {
-  const { events } = useSite()
+  const { events, session } = useSite()
   const [params, setParams] = useSearchParams()
-  const [query, setQuery] = useState('')
   const event = params.get('event') || '333'
   const metric = params.get('type') === 'average' ? 'average' : 'single'
-  const filters = new URLSearchParams({ event, type: metric, q: query })
+  const filters = new URLSearchParams({ event, type: metric })
   const { data, loading, error } = useResource<RecordInfo[] | Record<'single' | 'average', RecordInfo[]>>(
     historyMode ? `/records/gr?${new URLSearchParams({ event })}` : `/records/leaderboard?${filters}`,
   )
@@ -26,15 +23,10 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
     setParams(next, { replace: true })
   }
   return <>
-    <header className="page-heading"><h1>{historyMode ? '群纪录' : '成绩榜单'}</h1><ActionLink to="/submit" label="录入成绩"><Plus /></ActionLink></header>
+    <header className="page-heading"><h1>{historyMode ? '破纪录历史' : '排行榜'}</h1>{historyMode
+      ? <Button variant="outline" render={<Link to="/gr" />}>返回 GR 纪录</Button>
+      : <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>}</header>
     <div className="toolbar board-toolbar">
-      {!historyMode && <form className="search" role="search" onSubmit={submit => {
-        submit.preventDefault()
-        setQuery(String(new FormData(submit.currentTarget).get('nickname') || '').trim())
-      }}>
-        <Input name="nickname" aria-label="选手昵称" type="search" maxLength={50} placeholder="选手昵称" />
-        <IconButton type="submit" label="搜索"><Search /></IconButton>
-      </form>}
       <ProjectSelect events={events} value={event} onValueChange={next => update('event', next)} />
       <div className="segments" role="group" aria-label="成绩类型">
         <Button variant="ghost" aria-pressed={metric === 'single'} onClick={() => update('type', 'single')}>单次</Button>
@@ -45,12 +37,13 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
       <Table><TableHeader><TableRow>
         {!historyMode && <TableHead scope="col" className="rank">排名</TableHead>}
         <TableHead scope="col">选手</TableHead><TableHead scope="col" className="numeric">成绩</TableHead>
-        <TableHead scope="col" className="secondary-col">器材</TableHead><TableHead scope="col" className="date-col">日期</TableHead>
-      </TableRow></TableHeader><TableBody>{rows.map(row => <TableRow key={row.id}>
+        <TableHead scope="col" className="date-col">日期</TableHead>
+      </TableRow></TableHeader><TableBody>{rows.map(row => <TableRow key={row.id}
+        className={!historyMode && row.userNo === session?.userNo ? 'own-rank' : undefined}>
         {!historyMode && <TableCell className={`rank ${row.rank && row.rank <= 3 ? 'podium' : ''}`}>{row.rank}</TableCell>}
         <TableCell><Link to={`/user/${row.userNo}`}>{row.nickname}</Link></TableCell>
         <TableCell className="numeric result-time">{time(metric === 'average' ? row.averageSeconds : row.singleSeconds)}</TableCell>
-        <TableCell className="secondary-col">{row.cube || '—'}</TableCell><TableCell className="date-col">{day(row.timestamp)}</TableCell>
+        <TableCell className="date-col">{day(row.timestamp)}</TableCell>
       </TableRow>)}</TableBody></Table>}
   </>
 }

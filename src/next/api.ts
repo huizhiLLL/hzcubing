@@ -1,7 +1,7 @@
 export interface Player {
   userNo: number; nickname: string; bio: string; wcaId: string; avatar: string | null
 }
-export interface Session extends Player { role: string; qqBound?: boolean }
+export interface Session extends Player { email: string; role: string; qqBound: boolean }
 export interface EventInfo { code: string; name: string; category: string; description: string; iconId: string | null; active: boolean }
 export interface Best { event: string; singleSeconds: number | null; averageSeconds: number | null }
 export interface RecordInfo extends Best {
