@@ -23,6 +23,11 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    allowedHosts: ['hzcubing.fun']
+    allowedHosts: ['hzcubing.fun'],
+    proxy: {
+      // Keep the browser Host so the Worker can compare it with Origin.
+      '/api': { target: 'http://127.0.0.1:8795', changeOrigin: false },
+      '/media': { target: 'http://127.0.0.1:8795', changeOrigin: false },
+    },
   }
 })
