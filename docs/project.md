@@ -13,9 +13,15 @@ HZCubing 是面向魔方玩家的社区成绩系统，核心围绕用户、成�
 - 静态资源：`public/`。
 - 项目文档：`docs/`，按 `project.md`、`architecture.md`、`roadmap.md`、`api.md` 四份文档维护。
 
+## 新版预览
+
+`hzcubing-cf` 工作树的 `codex/cloudflare-migration` 分支已在 `preview.hzcubing.fun` 提供只读预览。新版使用 Worker 提供页面与 API，D1 保存公开的业务数据，R2 保存头像。
+
+首页、项目和选手列表已减少装饰与说明文案。搜索、翻页、编辑和账户操作使用 Lucide 线形图标与透明底按钮，悬停时显示淡青绿底色。主导航与表单提交保留短标签。
+
 ## 当前可用能力
 
-以下是 Pages 与 VPS2 上的生产版本。`codex/cloudflare-migration` 工作树已接入同域 Worker API，并在 `preview.hzcubing.fun` 提供使用真实公开数据的只读环境。
+以下是 Pages 与 VPS2 上的生产版本。
 
 ### 前端
 
@@ -63,7 +69,7 @@ HZCubing 是面向魔方玩家的社区成绩系统，核心围绕用户、成�
 
 ## 当前重点
 
-下列事项作为旧版基线和新版验收参考。下一阶段的交付计划见 [Cloudflare 迁移与全站重构](./roadmap.md#cloudflare-迁移与全站重构方案)。
+当前在预览域名继续优化新版前端，并用真实公开数据验收核心页面。正式切换在预览验收后安排。切换步骤见 [Cloudflare 迁移与全站重构](./roadmap.md#cloudflare-迁移与全站重构方案)。
 
 当前项目已具备可用 MVP 主链路，并完成了一轮前端体验与后端聚合接口收口。现阶段重点不是扩大功能范围，而是让已有主链路更稳定、更一致、更容易继续迭代。
 
