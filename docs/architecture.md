@@ -15,7 +15,7 @@
 
 Workers Static Assets 提供 React SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。`preview.hzcubing.fun` 使用独立的 D1 和 R2，导入旧站公开的选手资料、成绩、项目与头像。预览使用占位登录数据，开启 `SITE_READ_ONLY=1`。正式 `hzcubing.fun` 仍通过 Pages 和 VPS2 旧 API 提供服务。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
 
-官方组件源码放在 `src/next/components/ui/`，该目录保留 coss ui 的 MIT 许可。页面布局与语义色由 `src/next/style.css` 管理。项目分组选择使用原生 `select` 与 `optgroup`。
+官方组件源码放在 `src/next/components/ui/`，该目录保留 coss ui 的 MIT 许可。页面布局与语义色由 `src/next/style.css` 管理。榜单和成绩录入使用 coss ui Select，并保留项目分组。字体优先使用系统的 SF Pro Text 与 PingFang SC，Vite 从 Fontsource 打包 Geist 和 Noto Sans SC 作为自托管回退字体。顶部导航随滚动收为吸顶状态，保留原占位以避免内容跳动。
 
 ## 数据和权限
 

@@ -22,16 +22,26 @@ const navigation = [
 export default function App() {
   const { session, sessionReady, setSession, initializationError } = useSite()
   const [error, setError] = useState('')
+  const [compactHeader, setCompactHeader] = useState(false)
   const navigate = useNavigate()
   const { pathname } = useLocation()
   useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  useEffect(() => {
+    const syncHeader = () => {
+      const scrollTop = window.scrollY
+      setCompactHeader(compact => scrollTop > (compact ? 4 : 16))
+    }
+    window.addEventListener('scroll', syncHeader, { passive: true })
+    syncHeader()
+    return () => window.removeEventListener('scroll', syncHeader)
+  }, [])
   async function logout() {
     try { await send('/auth/logout', 'POST'); setSession(null); navigate('/') }
     catch (cause) { setError(message(cause)) }
   }
   return <>
     <a className="skip" href="#main">跳到正文</a>
-    <header className="site-header"><div className="header-inner">
+    <header className="site-header" data-compact={compactHeader || undefined}><div className="header-inner">
       <Link className="brand" to="/"><img src="/logo.png" alt="" width={36} height={36} />HZCubing</Link>
       <nav aria-label="站点导航">
         {navigation.map(({ to, label, Icon }) => <NavLink key={to} className="nav-link" to={to}><Icon aria-hidden="true" />{label}</NavLink>)}
@@ -44,7 +54,7 @@ export default function App() {
         {sessionReady && !session && <ActionLink to="/auth" label="登录"><LogIn /></ActionLink>}
       </div>
     </div></header>
-    <main id="main" className="site-main">
+    <main id="main" className="site-main" tabIndex={-1}>
       <ResourceNotice error={error || initializationError} />
       <Suspense fallback={<ResourceNotice loading />}><Routes>
         <Route path="/" element={<Home />} />

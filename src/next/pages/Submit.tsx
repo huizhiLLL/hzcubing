@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { message, send, type EventInfo, type RecordInfo } from '../api'
 import { ResourceNotice } from '../components/Actions'
+import { ProjectSelect } from '../components/ProjectSelect'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { useResource, useSite } from '../site'
@@ -29,6 +30,7 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
   const initialTimes = { singleSeconds: String(record?.singleSeconds ?? ''), averageSeconds: String(record?.averageSeconds ?? '') }
   const initialSolves = record?.solves?.map(value => value ?? 'DNF').join(' ') ?? ''
   const initialEvent = record?.event ?? '333'
+  const [selectedEvent, setSelectedEvent] = useState(initialEvent)
   const options = events.filter(event => event.active || event.code === initialEvent)
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -49,10 +51,7 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
   }
   return <form className="fields" onSubmit={save}>
     <ResourceNotice error={error} />
-    <label>项目<select name="event" required defaultValue={initialEvent}>
-      {!options.some(event => event.code === initialEvent) && <option value={initialEvent}>{initialEvent}</option>}
-      {options.map(event => <option key={event.code} value={event.code}>{event.name}</option>)}
-    </select></label>
+    <ProjectSelect events={options} name="event" required value={selectedEvent} onValueChange={setSelectedEvent} />
     <div className="field-pair">
       <label>单次<Input name="singleSeconds" defaultValue={initialTimes.singleSeconds} placeholder="12.34" inputMode="decimal" /></label>
       <label>平均<Input name="averageSeconds" defaultValue={initialTimes.averageSeconds} placeholder="13.45" inputMode="decimal" /></label>
