@@ -1,0 +1,4 @@
+PASSWORD_SERVICE_URL=http://127.0.0.1:3026
+DEV_PASSWORD_HTTP=1
+PASSWORD_SERVICE_SECRET=replace_with_64_hex_characters
+BOT_SECRET=replace_with_32_or_more_random_characters
