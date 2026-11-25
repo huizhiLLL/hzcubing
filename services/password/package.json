@@ -1,0 +1,7 @@
+{
+  "name": "hzcubing-password",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node index.mjs", "test": "node --test" },
+  "dependencies": { "bcryptjs": "2.4.3" }
+}
