@@ -11,7 +11,7 @@
 - Cloudflare Pages 项目 `hzcubing` 绑定 `hzcubing.fun` 和 `hzcubing.pages.dev`，关联 GitHub `huizhiLLL/hzcubing` 的 `main`。生产自动部署已开启，预览分支匹配 `*`。构建命令为 `npm run build`，产物目录为 `dist`。当前生产部署提交为 `552683c`，部署于 2026 年 6 月 28 日。以上由 Cloudflare Pages 项目配置核实。
 - 前端当前调用 `api.hzcubing.fun`，经 Cloudflare 和 VPS2 上的 OpenResty 到 PM2 的 `hzcubing-api`。MongoDB 7 运行在 `hzcubing-mongo` 容器中，服务端提交也是 `552683c`。VPS2 还运行 AstrBot、NapCat 等独立服务。
 - 2026 年 11 月 25 日盘点有 32 个账号、734 条成绩、34 个整活项目、10 张 Base64 头像，19 个账号绑定 QQ。全部 32 个密码哈希为 bcrypt cost 10。切换时以冻结后的最终快照为准。
-- Workers Free 实测的 105 个请求全部通过，CPU 用时 P50 约 94 ms，P99 约 217 ms，高于 Free 的 10 ms 标准限额。VPS2 的密码服务已通过本地与临时 HTTPS 调用测试。生产密码域名仍需 DNS 绑定。现有 Cloudflare 账号已可列出 R2 桶。按 Workers Free、D1 Free 和 R2 Standard 免费用量规划，监控账号内其他项目的合计用量。
+- Workers Free 实测的 105 个请求全部通过，CPU 用时 P50 约 94 ms，P99 约 217 ms，高于 Free 的 10 ms 标准限额。VPS2 的密码服务已通过本地 HTTP 和 `password.hzcubing.fun` 的 HTTPS 调用测试。现有 Cloudflare 账号已可列出 R2 桶。按 Workers Free、D1 Free 和 R2 Standard 免费用量规划，监控账号内其他项目的合计用量。
 
 ### 仓库与开发目录
 
@@ -65,7 +65,7 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 - 2026 年 11 月 25 日，读取 MongoDB 快照并在内存 SQLite 核验了 32 个账号、70 个合并项目、734 条成绩和 10 张头像。其中 18 条成绩保留超过两位小数的原始值，一个用户的规范 ISO 日期字符串转换为同一 UTC 时刻。最终以停写后的快照为准。
 - 工作站已收到 DPAPI 加密的 MongoDB 归档，解密前后的 SHA-256 一致，`mongorestore --dryRun` 验证通过。归档还已恢复到无外网的临时 MongoDB 容器，恢复计数为 32 个账号、734 条成绩、34 个整活项目和 10 张头像。切换时在停写后重新备份并重复校验。
 - `preview.hzcubing.fun` 已绑定 `hzcubing-next-preview`。预览数据库用 `scripts/migration/preview-snapshot.mjs` 从旧站的公开字段生成，包含 32 个选手、70 个项目、734 条成绩和 10 张头像。登录字段使用占位值。预览开启停写，供查看榜单和页面。
-- VPS2 已安装密码服务和专用 Tunnel 连接器。现有 OAuth 创建 `password.hzcubing.fun` 的 DNS 记录时返回 `403`。在 Cloudflare 的 `hzcubing.fun` 区域添加代理 CNAME，目标为 `8f1cc72e-a9dc-4d72-9cac-d86479b2a1fd.cfargotunnel.com`。生效后在隔离预览环境核对 Worker 通过正式 HTTPS 地址调用密码服务。
+- `password.hzcubing.fun` 已通过代理 CNAME 接入 VPS2 的专用 Tunnel。使用隔离库的合成账号，在 `preview.hzcubing.fun` 验证了注册、正确与错误密码、Cookie 安全属性、退出、退出后会话失效和跨域请求拒绝。测试账号已清理，公开预览恢复为只读。
 
 - AstrBot 插件的新版适配在其原仓库的 `codex/cloudflare-api` 分支，已用 VPS2 上同一镜像验证预览环境的群纪录、群纪录历史、榜单和项目查询。部署插件时设置 `HZCUBING_BOT_SECRET`，使其匹配 Worker 的 `BOT_SECRET`。`/绑定` 查询绑定状态，新绑定在个人主页完成。
 
