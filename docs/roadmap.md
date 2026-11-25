@@ -63,7 +63,7 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 ### 试迁记录与切换准备
 
 - 2026 年 11 月 25 日，读取 MongoDB 快照并在内存 SQLite 核验了 32 个账号、70 个合并项目、734 条成绩和 10 张头像。其中 18 条成绩保留超过两位小数的原始值，一个用户的规范 ISO 日期字符串转换为同一 UTC 时刻。最终以停写后的快照为准。
-- 工作站已收到 DPAPI 加密的 MongoDB 归档，解密前后的 SHA-256 一致，`mongorestore --dryRun` 验证通过。停写后重新备份，并完成隔离库的实际恢复。
+- 工作站已收到 DPAPI 加密的 MongoDB 归档，解密前后的 SHA-256 一致，`mongorestore --dryRun` 验证通过。归档还已恢复到无外网的临时 MongoDB 容器，恢复计数为 32 个账号、734 条成绩、34 个整活项目和 10 张头像。切换时在停写后重新备份并重复校验。
 - `hzcubing-next-preview` 已部署到 Workers Free，使用独立 D1 和 R2。合成快照已完成远程上传、导入、导出和逐项校验。预览开启停写，可查看站点和合成榜单。
 - VPS2 已安装密码服务和专用 Tunnel 连接器。现有 OAuth 创建 `password.hzcubing.fun` 的 DNS 记录时返回 `403`。在 Cloudflare 的 `hzcubing.fun` 区域添加代理 CNAME，目标为 `8f1cc72e-a9dc-4d72-9cac-d86479b2a1fd.cfargotunnel.com`。生效后在隔离预览环境核对 Worker 通过正式 HTTPS 地址调用密码服务。
 
