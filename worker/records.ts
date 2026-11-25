@@ -118,6 +118,11 @@ records.post('/', async c => {
   return c.json(result, 201)
 })
 
+records.get('/:id', async c => {
+  const record = await c.env.DB.prepare(`${recordSelect} WHERE r.id=?`).bind(c.req.param('id')).first<RecordRow>()
+  if (!record) fail(404, '找不到该成绩')
+  return c.json(recordDto(record))
+})
 async function ownedRecord(c: AppContext, id: string) {
   const user = signedIn(c)
   const previous = await c.env.DB.prepare('SELECT * FROM records WHERE id=? AND user_id=?').bind(id, user.id).first<RecordRow>()
