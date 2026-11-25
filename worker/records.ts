@@ -80,6 +80,7 @@ records.get('/leaderboard', async c => {
   const event = text(c.req.query('event'), 100, true)
   const search = text(c.req.query('q'), 50)
   const metric = c.req.query('type') === 'average' ? 'average_seconds' : 'single_seconds'
+  const limit = Math.trunc(Math.max(1, Math.min(200, Number(c.req.query('limit')) || 100)))
   const { results } = await c.env.DB.prepare(`WITH chosen AS (
     SELECT r.*, ROW_NUMBER() OVER (PARTITION BY r.user_id ORDER BY r.${metric}, r.timestamp DESC, r.id) AS position
     FROM records r WHERE event=? AND r.${metric} IS NOT NULL
@@ -87,8 +88,31 @@ records.get('/leaderboard', async c => {
     SELECT chosen.*, u.user_no, u.nickname AS current_nickname, u.avatar_key,
       ROW_NUMBER() OVER (ORDER BY chosen.${metric}, chosen.timestamp DESC, chosen.id) AS rank
     FROM chosen JOIN users u ON u.id=chosen.user_id WHERE position=1
-  ) SELECT * FROM ranked WHERE instr(lower(current_nickname), lower(?))>0 ORDER BY rank LIMIT 100`).bind(event, search).all<RecordRow & { rank: number }>()
+  ) SELECT * FROM ranked WHERE instr(lower(current_nickname), lower(?))>0 ORDER BY rank LIMIT ?`).bind(event, search, limit).all<RecordRow & { rank: number }>()
   return c.json(results.map(row => ({ ...recordDto(row), rank: row.rank })))
+})
+
+records.get('/best', async c => {
+  const event = text(c.req.query('event'), 100)
+  const { results } = await c.env.DB.prepare(`WITH metrics AS (
+    SELECT event, user_id, timestamp, id, 'single' AS metric, single_seconds AS seconds
+      FROM records WHERE single_seconds IS NOT NULL AND (?='' OR event=?)
+    UNION ALL
+    SELECT event, user_id, timestamp, id, 'average', average_seconds
+      FROM records WHERE average_seconds IS NOT NULL AND (?='' OR event=?)
+  ), ranked AS (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY event,metric ORDER BY seconds,timestamp,id) AS position FROM metrics
+  ) SELECT ranked.event, ranked.timestamp, ranked.metric, ranked.seconds, u.nickname, u.user_no
+    FROM ranked JOIN users u ON u.id=ranked.user_id WHERE position=1 ORDER BY ranked.event`).bind(event, event, event, event)
+    .all<{ event: string; timestamp: number; metric: 'single' | 'average'; seconds: number; nickname: string; user_no: number }>()
+  type Holder = { seconds: number; nickname: string; userNo: number; timestamp: number }
+  const best = new Map<string, { event: string; single: Holder | null; average: Holder | null }>()
+  for (const row of results) {
+    const result = best.get(row.event) ?? { event: row.event, single: null, average: null }
+    result[row.metric] = { seconds: row.seconds, nickname: row.nickname, userNo: row.user_no, timestamp: row.timestamp }
+    best.set(row.event, result)
+  }
+  return c.json([...best.values()])
 })
 
 records.get('/gr', async c => {

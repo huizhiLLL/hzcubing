@@ -17,7 +17,8 @@
 | `POST /api/profile/qq` | 登录 | `qqId` 是字符串，绑定当前账号。 |
 | `GET /api/events` | 公开 | 项目编码、名称、分类、描述和状态。 |
 | `POST /api/events`、`PATCH /api/events/:code` | 管理员 | 创建或编辑整活项目，使用 `code`、`name`、`description`、`active`。编码为创建时确定。 |
-| `GET /api/records/leaderboard?event=&type=&q=` | 公开 | 按 `single` 或 `average` 排名，支持昵称过滤。 |
+| `GET /api/records/leaderboard?event=&type=&q=&limit=` | 公开 | 按 `single` 或 `average` 排名，支持昵称过滤。 |
+| `GET /api/records/best?event=` | 公开 | 各项目当前单次和平均群纪录。 |
 | `GET /api/records/gr?event=` | 公开 | 单次和平均的群纪录历史。 |
 | `GET /api/records/:id` | 公开 | 查看单条成绩。 |
 | `POST /api/records` | 登录 | 提交成绩，返回成绩及是否刷新 GR。 |
