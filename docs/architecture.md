@@ -153,6 +153,8 @@ store 负责：
 
 ## 部署与运行边界
 
+现网由 Cloudflare Pages 和 VPS2 承载。已确认的 Workers、D1、R2 与 VPS2 密码服务目标架构及切换步骤见 [Cloudflare 迁移与全站重构方案](./roadmap.md#cloudflare-迁移与全站重构方案)。
+
 根项目脚本主要服务前端开发、构建和本地预览：
 
 - `npm run dev`

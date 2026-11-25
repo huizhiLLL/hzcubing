@@ -1,90 +1,70 @@
 # 路线图
 
-更新时间：2026-06-17
+更新时间：2026-11-25
 
-## 当前阶段目标
+## Cloudflare 迁移与全站重构方案
 
-当前阶段目标是把已经可用的魔方社区 MVP 主链路稳定下来，而不是快速扩张功能范围。
+方案已确认。新版整站部署到 Cloudflare Workers Free，业务数据进 D1，头像进 R2，VPS2 只承担 HZCubing 的密码校验和哈希生成。以一次切换交付新版，用户沿用原账号和密码，切换时重新登录。
 
-核心判断：
+### 生产现状
 
-- 前端主页面、个人主页、成绩管理、榜单、选手总览和主要交互已经可用。
-- 后端用户、成绩、首页统计、榜单聚合和整活项目接口已经可用。
-- 当前短板主要在测试、接口契约、性能边界、安全边界和模块分层。
+- Cloudflare Pages 项目 `hzcubing` 绑定 `hzcubing.fun` 和 `hzcubing.pages.dev`，关联 GitHub `huizhiLLL/hzcubing` 的 `main`。生产自动部署已开启，预览分支匹配 `*`。构建命令为 `npm run build`，产物目录为 `dist`。当前生产部署提交为 `552683c`，部署于 2026 年 6 月 28 日。以上由 Cloudflare Pages 项目配置核实。
+- 前端当前调用 `api.hzcubing.fun`，经 Cloudflare 和 VPS2 上的 OpenResty 到 PM2 的 `hzcubing-api`。MongoDB 7 运行在 `hzcubing-mongo` 容器中，服务端提交也是 `552683c`。VPS2 还运行 AstrBot、NapCat 等独立服务。
+- 2026 年 11 月 25 日盘点有 32 个账号、734 条成绩、34 个整活项目、10 张 Base64 头像，19 个账号绑定 QQ。全部 32 个密码哈希为 bcrypt cost 10。切换时以冻结后的最终快照为准。
+- Workers Free 实测的 105 个请求全部通过，CPU 用时 P50 约 94 ms，P99 约 217 ms，高于 Free 的 10 ms 标准限额。VPS2 的本地 HTTP 原型通过校验、生成哈希和凭据校验。正式跨网络调用仍需验收。现有 Cloudflare 账号已可列出 R2 桶。按 Workers Free、D1 Free 和 R2 Standard 免费用量规划，监控账号内其他项目的合计用量。
 
-## 近期优先级
+### 仓库与开发目录
 
-### P0：稳定主链路
+沿用现有 GitHub 仓库和提交历史。实施时先同步 `origin/main`，以包含 `552683c` 的最新提交为基线，创建 `codex/cloudflare-migration` 分支，并在仓库旁的 `hzcubing-cf` worktree 开发。实施分支完成后合入 `main`，生产 Worker 从合并后的提交构建。
 
-- 补充成绩排名、个人最佳、GR 计算的最小测试集。
-- 补充首页统计、榜单聚合、用户总览搜索排序的接口回归测试。
-- 补充注册登录、成绩增删改查、整活项目管理的接口回归测试。
-- 继续统一关键页面的加载、错误和空状态反馈。
+原仓库集中保留代码历史、issue、GitHub 权限和现有 Cloudflare 关联。独立 worktree 提供干净的开发目录，适合替换前端、API 和数据层。新建 GitHub 仓库需要重新配置协作权限和仓库绑定，只有项目准备拆成独立产品时才值得采用。
 
-### P1：前端收口
+Pages 当前会尝试为所有远端分支构建预览。第一次推送重构分支前，从 Pages 预览分支配置中排除该分支。分支验收使用独立的测试 Worker、D1 和 R2。正式切换前关闭旧 Pages 的生产自动部署，迁移期间统一由 Wrangler 执行新版部署。
 
-- 继续将页面接入统一页面骨架和公共组件。
-- 将选手总览、个人主页和成绩管理中仍可复用的视图派生能力沉淀到共享层。
-- 清理未使用或职责过期的公共组件和前端全量榜单辅助逻辑。
-- 优化成绩提交体验，包括 DNF / DNS、输入容错和移动端输入体验。
-- 梳理 GR 页职责，明确“当前纪录看板”和“纪录时间轴”的边界。
-- 评估是否进一步把成绩管理能力并入个人主页，减少用户在提交页与主页之间跳转。
+### 目标架构与首发范围
 
-### P1：后端收口
+| 部署位置 | 负责的功能 |
+| --- | --- |
+| Workers Static Assets | Vue 3、Vite、TypeScript 和 Vue Router。保留 Vue 生态，重新组织页面、组件和路由。SPA 深链接返回 `index.html`。 |
+| Hono Worker | 同域 `/api/*`、会话、账号与权限、成绩、榜单、GR、整活项目、QQ 接口、头像访问。`/api/*` 和 `/media/*` 优先进入 Worker。 |
+| D1 | 用户、项目、成绩和会话。用 SQL 做榜单、个人最佳、GR 和首页统计，按项目、用户、时间建立必要索引。 |
+| R2 Standard | 私有头像对象。Worker 校验上传类型和大小，通过 `/media/*` 提供图片，D1 保存对象键。 |
+| VPS2 | 无状态 Node 密码服务，使用现有 `bcryptjs` 算法。密码校验和哈希生成由 Worker 通过 HTTPS 调用。 |
 
-- 为 `/api/stats/summary`、`/api/records/leaderboard`、`/api/users/overview` 等聚合接口补测试、索引评估和必要缓存。
-- 为 QQ / AstrBot 外部入口补请求来源识别、简单签名、速率限制和结构化日志。
-- 抽出 `recordService`、`userService`、`authService` 等服务层雏形。
-- 统一分页响应、成功状态码和用户标识字段。
+首发覆盖首页、注册登录、个人资料和头像、选手总览、成绩增删改查、分项目榜单、个人最佳、GR 历程、管理员整活项目管理，以及 AstrBot 的 QQ 绑定、查询和录入。页面和 API 形状可重新设计，历史用户编号、项目编码、成绩语义和现有权限要可验证。站内提交破 GR 后的群通知在 AstrBot 已有可用服务地址时接通，发送失败与成绩提交结果独立。
 
-## 中期计划
+密码服务将 `/verify` 和 `/hash` 作为两个固定操作，监听 VPS2 环回地址，由 OpenResty 在 `password.hzcubing.fun` 提供专用 HTTPS 入口。Worker Secret 与 VPS2 从部署环境读取专用凭据，VPS2 校验凭据并限制请求频率、并发和请求体大小。D1 保存密码哈希，VPS2 在单次请求内处理密码和哈希。两端日志仅记录请求结果、耗时和诊断 ID。服务超时或不可用时，Worker 返回可重试的 `503`，公开查询及有效会话仍由 Worker 正常处理。
 
-- 建立最小 API 契约文档或 OpenAPI 描述。
-- 明确官方项目、趣味项目、整活项目的事件字典关系。
-- 为管理员补用户状态管理、角色调整、成绩修正等治理能力。
-- 为关键写操作补审计日志。
-- 根据数据量评估排行榜缓存、预计算或物化统计。
-- 头像当前支持 Base64 图片、HTTP(S) 地址和站内路径；长期建议改为对象存储 / CDN，并迁移大体积 Base64 头像。
+会话用随机令牌，D1 保存令牌摘要和到期时间，浏览器通过同域 `HttpOnly`、`Secure`、`SameSite=Lax` Cookie 携带会话，退出登录时撤销。Worker 校验浏览器写请求的来源，并限制登录、注册频率。AstrBot 用独立服务凭据调用新版 QQ 接口，权限约束在绑定、查询和提交相关操作。QQ 写入和网站写入遵循相同的停写开关。
 
-## 暂缓事项
+### 数据转换与核验
 
-以下事项暂缓，除非出现明确需求：
+| 来源 | 迁移规则 |
+| --- | --- |
+| `users` 与 `counters` | 保留 `_id`、`userNo`、资料、邮箱、哈希、QQ 绑定、角色和状态。用户编号和 MongoDB ID 分别保留唯一约束。自增序列从最终快照的 `max(counter.seq, max(userNo))` 接续。旧 JWT 到切换时失效。 |
+| `records` | 保留成绩 ID、用户 ID、原昵称快照、项目编码、单次与平均原始数值、solves、器材、方法、比赛及各类时间戳。当前有 18 条超过两位小数的历史成绩，原值进入 D1，显示精度和榜单比较规则分别按历史行为验收。空成绩沿用 `NULL`，无 solves 的记录保留空值。 |
+| `meme_events` 与静态项目表 | 汇总官方、趣味、整活项目，项目键沿用原始编码和大小写，保留整活项目 ID、状态、描述及来源字段。历史编码缺少定义时，以原编码建立可查询的历史项目，报告中列出差异。已有成绩关联的项目停用后仍可查看历史成绩。 |
+| Base64 头像 | 在迁移环境解码，校验 MIME 和 SHA-256，按用户 ID 和内容摘要生成确定的 R2 对象键。先验证对象上传结果，再写入 D1 引用。 |
 
-- 大规模重做 UI。
-- 多端客户端开发。
-- 微服务化。
-- 更换数据库。
-- 引入复杂权限系统。
-- 引入任务队列、搜索服务或 BI 分析系统。
-- 完整比赛系统、报名系统、赛程系统。
+迁移脚本放在 `scripts/migration/`，按导出、转换、导入、校验四步执行。MongoDB 用 `mongodump` 生成独立的加密备份，转换器读取结构化数据，输出 D1 导入文件、R2 图片和校验清单。备份至少保留一份在 VPS2 之外，并用隔离 MongoDB 做一次恢复演练。哈希、QQ、邮箱、真实头像和备份文件只在受控迁移目录处理。
 
-## 技术决策记录
+试迁脚本从指定快照重复生成同一份导入清单，D1 使用空目标库，R2 相同对象键可重复上传。校验先比账号、项目、成绩和头像计数，再逐条比 ID、字段摘要、成绩关联及 R2 对象校验值。以同一快照生成旧榜单、个人最佳和 GR 样本，与新版输出对比。字段冲突、悬空关联和哈希不符都阻止切换。
 
-### 前后端分离
+### 实施顺序
 
-继续保持 `src/` 前端和 `server/` 后端分离。前端只通过 HTTP API 访问数据，后端承接可信校验、数据库读写和全局一致的聚合计算。
+1. **准备分支和基线。** 建立 worktree，确定旧版排名、权限和数据验证样本。在该分支更新 `AGENTS.md` 的 Vue、Workers、D1、R2 与 VPS2 密码服务约定，取代旧的 Express/MongoDB 约定。规划 `src/` 存放新版前端，`worker/` 存放 API，`services/password/` 存放 VPS2 服务，`migrations/` 存放 D1 SQL。
+2. **先打通一条完整链路。** 用合成账号从登录进入个人主页、录入一条成绩、查看榜单。连接测试 D1、R2 与隔离的密码服务。验证正确密码、错误密码、服务超时、注销，确认 Free 档没有 CPU 超限。用新环境跑 `npm run build`、`npm test` 和 `wrangler deploy --dry-run`。
+3. **完成首发功能并试迁。** 补齐个人资料、GR、整活项目和 QQ 流程。把生产数据快照导入隔离资源并比对清单。测试账号验证实际 Worker 到 VPS2 的认证请求，检查未授权访问、超时和日志脱敏。确认管理权限、头像访问、移动端布局、SPA 深链接、API 404 和用户编号接续。以真实用户所在的国内网络验证页面和提交链路。
+4. **停写并切换。** 确认备份可恢复、隔离环境验收通过后，约定短暂停写窗口。暂停旧 API 写入和 AstrBot 插件写入，等待进行中的请求结束，导出最终快照。导入生产 D1 与 R2 并重新校验。先在新 Worker 验证线上绑定，再从 Pages 解除 `hzcubing.fun`，检查并处理旧 CNAME，把域名绑定为 Worker Custom Domain。AstrBot 配置指向新版 `/api/bot/*`。正式入口的只读检查通过后，恢复站内与 QQ 写入。
+5. **验收并退役。** 验收正式域名的首页、登录、旧数据浏览、提交成绩、管理员功能和 QQ 写入。成功后停掉 `hzcubing-api` 和 `hzcubing-mongo`，下线 `api.hzcubing.fun` 的旧代理配置，退役旧 Pages 项目。切换至恢复写入之间如发现校验失败，保持停写并修复，校验通过后切换。恢复写入之后以 D1 和 R2 为生产源，数据修复使用当前快照及备份。
 
-### 聚合数据后端化
+生产数据导入、推送、远端部署、Pages/DNS 切换和停旧服务按 `AGENTS.md` 确认操作范围和切换窗口。首发后同步 `project.md`、`architecture.md`、`api.md` 和 README 的实际状态及用法。
 
-首页统计、单项目榜单、选手总览搜索排序已经改由后端接口提供。前端保留必要展示状态和局部交互，不再为了首页统计或榜单排名拉取全量成绩明细。
+### 上线后的产品工作
 
-### 文档结构
+优先处理成绩录入容错、管理员数据治理和关键写操作的审计。后续根据真实负载决定榜单缓存或预计算。完整比赛系统、多端客户端和复杂权限系统继续暂缓。
 
-后续只维护四份主文档：
+### 核对依据
 
-- `project.md`
-- `architecture.md`
-- `roadmap.md`
-- `api.md`
-
-临时执行计划、阶段性整改手册等完成后不长期保留；仍有价值的决策和后续事项沉淀到 `roadmap.md`。
-
-### 改造方式
-
-后续改造遵循小步推进：
-
-- 先补测试和契约。
-- 再优化性能和安全边界。
-- 最后做结构分层和治理能力扩展。
-
-不为了结构完整性进行一次性大重构。
+- Cloudflare [Workers Static Assets SPA 路由](https://developers.cloudflare.com/workers/static-assets/routing/single-page-application/)、[Pages 迁移指南](https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/)和[Workers Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)。
+- Cloudflare [Workers Limits](https://developers.cloudflare.com/workers/platform/limits/)、[D1 Limits](https://developers.cloudflare.com/d1/platform/limits/)和[R2 Pricing](https://developers.cloudflare.com/r2/pricing/)。
