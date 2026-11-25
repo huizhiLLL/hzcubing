@@ -74,7 +74,12 @@ node scripts/migration/convert.mjs <BSON库目录> <新建受控目录>
 node scripts/migration/verify.mjs <转换目录>
 ```
 
-先依 `manifest.json` 原样上传 R2 图片，包括对象键和 MIME 类型，再用 `wrangler d1 migrations apply DB --remote` 初始化生产 D1。用 `wrangler d1 execute DB --remote --file <转换目录>/data.sql` 导入数据。生产命令通过 `-c` 指定实际生产配置。导出真实 D1 并下载 R2 对象后，执行 `node scripts/migration/verify.mjs <转换目录> <D1导出SQL> <下载对象目录>`。按验收结果安排切换。
+用实际生产绑定的 Wrangler JSON 配置执行导入。脚本在正式写入前检查 D1 业务表为空，按清单上传 R2 对象并导入 SQL。校验命令导出 D1 并下载 R2 对象，核对完成后清理临时导出。按验收结果安排切换。
+
+```sh
+node scripts/migration/cloud-copy.mjs import <生产Wrangler配置> <转换目录>
+node scripts/migration/cloud-copy.mjs verify <生产Wrangler配置> <转换目录>
+```
 
 ### 上线后的产品工作
 
