@@ -13,7 +13,7 @@
 | `services/password/` | Node 和 bcryptjs 2.4.3。VPS2 只支持验证密码和生成哈希。 |
 | `server/` 与旧版 `src/` | 切换验收使用的旧行为基线。 |
 
-Workers Static Assets 提供 Vue SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。Cloudflare 预览项目使用独立 D1 和 R2 及合成数据，开启 `SITE_READ_ONLY=1`。正式 `hzcubing.fun` 仍通过 Pages 和 VPS2 旧 API 提供服务。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
+Workers Static Assets 提供 Vue SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。`preview.hzcubing.fun` 使用独立的 D1 和 R2，导入旧站公开的选手资料、成绩、项目与头像。预览使用占位登录数据，开启 `SITE_READ_ONLY=1`。正式 `hzcubing.fun` 仍通过 Pages 和 VPS2 旧 API 提供服务。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
 
 ## 数据和权限
 

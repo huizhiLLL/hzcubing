@@ -15,7 +15,7 @@ HZCubing 是面向魔方玩家的社区成绩系统，核心围绕用户、成�
 
 ## 当前可用能力
 
-以下是 Pages 与 VPS2 上的生产版本。`codex/cloudflare-migration` 工作树已接入同域 Worker API，并在独立 Cloudflare 预览环境通过合成数据导入和只读验收。
+以下是 Pages 与 VPS2 上的生产版本。`codex/cloudflare-migration` 工作树已接入同域 Worker API，并在 `preview.hzcubing.fun` 提供使用真实公开数据的只读环境。
 
 ### 前端
 

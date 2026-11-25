@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { deserialize } from 'bson'
 import { STATIC_EVENTS } from '../../src/config/events.js'
 
@@ -144,4 +144,17 @@ export function verify(database, output, expected, loadAvatar = key => readFileS
     const bytes = loadAvatar(image.key)
     if (bytes.length !== image.bytes || sha256(bytes) !== image.sha256) throw new Error('Avatar checksum mismatch')
   }
+}
+
+export function writeConversion(output, data) {
+  mkdirSync(output, { mode: 0o700 })
+  for (const [key, { bytes }] of data.avatars) {
+    const file = join(output, key)
+    mkdirSync(dirname(file), { recursive: true, mode: 0o700 })
+    writeFileSync(file, bytes, { mode: 0o600 })
+  }
+  const summary = manifest(data)
+  writeFileSync(join(output, 'data.sql'), importSql(data), { mode: 0o600 })
+  writeFileSync(join(output, 'manifest.json'), JSON.stringify(summary, null, 2) + '\n', { mode: 0o600 })
+  return summary
 }
