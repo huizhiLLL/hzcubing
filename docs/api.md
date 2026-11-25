@@ -1,135 +1,41 @@
-# 后端接口文档
+# Worker API
 
-更新时间：2026-06-17
+更新时间：2026-11-25
 
-## 说明
+浏览器经站点同域访问。成功直接返回对象或数组，错误返回 `{ "message": "…" }`。写接口使用 `application/json` 与同域 `Origin`。上传头像直接发送图片字节。需要登录的接口由会话 Cookie 鉴权，机器人接口使用独立 Bearer 凭据。
 
-- 基础路径：`/api`
-- 请求体默认使用 `application/json`
-- 鉴权方式：`Authorization: Bearer <token>`
-- `Public` 表示无需登录，`Private` 表示需要登录，`Admin` 表示需要管理员权限
-- 成功响应通常为 `{ code, message, data }`
-- 分页接口额外返回 `page`、`pageSize`、`total`，部分接口返回 `totalPages`
-- 健康检查和少量无返回体写操作可以不带 `data`
+| 方法与路径 | 访问权限 | 用途 |
+| --- | --- | --- |
+| `GET /api/health` | 公开 | Worker 健康检查。 |
+| `GET /api/summary` | 公开 | 账号、成绩与启用项目数量。 |
+| `POST /api/auth/register`、`POST /api/auth/login` | 同域 | 注册传 `email`、`password`、`nickname`，登录传邮箱与密码，成功设置会话。 |
+| `GET /api/auth/me`、`POST /api/auth/logout` | 登录 | 查询本人资料及角色，或撤销会话。 |
+| `GET /api/players?q=&page=` | 公开 | 以昵称或 WCA ID 搜索选手，每页 30 条。 |
+| `GET /api/players/:userNo?page=` | 公开 | 个人资料，全部个人最佳与分页历史。 |
+| `PATCH /api/profile` | 登录 | 更新 `nickname`、`bio` 或 `wcaId`。 |
+| `PUT /api/profile/avatar` | 登录 | 上传 PNG、JPEG、GIF、WebP 或 AVIF，上限 2 MB。 |
+| `POST /api/profile/qq` | 登录 | `qqId` 是字符串，绑定当前账号。 |
+| `GET /api/events` | 公开 | 项目编码、名称、分类、描述和状态。 |
+| `POST /api/events`、`PATCH /api/events/:code` | 管理员 | 创建或编辑整活项目，使用 `code`、`name`、`description`、`active`。编码为创建时确定。 |
+| `GET /api/records/leaderboard?event=&type=&q=` | 公开 | 按 `single` 或 `average` 排名，支持昵称过滤。 |
+| `GET /api/records/gr?event=` | 公开 | 单次和平均的群纪录历史。 |
+| `GET /api/records/:id` | 公开 | 查看单条成绩。 |
+| `POST /api/records` | 登录 | 提交成绩，返回成绩及是否刷新 GR。 |
+| `PATCH /api/records/:id`、`DELETE /api/records/:id` | 成绩所属账号 | 修改或删除成绩。删除成功返回 `204`。 |
+| `GET /media/avatars/:user/:file` | 公开 | 读取 R2 中的头像。 |
 
-## 公共接口
+提交成绩至少包含 `event`、`singleSeconds` 或 `averageSeconds`。数值支持秒数及 `分:秒` 字符串，`DNF`、`DNS` 或空值代表该项无有效成绩。`solves`、`cube`、`method`、`competition` 和毫秒时间戳 `timestamp` 均可选。PATCH 仅修改提供的字段，历史成绩原值在未编辑对应成绩字段时保留。
 
-| 方法 | 路径 | 鉴权 | 说明 | 参数 |
-|---|---|---|---|---|
-| GET | `/health` | Public | 服务健康检查 | 无 |
+## AstrBot 切换
 
-## Stats
+| 旧接口 | 新接口与调整 |
+| --- | --- |
+| `GET /api/auth/find-user-by-qq` | `GET /api/bot/player?qqId=...`，从返回根对象读取 `userNo` 和昵称。 |
+| `POST /api/auth/submit-record-by-qq` | `POST /api/bot/records`，保留 `qqId`、`event` 和时间字段，成功为 `201`，成绩与 GR 字段在返回根对象。 |
+| `POST /api/auth/create-meme-event` | `POST /api/bot/events`，使用 `qqId`、`code`、`name`、`description`。按绑定账户判断管理员权限。 |
+| `POST /api/auth/bind-user-by-nickname` | 引导用户登录个人主页并通过 `POST /api/profile/qq` 自助绑定。迁入的绑定直接可用。 |
+| `GET /api/meme-events` | `GET /api/events`，以 `category === 'meme'` 取整活项目。 |
 
-| 方法 | 路径 | 鉴权 | 说明 | 参数 |
-|---|---|---|---|---|
-| GET | `/stats/summary` | Public | 首页轻量统计 | 无 |
+`/api/bot/*` 统一携带 `Authorization: Bearer <BOT_SECRET>`。配置切换时验证查人、提交及项目查询，再启用写入。网页端的成绩通知由 Worker 在设置 AstrBot 凭据时发送。
 
-返回要点：
-
-- 返回 `totalRecords`、`totalUsers`
-- `totalUsers` 只统计状态为 `active` 的用户
-
-## Auth
-
-| 方法 | 路径 | 鉴权 | 说明 | 参数 |
-|---|---|---|---|---|
-| POST | `/auth/register` | Public | 注册用户 | body：`email`、`password`、`nickname`、`bio?`、`qqId?` |
-| POST | `/auth/login` | Public | 用户登录 | body：`email`、`password` |
-| GET | `/auth/me` | Private | 获取当前用户 | 无 |
-| POST | `/auth/bind-qq` | Private | 给当前用户绑定 QQ | body：`qqId` |
-| POST | `/auth/bind-user-by-nickname` | Public | 通过昵称绑定 QQ | body：`qqId`、`nickname` |
-| GET | `/auth/find-user-by-qq` | Public | 通过 QQ 查询用户 | query：`qqId` |
-| POST | `/auth/create-meme-event` | Public | 通过 QQ 创建整活项目 | body：`qqId`、`eventCode?`、`eventName`、`description?` |
-| POST | `/auth/submit-record-by-qq` | Public | 通过 QQ 提交成绩 | body：`qqId`、`event`、`singleSeconds?`、`averageSeconds?`、`cube?`、`method?` |
-
-返回要点：
-
-- 注册、登录返回 `token` 和 `user`
-- `me` 返回当前用户资料
-- QQ 绑定返回 `qqId`
-- 通过 QQ 查询返回 `userNo`、`_id`、`nickname`、`email`、`qqId`
-- 通过 QQ 提交成绩返回成绩 ID、成绩字段和 GR 判断结果
-
-## Users
-
-| 方法 | 路径 | 鉴权 | 说明 | 参数 |
-|---|---|---|---|---|
-| PUT | `/users/profile` | Private | 更新当前用户资料 | body：`nickname?`、`bio?`、`wcaId?`、`avatar?` |
-| GET | `/users` | Public | 用户列表 | query：`page?`、`pageSize?` |
-| GET | `/users/overview` | Public | 用户概览卡片 | query：`page?`、`pageSize?`、`keyword?`、`sort?` |
-| GET | `/users/:id` | Public | 通过用户编号或 MongoDB ID 查询用户 | path：`id` |
-
-返回要点：
-
-- 用户列表返回 `id`、`userNo`、`_id`、`nickname`、`avatar`、`role`、`email`、`createdAt`
-- 用户概览只返回状态为 `active` 的用户
-- 用户概览返回 `profileUserNo`、`nickname`、`createdAt`、`recordCount`、`events`
-- 用户概览 `keyword` 按昵称模糊搜索
-- 用户概览 `sort` 支持 `latest`、`mostRecords`、`mostEvents`
-- 用户详情返回 `bio`、`wcaId`、`status`、`createdAt`、`updatedAt` 等资料字段
-
-## Records
-
-| 方法 | 路径 | 鉴权 | 说明 | 参数 |
-|---|---|---|---|---|
-| GET | `/records` | Public | 成绩列表 | query：`event?`、`page?`、`pageSize?` |
-| GET | `/records/user/:userId` | Public | 某用户成绩列表 | path：`userId`；query：`event?`、`page?`、`pageSize?` |
-| GET | `/records/best` | Public | 全站分项目最佳 | query：`event?` |
-| GET | `/records/leaderboard` | Public | 单项目榜单 | query：`event`、`type?`、`limit?`、`keyword?` |
-| GET | `/records/gr-history/:event` | Public | 单项目 GR 历程 | path：`event` |
-| GET | `/records/user/:userId/best` | Public | 某用户个人最佳 | path：`userId`；query：`event?` |
-| GET | `/records/user/:userId/history` | Public | 某用户成绩时间线 | path：`userId`；query：`event?`、`page?`、`pageSize?` |
-| POST | `/records` | Private | 新增成绩 | body：`event`、`singleSeconds?`、`averageSeconds?`、`cube?`、`method?`、`timestamp?` |
-| PUT | `/records/:id` | Private | 更新自己的成绩 | path：`id`；body：`event?`、`singleSeconds?`、`averageSeconds?`、`cube?`、`method?` |
-| DELETE | `/records/:id` | Private | 删除自己的成绩 | path：`id` |
-| GET | `/records/recent-breaks` | Public | 近期破纪录列表 | query：`limit?` |
-
-返回要点：
-
-- 列表接口返回成绩数组和分页字段
-- 成绩项包含 `_id`、`profileUserNo`、`nickname`、`event`、`singleSeconds`、`averageSeconds`、`cube`、`method`、`timestamp`
-- 全站最佳返回每个项目的单次 / 平均最佳、所属用户编号、昵称和时间
-- 单项目榜单在数据库侧按用户取最佳成绩并排序，`type` 支持 `single`、`average`
-- 单项目榜单返回完整成绩项数组（字段同成绩列表），`limit` 默认 100、最大 200，`keyword` 按用户昵称搜索后再返回该搜索范围内的最佳成绩
-- GR 历程返回 `event`、`single`、`average`
-- 新增成绩（私有接口）返回 `_id`、`isSingleGR`、`isAverageGR`
-- 通过 QQ 提交成绩返回 `_id`、`userId`、`nickname`、`event`、`singleSeconds`、`averageSeconds`、`isSingleGR`、`isAverageGR`、`previousSingleBest`、`previousAverageBest`
-- `previousSingleBest` 和 `previousAverageBest` 结构：`{ userId, nickname, seconds, timestamp }` 或 `null`
-- 更新和删除成绩只返回操作结果信息
-
-## Meme Events
-
-| 方法 | 路径 | 鉴权 | 说明 | 参数 |
-|---|---|---|---|---|
-| GET | `/meme-events` | Public | 获取整活项目 | 无 |
-| POST | `/meme-events` | Admin | 新增整活项目 | body：`eventCode?`、`eventName`、`description?` |
-| PUT | `/meme-events/:eventCode` | Admin | 更新整活项目 | path：`eventCode`；body：`eventCode?`、`eventName`、`description?`、`isActive?` |
-| DELETE | `/meme-events/:eventCode` | Admin | 删除整活项目 | path：`eventCode` |
-
-返回要点：
-
-- 整活项目标准字段：`id`、`name`、`category`、`description`、`createdBy`、`createdByName`、`isActive`、`createdAt`、`updatedAt`
-- 更新 `eventCode` 会返回 `migratedRecordCount`
-- 删除整活项目会返回 `deletedRecordCount`
-
-## 常见错误
-
-| 状态码 | 含义 |
-|---|---|
-| 400 | 参数校验失败、重复字段或非法 ID |
-| 401 | 未登录、token 无效或过期 |
-| 403 | 账号禁用或权限不足 |
-| 404 | 资源不存在 |
-| 413 | 请求内容过大，例如头像过大 |
-| 500 | 服务端异常 |
-
-## 数据约束
-
-- `password` 最少 6 位，默认不会返回
-- `nickname` 最长 50 字符
-- `bio` 最长 500 字符
-- `qqId` 注册时最长 20 字符，且唯一
-- `avatar` 支持 Base64 图片、HTTP(S) 地址和站内路径，最大约 2MB
-- `singleSeconds`、`averageSeconds` 必须为非负数，新增成绩时至少提供一个
-- `eventCode` 会标准化为小写，并移除空格和非法字符
-- `eventName` 最长 50 字符，`description` 最长 300 字符
+常见错误为未登录或机器人凭据无效 `401`，权限或来源不符 `403`，资源不存在 `404`，绑定或编码冲突 `409`，限频 `429`，停写或密码服务不可用 `503`。

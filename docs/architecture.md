@@ -1,218 +1,40 @@
 # 架构说明
 
-更新时间：2026-06-17
+更新时间：2026-11-25
 
-## 总体架构
+## 代码与部署
 
-项目采用前后端分离架构。
+| 目录 | 职责 |
+| --- | --- |
+| `src/next/` | Vue 3、Vue Router、Vite 与 TypeScript。页面通过同域 `/api` 访问 Worker。普通 CSS 只用于页面骨架。 |
+| `worker/` | Hono API、会话、权限、项目、选手、成绩、群纪录、QQ 及媒体请求。 |
+| `migrations/` | D1 表、项目种子、会话和速率计数。 |
+| `scripts/migration/` | 快照备份、BSON、D1 和 R2 之间的转换与校验。 |
+| `services/password/` | Node 和 bcryptjs 2.4.3。VPS2 只支持验证密码和生成哈希。 |
+| `server/` 与旧版 `src/` | 切换验收使用的旧行为基线。 |
 
-```text
-src/        Vue 3 前端应用
-server/     Express + MongoDB API 服务
-public/     静态资源
-docs/       项目文档
-```
+Workers Static Assets 提供 Vue SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。Cloudflare 预览项目使用独立 D1 和 R2 及合成数据，开启 `SITE_READ_ONLY=1`。正式 `hzcubing.fun` 仍通过 Pages 和 VPS2 旧 API 提供服务。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
 
-前端通过 HTTP API 访问后端，不直接访问数据库。后端负责鉴权、数据校验、领域规则、数据库读写、聚合计算和外部入口治理。
+## 数据和权限
 
-## 前端架构
+- `users` 保留 MongoDB ID 和原 `userNo`，用 `user_no` 自增键发放新编号。邮箱和 QQ ID 保持唯一约束。会话在 D1 保存令牌摘要和过期时间，登录 API 通过 `HttpOnly`、`Secure`、`SameSite=Lax` Cookie 传递令牌。Worker 检查写请求的 `Origin`，会话权限从 D1 的有效账户读取。
+- `events` 汇总官方、趣味、整活和补录的历史项目。项目编码可区分大小写。旧项目停用后，关联成绩仍能查询。`records` 保存用户外键、昵称快照、原始单次与平均成绩、时间、solves 和描述字段。
+- 榜单按单次或平均成绩升序、时间降序、ID 升序选取每位选手最佳记录，再按同一顺序排名。GR 按时间和 ID 从早到晚计算，只有严格刷新最佳成绩才形成记录。显示截取到百分秒，排序使用 D1 的原始值。
+- R2 桶保持私有。Worker 校验头像类型与大小，文件名包含 SHA-256，D1 只保存对象键。媒体读取路由返回明确的 MIME 类型和缓存策略。
 
-### 技术栈
+## 密码服务
 
-- Vue 3
-- Vue Router
-- Pinia
-- Axios
-- Vite
+Worker 通过 `password.hzcubing.fun` 的 HTTPS 对 `/hash` 和 `/verify` 发出有凭据的 POST 请求。VPS2 的密码进程通过 `hzcubing-password.service` 监听 `127.0.0.1:3026`。独立的 Cloudflare Tunnel 将这个域名转给环回服务，连接器由 `hzcubing-password-tunnel.service` 管理。连接器令牌由 systemd 读取，VPS2 的服务凭据和 Worker Secret 使用同一随机值。密码哈希留在 D1，VPS2 不持久化密码、哈希或业务数据。
 
-### 目录职责
+Worker 对密码调用设置 3.5 秒超时，凭据错误或依赖不可用时返回 `503`。VPS2 限制请求体、每分钟调用次数与并发数。bcrypt cost 10 沿用已有账号的参数。日志只写状态、耗时和必要的诊断标识。
 
-- `src/main.js`：前端应用入口。
-- `src/App.vue`：应用根组件。
-- `src/router/index.js`：路由定义、登录态和管理员路由守卫。
-- `src/api/index.js`：API 客户端和接口封装。
-- `src/stores/`：跨页面共享状态和业务数据缓存。
-- `src/views/`：页面级组件。
-- `src/components/`：可复用 UI 组件，包括公共按钮、分段控件、确认弹窗、状态块和页面骨架组件。
-- `src/config/events.js`：官方项目、趣味项目和静态项目配置。
-- `src/utils/`：纯业务工具函数。
-- `src/styles/` 与 `src/style.css`：全局样式与主题规则。
+## 环境配置
 
-### 前端边界
-
-页面组件负责：
-
-- 组织页面结构。
-- 调用 store 或 API 封装。
-- 管理当前页面的局部交互状态。
-- 展示加载、错误和空状态。
-
-store 负责：
-
-- 共享数据加载。
-- 请求复用和缓存状态。
-- 跨页面使用的派生数据。
-- 与 API 层的稳定衔接。
-
-工具函数负责：
-
-- 排名映射、格式化、头像等可纯函数化的业务逻辑。
-- 不依赖组件生命周期和 DOM。
-
-前端不应承担：
-
-- 鉴权可信判断。
-- 数据库字段最终校验。
-- 管理员权限最终校验。
-- 需要全局一致的核心业务写入规则。
-- 首页统计、全站榜单排序、跨用户搜索分页等后端更适合承担的聚合计算。
-
-## 后端架构
-
-### 技术栈
-
-- Node.js
-- Express
-- MongoDB
-- Mongoose
-- JWT
-- bcryptjs
-
-### 目录职责
-
-- `server/index.js`：Express 应用初始化、中间件、路由注册、服务启动。
-- `server/config/database.js`：数据库连接配置。
-- `server/routes/`：HTTP 路由与接口层。
-- `server/routes/stats.js`：首页轻量统计接口。
-- `server/models/`：Mongoose 数据模型。
-- `server/middleware/`：鉴权、错误处理等中间件。
-- `server/utils/`：后端共享工具，包括用户查询、整活项目、GR 判断与 AstrBot 通知。
-
-### 后端边界
-
-后端负责：
-
-- 用户注册、登录、密码哈希和 token 签发。
-- 用户身份识别和管理员权限校验。
-- 成绩、用户、整活项目的数据读写。
-- 数据结构、字段白名单和核心业务规则校验。
-- 首页统计、榜单排序、用户总览搜索排序等聚合数据，避免前端拉取全量明细后再计算。
-- 对外部 QQ / AstrBot 等入口进行安全约束，并在网站录入成绩刷新 GR 时通过 AstrBot Open API 发送记录快讯。
-- 为前端提供稳定 API 契约。
-
-路由层当前承担了较多业务逻辑。后续新增或重构复杂逻辑时，应优先下沉到 service 或独立工具模块，避免继续扩大 `routes/*.js`。
-
-## API 契约
-
-前端统一通过 `src/api/index.js` 调用后端接口。
-
-默认响应结构为：
-
-```json
-{
-  "code": 200,
-  "message": "ok",
-  "data": {}
-}
-```
-
-分页接口可额外返回：
-
-```json
-{
-  "page": 1,
-  "pageSize": 20,
-  "total": 100
-}
-```
-
-约束：
-
-- 新接口应保持 `code`、`message`、`data` 的基本结构。
-- HTTP 状态码与响应 `code` 应尽量一致。
-- 用户主标识需要逐步统一，避免 `_id`、`userNo`、`profileUserNo` 在新接口中继续扩散。
-- 前端不得绕过 `src/api/index.js` 直接散落创建 axios 实例。
-- 健康检查和少量无返回体写操作可以不带 `data`。
-
-## 数据模型约束
-
-当前核心模型：
-
-- `User`：账号、资料、角色、状态、QQ ID、用户编号。
-- `Record`：用户成绩、项目、单次、平均、器材、方法、比赛、原始 solves、时间戳。
-- `MemeEvent`：动态整活项目。
-- `Counter`：自增编号。
-
-重要约束：
-
-- `User.password` 默认不返回。
-- `User.userNo` 使用 `Counter` 自动生成。
-- `Record.nickname` 是写入时用户昵称快照，不等同于用户当前昵称。
-- `Record.event` 当前仍是字符串，后续需要逐步收口事件字典和校验规则。
-- 整活项目 `eventCode` 变更会同步迁移关联成绩的 `event` 字段；删除会级联删除关联成绩，修改前必须评估数据影响。
-
-## 部署与运行边界
-
-现网由 Cloudflare Pages 和 VPS2 承载。已确认的 Workers、D1、R2 与 VPS2 密码服务目标架构及切换步骤见 [Cloudflare 迁移与全站重构方案](./roadmap.md#cloudflare-迁移与全站重构方案)。
-
-根项目脚本主要服务前端开发、构建和本地预览：
-
-- `npm run dev`
-- `npm run build`
-- `npm run preview`
-
-前端按静态站点部署到 Cloudflare Pages。Cloudflare Pages 侧建议使用 GitHub 导入仓库，构建命令为 `npm run build`，输出目录为 `dist`。前端使用 Vue Router history 模式，刷新非首页路由时必须由静态托管层回退到 `index.html`。当前通过 `public/_redirects` 提供 SPA fallback 规则，构建后会复制到 `dist/_redirects`。
-
-后端位于 `server/`，使用独立依赖和脚本：
-
-- `npm run dev` — 开发启动（`node --watch`）
-- `npm start` — 生产启动（`node index.js`）
-
-### 接口文档
-
-后端当前接口清单统一维护在 `docs/api.md`。该文档只记录当前真实接口，不写调用示例代码。
-
-### 生产部署
-
-后端在生产环境通过 **PM2**（v6.0.14）管理进程，部署于 OpenResty 反向代理之后：
-
-- `api.hzcubing.fun` → Cloudflare（小黄云） → OpenResty → `127.0.0.1:3001`
-- PM2 负责进程守护（崩溃自动重启）、日志管理和开机自启
-
-常用命令：
-
-| 操作 | 命令 |
-|------|------|
-| 启动 | `PORT=3001 pm2 start server/index.js --name hzcubing-api` |
-| 重启 | `pm2 restart hzcubing-api` |
-| 停止 | `pm2 stop hzcubing-api` |
-| 查看状态 | `pm2 status` |
-| 查看日志 | `pm2 logs hzcubing-api` |
-| 保存进程列表 | `pm2 save`（修改 PM2 进程后务必执行） |
-
-首次部署需执行 `pm2 startup` 设置开机自启。
-
-远端服务器只用于临时脚本执行、数据库操作和运行状态排查。默认不在远端服务器长期修改代码。
-
-### AstrBot 通知配置
-
-网站端提交成绩后，后端会判断该成绩是否刷新对应项目的单次或平均 GR。刷新时通过 AstrBot Open API 发送“记录快讯”消息；通知发送失败只记录日志，不影响成绩提交成功。
-
-需要在后端运行环境配置：
-
-| 变量 | 说明 |
-|------|------|
-| `ASTRBOT_MESSAGE_URL` | AstrBot 发消息接口 URL，默认 `https://astrbot.huizhi.pro/api/v1/im/message` |
-| `ASTRBOT_API_KEY` | AstrBot Open API Key |
-| `ASTRBOT_MESSAGE_UMO` | 目标会话 UMO |
-| `ASTRBOT_MESSAGE_TIMEOUT_MS` | 通知请求超时时间，默认 5000ms |
-
-## 开发约束
-
-- 保持前后端分离，前端不直接访问数据库。
-- 低风险改动可以本地直接完成；高风险操作必须先说明影响并等待确认。
-- 不随意修改 `.env`、部署配置、数据库字段含义和持久化数据结构。
-- 不引入大型依赖或切换核心技术方案，除非任务明确需要且已确认。
-- 优先复用现有组件、store、工具函数、模型和中间件。
-- 避免无关格式化、无关重命名和无关重构。
-- 涉及接口、数据结构、模块边界、运行方式变化时，必须同步检查文档。
+| 名称 | 来源 |
+| --- | --- |
+| `DB`、`AVATARS` | Wrangler 中对应环境的 D1、R2 绑定。版本库中的配置用作本地开发。 |
+| `PASSWORD_SERVICE_URL` | 生产和预览填写 `https://password.hzcubing.fun`。开发环境可用回环 HTTP，同时设置 `DEV_PASSWORD_HTTP=1`。 |
+| `PASSWORD_SERVICE_SECRET` | 用 Worker Secret 注入，与 VPS2 `/etc/hzcubing-password.env` 中的值匹配。 |
+| `BOT_SECRET` | AstrBot 插件独享的 Worker Secret。 |
+| `SITE_READ_ONLY` | 为 `1` 时暂停浏览器及 QQ 写入。 |
+| `ASTRBOT_MESSAGE_URL`、`ASTRBOT_API_KEY`、`ASTRBOT_MESSAGE_UMO` | 配齐可用的 AstrBot 服务地址及凭据后启用破纪录通知。 |

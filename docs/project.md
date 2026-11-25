@@ -1,6 +1,6 @@
 # 项目现状
 
-更新时间：2026-06-17
+更新时间：2026-11-25
 
 ## 项目定位
 
@@ -14,6 +14,8 @@ HZCubing 是面向魔方玩家的社区成绩系统，核心围绕用户、成�
 - 项目文档：`docs/`，按 `project.md`、`architecture.md`、`roadmap.md`、`api.md` 四份文档维护。
 
 ## 当前可用能力
+
+以下是 Pages 与 VPS2 上的生产版本。`codex/cloudflare-migration` 工作树已接入同域 Worker API，并在独立 Cloudflare 预览环境通过合成数据导入和只读验收。
 
 ### 前端
 

@@ -11,7 +11,7 @@
 - Cloudflare Pages 项目 `hzcubing` 绑定 `hzcubing.fun` 和 `hzcubing.pages.dev`，关联 GitHub `huizhiLLL/hzcubing` 的 `main`。生产自动部署已开启，预览分支匹配 `*`。构建命令为 `npm run build`，产物目录为 `dist`。当前生产部署提交为 `552683c`，部署于 2026 年 6 月 28 日。以上由 Cloudflare Pages 项目配置核实。
 - 前端当前调用 `api.hzcubing.fun`，经 Cloudflare 和 VPS2 上的 OpenResty 到 PM2 的 `hzcubing-api`。MongoDB 7 运行在 `hzcubing-mongo` 容器中，服务端提交也是 `552683c`。VPS2 还运行 AstrBot、NapCat 等独立服务。
 - 2026 年 11 月 25 日盘点有 32 个账号、734 条成绩、34 个整活项目、10 张 Base64 头像，19 个账号绑定 QQ。全部 32 个密码哈希为 bcrypt cost 10。切换时以冻结后的最终快照为准。
-- Workers Free 实测的 105 个请求全部通过，CPU 用时 P50 约 94 ms，P99 约 217 ms，高于 Free 的 10 ms 标准限额。VPS2 的本地 HTTP 原型通过校验、生成哈希和凭据校验。正式跨网络调用仍需验收。现有 Cloudflare 账号已可列出 R2 桶。按 Workers Free、D1 Free 和 R2 Standard 免费用量规划，监控账号内其他项目的合计用量。
+- Workers Free 实测的 105 个请求全部通过，CPU 用时 P50 约 94 ms，P99 约 217 ms，高于 Free 的 10 ms 标准限额。VPS2 的密码服务已通过本地与临时 HTTPS 调用测试。生产密码域名仍需 DNS 绑定。现有 Cloudflare 账号已可列出 R2 桶。按 Workers Free、D1 Free 和 R2 Standard 免费用量规划，监控账号内其他项目的合计用量。
 
 ### 仓库与开发目录
 
@@ -33,7 +33,7 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 
 首发覆盖首页、注册登录、个人资料和头像、选手总览、成绩增删改查、分项目榜单、个人最佳、GR 历程、管理员整活项目管理，以及 AstrBot 的 QQ 绑定、查询和录入。页面和 API 形状可重新设计，历史用户编号、项目编码、成绩语义和现有权限要可验证。站内提交破 GR 后的群通知在 AstrBot 已有可用服务地址时接通，发送失败与成绩提交结果独立。
 
-密码服务将 `/verify` 和 `/hash` 作为两个固定操作，监听 VPS2 环回地址，由 OpenResty 在 `password.hzcubing.fun` 提供专用 HTTPS 入口。Worker Secret 与 VPS2 从部署环境读取专用凭据，VPS2 校验凭据并限制请求频率、并发和请求体大小。D1 保存密码哈希，VPS2 在单次请求内处理密码和哈希。两端日志仅记录请求结果、耗时和诊断 ID。服务超时或不可用时，Worker 返回可重试的 `503`，公开查询及有效会话仍由 Worker 正常处理。
+密码服务将 `/verify` 和 `/hash` 作为两个固定操作，监听 VPS2 环回地址，由独立的 Cloudflare Tunnel 在 `password.hzcubing.fun` 提供专用 HTTPS 入口。Worker Secret 与 VPS2 从部署环境读取专用凭据，VPS2 校验凭据并限制请求频率、并发和请求体大小。D1 保存密码哈希，VPS2 在单次请求内处理密码和哈希。两端日志仅记录请求结果、耗时和诊断 ID。服务超时或不可用时，Worker 返回可重试的 `503`，公开查询及有效会话仍由 Worker 正常处理。
 
 会话用随机令牌，D1 保存令牌摘要和到期时间，浏览器通过同域 `HttpOnly`、`Secure`、`SameSite=Lax` Cookie 携带会话，退出登录时撤销。Worker 校验浏览器写请求的来源，并限制登录、注册频率。AstrBot 用独立服务凭据调用新版 QQ 接口，权限约束在绑定、查询和提交相关操作。QQ 写入和网站写入遵循相同的停写开关。
 
@@ -59,6 +59,22 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 5. **验收并退役。** 验收正式域名的首页、登录、旧数据浏览、提交成绩、管理员功能和 QQ 写入。成功后停掉 `hzcubing-api` 和 `hzcubing-mongo`，下线 `api.hzcubing.fun` 的旧代理配置，退役旧 Pages 项目。切换至恢复写入之间如发现校验失败，保持停写并修复，校验通过后切换。恢复写入之后以 D1 和 R2 为生产源，数据修复使用当前快照及备份。
 
 生产数据导入、推送、远端部署、Pages/DNS 切换和停旧服务按 `AGENTS.md` 确认操作范围和切换窗口。首发后同步 `project.md`、`architecture.md`、`api.md` 和 README 的实际状态及用法。
+
+### 试迁记录与切换准备
+
+- 2026 年 11 月 25 日，读取 MongoDB 快照并在内存 SQLite 核验了 32 个账号、70 个合并项目、734 条成绩和 10 张头像。其中 18 条成绩保留超过两位小数的原始值，一个用户的规范 ISO 日期字符串转换为同一 UTC 时刻。最终以停写后的快照为准。
+- 工作站已收到 DPAPI 加密的 MongoDB 归档，解密前后的 SHA-256 一致，`mongorestore --dryRun` 验证通过。停写后重新备份，并完成隔离库的实际恢复。
+- `hzcubing-next-preview` 已部署到 Workers Free，使用独立 D1 和 R2。合成快照已完成远程上传、导入、导出和逐项校验。预览开启停写，可查看站点和合成榜单。
+- VPS2 已安装密码服务和专用 Tunnel 连接器。现有 OAuth 创建 `password.hzcubing.fun` 的 DNS 记录时返回 `403`。在 Cloudflare 的 `hzcubing.fun` 区域添加代理 CNAME，目标为 `8f1cc72e-a9dc-4d72-9cac-d86479b2a1fd.cfargotunnel.com`。生效后在隔离预览环境核对 Worker 通过正式 HTTPS 地址调用密码服务。
+
+Windows 下可用 `scripts/migration/backup-vps2.ps1` 从 VPS2 拉取 gzip MongoDB 归档到当前用户的本机加密存储。Windows DPAPI 文件由生成它的用户账户解密。停写窗口开启后生成新的归档，并在独立 MongoDB 恢复以取得四份 BSON 文件。确认最终快照可恢复后再发布。
+
+```sh
+node scripts/migration/convert.mjs <BSON库目录> <新建受控目录>
+node scripts/migration/verify.mjs <转换目录>
+```
+
+先依 `manifest.json` 原样上传 R2 图片，包括对象键和 MIME 类型，再用 `wrangler d1 migrations apply DB --remote` 初始化生产 D1。用 `wrangler d1 execute DB --remote --file <转换目录>/data.sql` 导入数据。生产命令通过 `-c` 指定实际生产配置。导出真实 D1 并下载 R2 对象后，执行 `node scripts/migration/verify.mjs <转换目录> <D1导出SQL> <下载对象目录>`。按验收结果安排切换。
 
 ### 上线后的产品工作
 
