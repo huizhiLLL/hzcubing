@@ -6,14 +6,16 @@
 
 | 目录 | 职责 |
 | --- | --- |
-| `src/next/` | Vue 3、Vue Router、Vite 与 TypeScript。页面通过同域 `/api` 访问 Worker。普通 CSS 负责布局和交互样式，通用图标统一从 `@lucide/vue` 按需导入。 |
+| `src/next/` | React、React Router、Vite 与 TypeScript。页面通过同域 `/api` 访问 Worker。共享组件来自 coss ui registry，通过 Base UI 和 Tailwind CSS 提供交互与样式。通用图标从 `lucide-react` 按需导入。 |
 | `worker/` | Hono API、会话、权限、项目、选手、成绩、群纪录、QQ 及媒体请求。 |
 | `migrations/` | D1 表、项目种子、会话和速率计数。 |
 | `scripts/migration/` | 快照备份、BSON、D1 和 R2 之间的转换与校验。 |
 | `services/password/` | Node 和 bcryptjs 2.4.3。VPS2 只支持验证密码和生成哈希。 |
 | `server/` 与旧版 `src/` | 切换验收使用的旧行为基线。 |
 
-Workers Static Assets 提供 Vue SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。`preview.hzcubing.fun` 使用独立的 D1 和 R2，导入旧站公开的选手资料、成绩、项目与头像。预览使用占位登录数据，开启 `SITE_READ_ONLY=1`。正式 `hzcubing.fun` 仍通过 Pages 和 VPS2 旧 API 提供服务。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
+Workers Static Assets 提供 React SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。`preview.hzcubing.fun` 使用独立的 D1 和 R2，导入旧站公开的选手资料、成绩、项目与头像。预览使用占位登录数据，开启 `SITE_READ_ONLY=1`。正式 `hzcubing.fun` 仍通过 Pages 和 VPS2 旧 API 提供服务。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
+
+官方组件源码放在 `src/next/components/ui/`，该目录保留 coss ui 的 MIT 许可。页面布局与语义色由 `src/next/style.css` 管理。项目分组选择使用原生 `select` 与 `optgroup`。
 
 ## 数据和权限
 

@@ -8,26 +8,32 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test scripts/migration/*.test.mjs && npm --prefix services/password test",
-    "typecheck": "vue-tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "dev:worker": "wrangler dev --local",
     "db:local": "wrangler d1 migrations apply DB --local"
   },
   "dependencies": {
-    "@lucide/vue": "^1.80.0",
-    "axios": "^1.13.6",
+    "@base-ui/react": "^1.9.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "hono": "^4.13.22",
-    "pinia": "^3.0.4",
-    "vue": "^3.5.25",
-    "vue-router": "^4.6.4"
+    "lucide-react": "^1.80.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.7",
+    "tailwind-merge": "^3.7.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261125.1",
+    "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^26.6.10",
-    "@vitejs/plugin-vue": "^6.0.2",
+    "@types/react": "^19.3.2",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
     "bson": "^7.3.4",
+    "tailwindcss": "^4.3.5",
     "typescript": "^6.0.3",
     "vite": "^7.3.1",
-    "vue-tsc": "^3.3.14",
     "wrangler": "^4.168.0"
   }
 }

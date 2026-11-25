@@ -25,7 +25,7 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 
 | 部署位置 | 负责的功能 |
 | --- | --- |
-| Workers Static Assets | Vue 3、Vite、TypeScript 和 Vue Router。保留 Vue 生态，重新组织页面、组件和路由。SPA 深链接返回 `index.html`。 |
+| Workers Static Assets | React、Vite、TypeScript 和 React Router。共用 coss ui、Tailwind CSS 与 Lucide，SPA 深链接返回 `index.html`。 |
 | Hono Worker | 同域 `/api/*`、会话、账号与权限、成绩、榜单、GR、整活项目、QQ 接口、头像访问。`/api/*` 和 `/media/*` 优先进入 Worker。 |
 | D1 | 用户、项目、成绩和会话。用 SQL 做榜单、个人最佳、GR 和首页统计，按项目、用户、时间建立必要索引。 |
 | R2 Standard | 私有头像对象。Worker 校验上传类型和大小，通过 `/media/*` 提供图片，D1 保存对象键。 |
@@ -66,6 +66,7 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 - 工作站已收到 DPAPI 加密的 MongoDB 归档，解密前后的 SHA-256 一致，`mongorestore --dryRun` 验证通过。归档还已恢复到无外网的临时 MongoDB 容器，恢复计数为 32 个账号、734 条成绩、34 个整活项目和 10 张头像。切换时在停写后重新备份并重复校验。
 - `preview.hzcubing.fun` 已绑定 `hzcubing-next-preview`。预览数据库用 `scripts/migration/preview-snapshot.mjs` 从旧站的公开字段生成，包含 32 个选手、70 个项目、734 条成绩和 10 张头像。登录字段使用占位值。预览开启停写，供查看榜单和页面。
 - 前端优化提交 `65e059f` 已发布到只读预览站。首页去掉重复文案，项目和选手目录使用分隔线列表，通用操作使用 Lucide 图标及淡底悬停状态。类型检查、构建和现有测试已通过，预览域名已核对加载了新版静态资源。
+- 2026 年 11 月 25 日，迁移分支的新版入口切换为 React SPA，并引入 coss ui 的按钮、表单输入和表格。页面采用黑白灰，反馈状态使用独立语义色。
 - 本地联调采用 Vite 热更新，通过同源代理访问本地 Wrangler Worker 的 `/api` 与 `/media`。已验证首页、榜单路由、API 统计与头像读取。本地 D1 和 R2 使用独立状态，载入预览快照中的 734 条成绩和 10 张头像。
 - `password.hzcubing.fun` 已通过代理 CNAME 接入 VPS2 的专用 Tunnel。使用隔离库的合成账号，在 `preview.hzcubing.fun` 验证了注册、正确与错误密码、Cookie 安全属性、退出、退出后会话失效和跨域请求拒绝。测试账号已清理，公开预览恢复为只读。
 

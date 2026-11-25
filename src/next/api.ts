@@ -1,5 +1,3 @@
-import { shallowRef } from 'vue'
-
 export interface Player {
   userNo: number; nickname: string; bio: string; wcaId: string; avatar: string | null
 }
@@ -10,8 +8,6 @@ export interface RecordInfo extends Best {
   id: string; timestamp: number; userNo: number; nickname: string; avatar: string | null
   rank?: number; cube: string | null; method: string | null; competition: string | null; solves: (number | null)[] | null
 }
-export const session = shallowRef<Session | null>(null)
-export const eventList = shallowRef<EventInfo[]>([])
 export const categories = { official: '官方', fun: '趣味', meme: '整活', historical: '历史' }
 
 export class ApiError extends Error {
@@ -20,7 +16,7 @@ export class ApiError extends Error {
 export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, { credentials: 'same-origin', ...options })
   if (!response.ok) {
-    const result = await response.json<{ message?: string }>().catch(() => null)
+    const result = await response.json().catch(() => null) as { message?: string } | null
     throw new ApiError(response.status, result?.message ?? '请求失败，请稍后再试')
   }
   return response.status === 204 ? undefined as T : response.json()
@@ -28,12 +24,6 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
 export function send<T>(path: string, method: string, data?: unknown) {
   return api<T>(path, { method, headers: data == null ? undefined : { 'Content-Type': 'application/json' }, body: data == null ? undefined : JSON.stringify(data) })
 }
-export async function loadSession() {
-  try { session.value = await api<Session>('/auth/me') }
-  catch (error) { if (!(error instanceof ApiError) || error.status !== 401) throw error; session.value = null }
-}
-export async function loadEvents() { eventList.value = await api<EventInfo[]>('/events') }
-export const label = (code: string) => eventList.value.find(row => row.code === code)?.name ?? code
 export const message = (error: unknown) => error instanceof Error ? error.message : '暂时无法完成操作'
 export function time(seconds: number | null) {
   if (seconds == null) return '—'

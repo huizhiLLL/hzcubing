@@ -15,9 +15,9 @@ HZCubing 是面向魔方玩家的社区成绩系统，核心围绕用户、成�
 
 ## 新版预览
 
-`hzcubing-cf` 工作树的 `codex/cloudflare-migration` 分支已在 `preview.hzcubing.fun` 提供只读预览。新版使用 Worker 提供页面与 API，D1 保存公开的业务数据，R2 保存头像。
+`hzcubing-cf` 工作树的 `codex/cloudflare-migration` 分支已在 `preview.hzcubing.fun` 提供只读预览。新版是 React 单页应用，使用 Worker 提供页面与 API，D1 保存公开的业务数据，R2 保存头像。
 
-首页、项目和选手列表已减少装饰与说明文案。搜索、翻页、编辑和账户操作使用 Lucide 线形图标与透明底按钮，悬停时显示淡青绿底色。主导航与表单提交保留短标签。
+首页、项目和选手列表已减少装饰与说明文案。按钮、输入与表格使用 coss ui，搜索、翻页、编辑和账户操作使用 Lucide 线形图标与透明底按钮，悬停时显示浅灰底色。页面使用黑白灰，绿色与红色用于成功和危险反馈。主导航与表单提交保留短标签。
 
 ## 当前可用能力
 

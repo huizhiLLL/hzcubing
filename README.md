@@ -2,7 +2,7 @@
 
 魔方社区成绩系统，提供成绩提交、榜单、选手主页、个人最佳、群纪录和整活项目管理。支持 QQ 账号绑定及 AstrBot 成绩录入。
 
-新版使用 Vue 3 + Vite 构建前端，Workers 托管全站，Hono 提供 API，D1 存业务数据，R2 存头像。VPS2 的独立服务负责 bcrypt。
+新版使用 React、Vite 和 React Router 构建单页应用，界面使用 coss ui 和 Lucide，Workers 托管全站，Hono 提供 API，D1 存业务数据，R2 存头像。VPS2 的独立服务负责 bcrypt。
 
 ## 本地开发
 
