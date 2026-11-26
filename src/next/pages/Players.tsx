@@ -35,17 +35,18 @@ export default function Players() {
   }, [data, page, q, sort])
   return <>
     <header className="page-heading"><h1>选手</h1></header>
-    <div className="toolbar board-toolbar players-toolbar"><form className="search" role="search" onSubmit={submit => {
-      submit.preventDefault()
-      setFilter({ ...filter, page: 1, q: String(new FormData(submit.currentTarget).get('query') || '').trim() })
-    }}>
-      <Input name="query" aria-label="昵称或 WCA ID" type="search" placeholder="搜索选手昵称" maxLength={50} />
-      <IconButton type="submit" label="搜索"><Search /></IconButton>
-    </form>
+    <div className="toolbar board-toolbar players-toolbar">
       <Select items={sortOptions} value={sort} onValueChange={value => value && setFilter({ ...filter, page: 1, sort: value })}>
         <SelectTrigger aria-label="排序方式"><SelectValue /></SelectTrigger>
         <SelectPopup alignItemWithTrigger={false}>{sortOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectPopup>
       </Select>
+      <form className="search" role="search" onSubmit={submit => {
+        submit.preventDefault()
+        setFilter({ ...filter, page: 1, q: String(new FormData(submit.currentTarget).get('query') || '').trim() })
+      }}>
+        <Input name="query" aria-label="昵称或 WCA ID" type="search" placeholder="搜索选手昵称" maxLength={50} />
+        <IconButton type="submit" label="搜索"><Search /></IconButton>
+      </form>
     </div>
     <div key={`${page}:${q}:${sort}:${loading}`} className="resource-enter">
       {loading || error || !data?.users.length ? <ResourceNotice skeleton="directory" loading={loading} error={error} empty="未找到选手。" /> :

@@ -38,7 +38,7 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
       : <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>}</header>
     <div className="toolbar board-toolbar board-filters">
       <ProjectSelect compact events={events} value={event} onValueChange={next => update('event', next)} />
-      <SegmentedControl label="成绩类型" size="compact" options={metrics} value={metric} onValueChange={next => update('type', next)} />
+      <SegmentedControl label="成绩类型" options={metrics} value={metric} onValueChange={next => update('type', next)} />
     </div>
     <div key={`${event}:${metric}:${loading}`} className="resource-enter">
       {loading || error || !rows.length ? <ResourceNotice skeleton="table" loading={loading} error={error} empty="暂无成绩。" /> :
