@@ -287,28 +287,27 @@ h2 { margin-bottom: .65rem; font-size: 1rem; font-weight: 600; }
   inset-inline-start: 50%;
   inline-size: max-content;
   max-inline-size: min(24vw, 11rem);
+  padding-inline-start: .55rem;
 }
 .home-orbit li::before {
   content: '';
   position: absolute;
   inset-block-start: calc(50% - 2px);
-  inset-inline-start: calc(50% - 2px);
+  inset-inline-start: calc((50% - 2px) * (1 - var(--label-opacity, 0)));
   inline-size: 4px;
   block-size: 4px;
   border-radius: 50%;
   background: var(--muted);
-  opacity: calc(1 - var(--label-opacity, 0));
 }
 .home-orbit li > span {
   display: block;
   overflow: hidden;
-  padding: .18rem .5rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
+  padding-block: .125rem;
+  color: var(--ink);
   font-size: clamp(.75rem, 1.6vw, .9rem);
   font-weight: 550;
   text-overflow: ellipsis;
+  text-shadow: 0 0 2px var(--page), 0 0 4px var(--page);
   white-space: nowrap;
   opacity: var(--label-opacity, 0);
 }
