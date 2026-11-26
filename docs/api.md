@@ -17,10 +17,10 @@
 | `DELETE /api/profile/avatar` | 登录 | 解除当前头像的关联。 |
 | `POST /api/profile/qq` | 登录 | `qqId` 是字符串，绑定当前账号。 |
 | `GET /api/events` | 公开 | 项目编码、名称、分类、描述和状态。 |
-| `POST /api/events`、`PATCH /api/events/:code` | 管理员 | 创建或编辑整活项目，使用 `code`、`name`、`description`、`active`。编码为创建时确定。 |
-| `GET /api/records/leaderboard?event=&type=&q=&limit=` | 公开 | 按 `single` 或 `average` 排名，支持昵称过滤。 |
-| `GET /api/records/best?event=` | 公开 | 各项目当前单次和平均群纪录。 |
-| `GET /api/records/gr?event=` | 公开 | 单次和平均的群纪录历史。 |
+| `POST /api/events`、`PATCH /api/events/:code` | 管理员 | 创建或编辑整活、积分项目，使用 `code`、`name`、`description`、`active`。创建时 `category` 可选 `meme`（默认）或 `score`，编码和分类创建后不可修改。 |
+| `GET /api/records/leaderboard?event=&type=&q=&limit=` | 公开 | 计时项目按 `single` 或 `average` 排名，积分项目按积分降序并列排名；支持排名后的昵称过滤。 |
+| `GET /api/records/best?event=` | 公开 | 各项目当前单次、平均和积分群纪录，积分持有人使用 `score: { value, userNo, nickname, timestamp }`。 |
+| `GET /api/records/gr?event=` | 公开 | 单次、平均和积分（`score` 数组）的群纪录历史。 |
 | `GET /api/records/:id` | 公开 | 查看单条成绩。 |
 | `POST /api/records` | 登录 | 提交成绩，返回成绩及是否刷新 GR。 |
 | `PATCH /api/records/:id`、`DELETE /api/records/:id` | 成绩所属账号 | 修改或删除成绩。删除成功返回 `204`。 |
@@ -28,13 +28,15 @@
 
 提交成绩至少包含 `event`、`singleSeconds` 或 `averageSeconds`。数值支持秒数及 `分:秒` 字符串，`DNF`、`DNS` 或空值代表该项无有效成绩。`solves`、`cube`、`method`、`competition` 和毫秒时间戳 `timestamp` 均可选。PATCH 仅修改提供的字段，历史成绩原值在未编辑对应成绩字段时保留。
 
+积分项目提交 `{ "event": "项目编码", "score": 120.5 }`。成绩接受有限数字或完整十进制字符串（允许正负号、首尾空格），绝对值不超过 `Number.MAX_SAFE_INTEGER`，保留原始小数。不可混入时间字段或 `solves`。编辑时省略 `score` 保留原值，不允许跨计时与积分更换项目。成绩对象均包含 `score`，计时成绩为 `null`；录入结果包含 `isScoreGR` 和 `previousScoreBest`。停用项目仍可查询和在原项目内编辑，不能录入新成绩。积分并列采用 `1、1、3` 排名；纪录历程按日期和 ID 判断严格刷新，当前纪录持有人为最早达到最高成绩的选手。
+
 ## AstrBot 切换
 
 | 旧接口 | 新接口与调整 |
 | --- | --- |
 | `GET /api/auth/find-user-by-qq` | `GET /api/bot/player?qqId=...`，从返回根对象读取 `userNo` 和昵称。 |
 | `POST /api/auth/submit-record-by-qq` | `POST /api/bot/records`，保留 `qqId`、`event` 和时间字段，成功为 `201`，成绩与 GR 字段在返回根对象。 |
-| `POST /api/auth/create-meme-event` | `POST /api/bot/events`，使用 `qqId`、`code`、`name`、`description`。按绑定账户判断管理员权限。 |
+| `POST /api/auth/create-meme-event` | `POST /api/bot/events`，使用 `qqId`、`code`、`name`、`description`，可选 `category`。按绑定账户判断管理员权限。 |
 | `POST /api/auth/bind-user-by-nickname` | 引导用户登录个人主页并通过 `POST /api/profile/qq` 自助绑定。迁入的绑定直接可用。 |
 | `GET /api/meme-events` | `GET /api/events`，以 `category === 'meme'` 取整活项目。 |
 
