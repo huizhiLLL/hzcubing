@@ -49,7 +49,7 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
         </TableRow></TableHeader><TableBody>{rows.map(row => <TableRow key={row.id}
           className={!historyMode && row.userNo === session?.userNo ? 'own-rank' : undefined}>
           {!historyMode && <TableCell column="rank" className={row.rank && row.rank <= 3 ? 'podium' : undefined}>{row.rank}</TableCell>}
-          <TableCell><Link to={`/user/${row.userNo}`}>{row.nickname}</Link></TableCell>
+          <TableCell column="player"><Link to={`/user/${row.userNo}`}>{row.nickname}</Link></TableCell>
           <TableCell column="time">{time(metric === 'average' ? row.averageSeconds : row.singleSeconds)}</TableCell>
           <TableCell column="date">{day(row.timestamp)}</TableCell>
         </TableRow>)}</TableBody></Table>}

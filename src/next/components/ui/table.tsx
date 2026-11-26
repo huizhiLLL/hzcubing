@@ -102,7 +102,7 @@ export function TableRow({
   );
 }
 
-type TableColumn = "time" | "date" | "rank";
+type TableColumn = "time" | "date" | "rank" | "player";
 
 export function TableHead({
   className,

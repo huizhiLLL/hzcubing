@@ -44,8 +44,8 @@ function Overview() {
           <TableHead scope="col" column="time">平均</TableHead>
         </TableRow></TableHeader><TableBody>{rows.map(row => <TableRow key={row.event}>
           <TableCell><Link to={`/gr/history?${new URLSearchParams({ event: row.event })}`}>{row.name}</Link></TableCell>
-          <TableCell><HolderLink holder={row.single} /></TableCell><TableCell column="time">{time(row.single?.seconds ?? null)}</TableCell>
-          <TableCell><HolderLink holder={row.average} /></TableCell><TableCell column="time">{time(row.average?.seconds ?? null)}</TableCell>
+          <TableCell column="player"><HolderLink holder={row.single} /></TableCell><TableCell column="time">{time(row.single?.seconds ?? null)}</TableCell>
+          <TableCell column="player"><HolderLink holder={row.average} /></TableCell><TableCell column="time">{time(row.average?.seconds ?? null)}</TableCell>
         </TableRow>)}</TableBody></Table></div>
         <ul className="gr-cards">{rows.map(row => <li key={row.event}>
           <h2><Link to={`/gr/history?${new URLSearchParams({ event: row.event })}`}>{row.name}</Link></h2>

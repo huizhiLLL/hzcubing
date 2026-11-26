@@ -562,6 +562,7 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 [data-slot="table"] [data-column="rank"] { width: 4rem; }
 [data-slot="table-cell"][data-column="rank"] { font-family: "Geist Variable", system-ui, sans-serif; }
+[data-slot="table-cell"]:is([data-column="player"], [data-column="time"]), .gr-cards dd { font-size: .9375rem; }
 [data-slot="table-cell"][data-column="time"], .result-time, .podium { color: var(--ink); font-weight: 700; }
 .players-toolbar { flex-wrap: nowrap; }
 .players-toolbar > [data-slot="select-trigger"] { flex: none; inline-size: 7rem; min-inline-size: 0; }
