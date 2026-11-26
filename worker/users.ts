@@ -8,17 +8,18 @@ export const players = new Hono<App>()
 players.get('/', async c => {
   const search = text(c.req.query('q'), 50)
   const page = Math.max(1, Math.min(1000, Number(c.req.query('page')) || 1)) | 0
+  const pageSize = Math.max(1, Math.min(30, Math.trunc(Number(c.req.query('pageSize'))) || 30))
   const sort = c.req.query('sort')
   const order = sort === 'mostRecords' ? 'record_count DESC,' : sort === 'mostEvents' ? 'event_count DESC,' : ''
   const { results } = await c.env.DB.prepare(`SELECT u.*, COUNT(r.id) AS record_count, COUNT(DISTINCT r.event) AS event_count,
       json_group_array(DISTINCT r.event) FILTER (WHERE r.event IS NOT NULL) AS event_codes
     FROM users u LEFT JOIN records r ON r.user_id=u.id WHERE u.status='active'
     AND (instr(lower(u.nickname),lower(?))>0 OR instr(lower(u.wca_id),lower(?))>0)
-    GROUP BY u.id ORDER BY ${order} u.created_at DESC,u.user_no DESC LIMIT 31 OFFSET ?`)
-    .bind(search, search, (page - 1) * 30).all<User & { created_at: number; record_count: number; event_count: number; event_codes: string }>()
-  return c.json({ users: results.slice(0, 30).map(user => ({
+    GROUP BY u.id ORDER BY ${order} u.created_at DESC,u.user_no DESC LIMIT ? OFFSET ?`)
+    .bind(search, search, pageSize + 1, (page - 1) * pageSize).all<User & { created_at: number; record_count: number; event_count: number; event_codes: string }>()
+  return c.json({ users: results.slice(0, pageSize).map(user => ({
     ...publicUser(user), createdAt: user.created_at, recordCount: user.record_count, eventCount: user.event_count, events: JSON.parse(user.event_codes) as string[],
-  })), more: results.length > 30 })
+  })), more: results.length > pageSize })
 })
 players.get('/:userNo', async c => {
   const userNo = Number(c.req.param('userNo'))
