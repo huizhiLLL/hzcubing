@@ -71,6 +71,7 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 - 本地联调采用 Vite 热更新，通过同源代理访问本地 Wrangler Worker 的 `/api` 与 `/media`。已验证首页、榜单路由、API 统计与头像读取。本地 D1 和 R2 使用独立状态，载入预览快照中的 734 条成绩和 10 张头像。
 - `password.hzcubing.fun` 已通过代理 CNAME 接入 VPS2 的专用 Tunnel。使用隔离库的合成账号，在 `preview.hzcubing.fun` 验证了注册、正确与错误密码、Cookie 安全属性、退出、退出后会话失效和跨域请求拒绝。测试账号已清理，公开预览恢复为只读。
 
+- 2026 年 11 月 26 日，公开预览将 `SITE_READ_ONLY` 设为 `0`，继续使用独立的 `hzcubing-preview-public-20261125` 数据库。已验证测试账号可注册、退出并重新登录，测试账号已清理。
 - AstrBot 插件的新版适配在其原仓库的 `codex/cloudflare-api` 分支，已用 VPS2 上同一镜像验证预览环境的群纪录、群纪录历史、榜单和项目查询。部署插件时设置 `HZCUBING_BOT_SECRET`，使其匹配 Worker 的 `BOT_SECRET`。`/绑定` 查询绑定状态，新绑定在个人主页完成。
 
 Windows 下可用 `scripts/migration/backup-vps2.ps1` 从 VPS2 拉取 gzip MongoDB 归档到当前用户的本机加密存储。Windows DPAPI 文件由生成它的用户账户解密。停写窗口开启后生成新的归档，并在独立 MongoDB 恢复以取得四份 BSON 文件。确认最终快照可恢复后再发布。

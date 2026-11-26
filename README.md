@@ -6,7 +6,7 @@
 
 ## 本地开发
 
-在已配置 `hzcubing` 快捷命令的 Windows 电脑上，从仓库根目录运行 `hzcubing`。也可以运行 `npm run dev:online`。该模式启动 Vite 热更新，经 `preview.hzcubing.fun` 的只读 Worker 读取线上 D1 和 R2 数据。
+在已配置 `hzcubing` 快捷命令的 Windows 电脑上，从仓库根目录运行 `hzcubing`。也可以运行 `npm run dev:online`。该模式启动 Vite 热更新，通过只读代理从 `preview.hzcubing.fun` 读取线上 D1 和 R2 数据。
 
 使用 Node.js 22.13 或更新版本。从仓库根目录安装依赖并初始化本地 D1。
 
@@ -18,7 +18,7 @@ npm run db:local
 
 复制 `.dev.vars.example` 为 `.dev.vars`，生成一个 64 位十六进制随机字符串，用作 `PASSWORD_SERVICE_SECRET`。在另一个终端设置同一环境变量，执行 `npm --prefix services/password start`。根目录分别执行 `npm run dev:worker -- --port 8795` 和 `npm run dev`。从 Vite 给出的地址打开站点，默认是 `http://localhost:5173`。前端保存后热更新，`/api` 和 `/media` 由 Vite 转发到本地 Worker。
 
-想用线上预览的真实数据调试界面时，在 `.env.development.local` 设置 `HZCUBING_PREVIEW_DATA=1` 并重启 Vite。`/api` 和 `/media` 会代理到 `preview.hzcubing.fun` 的只读 Worker。删除该配置并重启 Vite 可恢复本地 Worker。
+想用线上预览的真实数据调试界面时，在 `.env.development.local` 设置 `HZCUBING_PREVIEW_DATA=1` 并重启 Vite。`/api` 和 `/media` 只代理 `GET` 和 `HEAD` 请求。登录和注册测试可直接访问 `preview.hzcubing.fun`。删除该配置并重启 Vite 可恢复本地 Worker。
 
 要直接从 Worker 预览构建产物，先运行 `npm run build`，再访问 `http://127.0.0.1:8795`。重新构建后重启 Worker 即可更新静态资源。
 
