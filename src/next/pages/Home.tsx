@@ -5,8 +5,8 @@ import { Button } from '../components/ui/button'
 import { useResource, useSite } from '../site'
 
 export default function Home() {
-  const { events } = useSite()
-  const { data: summary, error } = useResource<{ users: number; records: number }>('/summary')
+  const { events, eventsLoading } = useSite()
+  const { data: summary, error, loading } = useResource<{ users: number; records: number }>('/summary')
   return <>
     <section className="home-intro">
       <div>
@@ -20,11 +20,11 @@ export default function Home() {
       {summary ? <dl className="summary-grid" aria-label="社区统计">
         <div><dt>总成绩数</dt><dd>{summary.records.toLocaleString()}</dd></div>
         <div><dt>活跃用户</dt><dd>{summary.users.toLocaleString()}</dd></div>
-      </dl> : <ResourceNotice error={error} />}
+      </dl> : <ResourceNotice skeleton="summary" loading={loading} error={error} />}
     </section>
     <section className="section home-projects">
       <h2>探索项目</h2>
-      {Object.entries(categories).filter(([category]) => category !== 'historical').map(([category, name]) => {
+      {eventsLoading ? <ResourceNotice loading skeleton="directory" /> : Object.entries(categories).filter(([category]) => category !== 'historical').map(([category, name]) => {
         const items = events.filter(event => event.category === category && event.active)
         return items.length > 0 && <section className="project-group" key={category}>
           <h3>{name}项目<small>{items.length} 项</small></h3>

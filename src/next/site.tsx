@@ -3,13 +3,14 @@ import { api, ApiError, type EventInfo, type Session } from './api'
 
 const SiteContext = createContext<{
   session: Session | null; sessionReady: boolean; setSession: (session: Session | null) => void
-  events: EventInfo[]; refreshEvents: () => Promise<void>; initializationError: string
+  events: EventInfo[]; eventsLoading: boolean; refreshEvents: () => Promise<void>; initializationError: string
 } | null>(null)
 
 export function SiteProvider({ children }: { children: ReactNode }) {
   const [session, setCurrentSession] = useState<Session | null>(null)
   const [sessionReady, setSessionReady] = useState(false)
   const [events, setEvents] = useState<EventInfo[]>([])
+  const [eventsLoading, setEventsLoading] = useState(true)
   const [initializationError, setInitializationError] = useState('')
   const setSession = (value: Session | null) => { setCurrentSession(value); setSessionReady(true) }
   const refreshEvents = async () => setEvents(await api<EventInfo[]>('/events'))
@@ -27,10 +28,12 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       if (!controller.signal.aborted) setEvents(value)
     }).catch(() => {
       if (!controller.signal.aborted) setInitializationError('暂时无法加载项目')
+    }).finally(() => {
+      if (!controller.signal.aborted) setEventsLoading(false)
     })
     return () => controller.abort()
   }, [])
-  return <SiteContext.Provider value={{ session, sessionReady, setSession, events, refreshEvents, initializationError }}>{children}</SiteContext.Provider>
+  return <SiteContext.Provider value={{ session, sessionReady, setSession, events, eventsLoading, refreshEvents, initializationError }}>{children}</SiteContext.Provider>
 }
 
 export function useSite() {

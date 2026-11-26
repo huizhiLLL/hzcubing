@@ -9,7 +9,7 @@ import { Textarea } from '../components/ui/textarea'
 import { useSite } from '../site'
 
 export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
-  const { session, sessionReady, events, refreshEvents } = useSite()
+  const { session, sessionReady, events, eventsLoading, refreshEvents } = useSite()
   const [editing, setEditing] = useState<EventInfo>()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -53,7 +53,7 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
         </div>
       </form>
     </section>}
-    {Object.entries(categories).map(([category, name]) => {
+    {eventsLoading ? <ResourceNotice loading skeleton="directory" /> : Object.entries(categories).map(([category, name]) => {
       if (adminOnly && category !== 'meme') return null
       const items = events.filter(event => event.category === category)
       return items.length > 0 && <section key={category} className="section">

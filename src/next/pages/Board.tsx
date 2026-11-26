@@ -33,17 +33,19 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
       <ProjectSelect compact events={events} value={event} onValueChange={next => update('event', next)} />
       <SegmentedControl label="成绩类型" size="compact" options={metrics} value={metric} onValueChange={next => update('type', next)} />
     </div>
-    {loading || error || !rows.length ? <ResourceNotice loading={loading} error={error} empty="暂无成绩。" /> :
-      <Table><TableHeader><TableRow>
-        {!historyMode && <TableHead scope="col" className="rank">排名</TableHead>}
-        <TableHead scope="col">选手</TableHead><TableHead scope="col" className="numeric">成绩</TableHead>
-        <TableHead scope="col" className="date-col">日期</TableHead>
-      </TableRow></TableHeader><TableBody>{rows.map(row => <TableRow key={row.id}
-        className={!historyMode && row.userNo === session?.userNo ? 'own-rank' : undefined}>
-        {!historyMode && <TableCell className={`rank ${row.rank && row.rank <= 3 ? 'podium' : ''}`}>{row.rank}</TableCell>}
-        <TableCell><Link to={`/user/${row.userNo}`}>{row.nickname}</Link></TableCell>
-        <TableCell className="numeric result-time">{time(metric === 'average' ? row.averageSeconds : row.singleSeconds)}</TableCell>
-        <TableCell className="date-col">{day(row.timestamp)}</TableCell>
-      </TableRow>)}</TableBody></Table>}
+    <div key={`${event}:${metric}:${loading}`} className="resource-enter">
+      {loading || error || !rows.length ? <ResourceNotice skeleton="table" loading={loading} error={error} empty="暂无成绩。" /> :
+        <Table><TableHeader><TableRow>
+          {!historyMode && <TableHead scope="col" className="rank">排名</TableHead>}
+          <TableHead scope="col">选手</TableHead><TableHead scope="col" className="numeric">成绩</TableHead>
+          <TableHead scope="col" className="date-col">日期</TableHead>
+        </TableRow></TableHeader><TableBody>{rows.map(row => <TableRow key={row.id}
+          className={!historyMode && row.userNo === session?.userNo ? 'own-rank' : undefined}>
+          {!historyMode && <TableCell className={`rank ${row.rank && row.rank <= 3 ? 'podium' : ''}`}>{row.rank}</TableCell>}
+          <TableCell><Link to={`/user/${row.userNo}`}>{row.nickname}</Link></TableCell>
+          <TableCell className="numeric result-time">{time(metric === 'average' ? row.averageSeconds : row.singleSeconds)}</TableCell>
+          <TableCell className="date-col">{day(row.timestamp)}</TableCell>
+        </TableRow>)}</TableBody></Table>}
+    </div>
   </>
 }

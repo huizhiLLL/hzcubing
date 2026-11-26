@@ -3,6 +3,7 @@ import { CircleUserRound, Layers3, ListOrdered, LogOut, Menu, Trophy, UsersRound
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { message, send } from './api'
 import { ActionLink, IconButton, ResourceNotice } from './components/Actions'
+import { Skeleton } from './components/Skeleton'
 import { Button } from './components/ui/button'
 import { ThemeToggle } from './components/ThemeToggle'
 import { useSite } from './site'
@@ -135,7 +136,7 @@ export default function App() {
     </div></header>
     <main id="main" className="site-main" tabIndex={-1}>
       <ResourceNotice error={error || initializationError} />
-      <Suspense fallback={<ResourceNotice loading />}>
+      <Suspense fallback={<Skeleton />}>
         <div className="route-content" key={pathname}>
           <Routes>
             <Route path="/" element={<Home />} />

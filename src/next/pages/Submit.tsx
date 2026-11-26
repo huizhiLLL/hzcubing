@@ -11,7 +11,7 @@ import { useResource, useSite } from '../site'
 export default function Submit() {
   const [params] = useSearchParams()
   const location = useLocation()
-  const { session, sessionReady, events } = useSite()
+  const { session, sessionReady, events, eventsLoading } = useSite()
   const id = params.get('edit') || ''
   const { data, loading, error } = useResource<RecordInfo>(id && session ? `/records/${encodeURIComponent(id)}` : null)
   const denied = Boolean(data && data.userNo !== session?.userNo)
@@ -22,8 +22,8 @@ export default function Submit() {
     </header>
     <section className="form-panel">
       {sessionReady && !session && <Link to={`/auth?${next}`}>登录后提交成绩</Link>}
-      <ResourceNotice loading={loading || !sessionReady} error={denied ? '只能编辑自己的成绩' : error} />
-      {session && (!id || (data && !denied)) && <RecordForm key={id} record={data} events={events} userNo={session.userNo} />}
+      <ResourceNotice skeleton="form" loading={loading || !sessionReady || (Boolean(session) && eventsLoading)} error={denied ? '只能编辑自己的成绩' : error} />
+      {session && !eventsLoading && (!id || (data && !denied)) && <RecordForm key={id} record={data} events={events} userNo={session.userNo} />}
     </section>
   </>
 }

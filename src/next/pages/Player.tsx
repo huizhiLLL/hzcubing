@@ -47,7 +47,7 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
     catch (cause) { setError(message(cause)) }
     finally { setPending(false) }
   }
-  if (!profile && mode !== 'manage') return <ResourceNotice loading={loading} error={loadError} />
+  if (!profile && mode !== 'manage') return <ResourceNotice loading={loading} error={loadError} skeleton={mode === 'settings' ? 'form' : 'page'} />
   const { user, best = [], records = [], more = false, createdProjects = [] } = profile ?? {}
   return <>
     <ResourceNotice error={error} />
@@ -85,19 +85,21 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
           setPage(1)
         }} />
       </div>}
-      {records.length ? <Table><TableHeader><TableRow>
-        <TableHead scope="col">项目</TableHead><TableHead scope="col" className="numeric">单次</TableHead><TableHead scope="col" className="numeric">平均</TableHead>
-        <TableHead scope="col" className="date-col">日期</TableHead>{mode === 'manage' && <TableHead scope="col">操作</TableHead>}
-      </TableRow></TableHeader><TableBody>{(mode === 'public' ? records.slice(0, 6) : records).map(item => <TableRow key={item.id}>
-        <TableCell>{label(item.event)}</TableCell><TableCell className="numeric">{time(item.singleSeconds)}</TableCell><TableCell className="numeric">{time(item.averageSeconds)}</TableCell>
-        <TableCell className="date-col">{day(item.timestamp)}</TableCell>
-        {mode === 'manage' && <TableCell><div className="record-actions">
-          <ActionLink to={`/submit?${new URLSearchParams({ edit: item.id })}`} label="编辑成绩"><Pencil /></ActionLink>
-          <IconButton className="danger-action" label="删除成绩" disabled={pending} onClick={() => {
-            if (window.confirm('确定删除这条成绩？')) void action(() => send(`/records/${encodeURIComponent(item.id)}`, 'DELETE'), '成绩已删除')
-          }}><Trash2 /></IconButton>
-        </div></TableCell>}
-      </TableRow>)}</TableBody></Table> : <ResourceNotice loading={loading} error={loadError} empty="暂无成绩。" />}
+      <div key={`${category}:${page}:${loading}`} className="resource-enter">
+        {records.length ? <Table><TableHeader><TableRow>
+          <TableHead scope="col">项目</TableHead><TableHead scope="col" className="numeric">单次</TableHead><TableHead scope="col" className="numeric">平均</TableHead>
+          <TableHead scope="col" className="date-col">日期</TableHead>{mode === 'manage' && <TableHead scope="col">操作</TableHead>}
+        </TableRow></TableHeader><TableBody>{(mode === 'public' ? records.slice(0, 6) : records).map(item => <TableRow key={item.id}>
+          <TableCell>{label(item.event)}</TableCell><TableCell className="numeric">{time(item.singleSeconds)}</TableCell><TableCell className="numeric">{time(item.averageSeconds)}</TableCell>
+          <TableCell className="date-col">{day(item.timestamp)}</TableCell>
+          {mode === 'manage' && <TableCell><div className="record-actions">
+            <ActionLink to={`/submit?${new URLSearchParams({ edit: item.id })}`} label="编辑成绩"><Pencil /></ActionLink>
+            <IconButton className="danger-action" label="删除成绩" disabled={pending} onClick={() => {
+              if (window.confirm('确定删除这条成绩？')) void action(() => send(`/records/${encodeURIComponent(item.id)}`, 'DELETE'), '成绩已删除')
+            }}><Trash2 /></IconButton>
+          </div></TableCell>}
+        </TableRow>)}</TableBody></Table> : <ResourceNotice loading={loading} error={loadError} empty="暂无成绩。" skeleton="table" />}
+      </div>
       {mode === 'manage' && <Pagination page={page} more={more} loading={loading} onPage={setPage} />}
     </section>}
     {mode === 'public' && createdProjects.length > 0 && <section className="section">

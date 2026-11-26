@@ -34,23 +34,25 @@ export default function Players() {
         <SelectPopup alignItemWithTrigger={false}>{sortOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectPopup>
       </Select>
     </div>
-    {loading || error || !data?.users.length ? <ResourceNotice loading={loading} error={error} empty="未找到选手。" /> :
-      <ul className="directory-list player-directory">{data.users.map(player => {
-        const projects = player.events.map(code => eventNames.get(code) ?? code).join(' · ')
-        return <li key={player.userNo}>
-          <Link to={`/user/${player.userNo}`} className="directory-link player-link">
-            {player.avatar ? <img className="avatar" src={player.avatar} alt="" width={42} height={42} loading="lazy" /> :
-              <span className="avatar fallback" aria-hidden="true">{[...player.nickname][0]}</span>}
-            <span className="player-summary">
-              <strong title={player.nickname}>{player.nickname}</strong>
-              <small title={player.wcaId || undefined}>{player.wcaId || `#${player.userNo}`}</small>
-              <small>加入于 {day(player.createdAt)}</small>
-              <small>{player.recordCount} 条成绩 · {player.eventCount} 项</small>
-              <small className="player-events" title={projects || undefined}>{projects}</small>
-            </span>
-          </Link>
-        </li>
-      })}</ul>}
+    <div key={`${page}:${q}:${sort}:${loading}`} className="resource-enter">
+      {loading || error || !data?.users.length ? <ResourceNotice skeleton="directory" loading={loading} error={error} empty="未找到选手。" /> :
+        <ul className="directory-list player-directory">{data.users.map(player => {
+          const projects = player.events.map(code => eventNames.get(code) ?? code).join(' · ')
+          return <li key={player.userNo}>
+            <Link to={`/user/${player.userNo}`} className="directory-link player-link">
+              {player.avatar ? <img className="avatar" src={player.avatar} alt="" width={42} height={42} loading="lazy" /> :
+                <span className="avatar fallback" aria-hidden="true">{[...player.nickname][0]}</span>}
+              <span className="player-summary">
+                <strong title={player.nickname}>{player.nickname}</strong>
+                <small title={player.wcaId || undefined}>{player.wcaId || `#${player.userNo}`}</small>
+                <small>加入于 {day(player.createdAt)}</small>
+                <small>{player.recordCount} 条成绩 · {player.eventCount} 项</small>
+                <small className="player-events" title={projects || undefined}>{projects}</small>
+              </span>
+            </Link>
+          </li>
+        })}</ul>}
+    </div>
     <Pagination page={page} more={Boolean(data?.more)} loading={loading} onPage={next => setFilter({ ...filter, page: next })} />
   </>
 }

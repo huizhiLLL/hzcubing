@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { Skeleton, type SkeletonKind } from './Skeleton'
 import { Button, type ButtonProps } from './ui/button'
 
 export function IconButton({ label, children, className, ...props }: ButtonProps & { label: string; children: ReactNode }) {
@@ -21,8 +22,10 @@ export function Pagination({ page, more, loading, onPage }: { page: number; more
   </div>
 }
 
-export function ResourceNotice({ loading, error, empty }: { loading?: boolean; error?: string; empty?: string }) {
-  if (loading) return <p className="notice" role="status">加载中…</p>
+export function ResourceNotice({ loading, error, empty, skeleton }: {
+  loading?: boolean; error?: string; empty?: string; skeleton?: SkeletonKind
+}) {
+  if (loading) return <Skeleton kind={skeleton} />
   if (error) return <p className="notice error" role="alert">{error}</p>
   return empty ? <p className="notice">{empty}</p> : null
 }
