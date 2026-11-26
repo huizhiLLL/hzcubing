@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '../components/ui/select'
 import { useResource, useSite } from '../site'
 
+const pageSize = 12
 const sortOptions = [
   { label: '最新', value: 'latest' },
   { label: '成绩最多', value: 'mostRecords' },
@@ -15,7 +16,7 @@ const sortOptions = [
 type ListedPlayer = Player & { createdAt: number; recordCount: number; eventCount: number; events: string[] }
 
 function playersPath(page: number, q: string, sort: string) {
-  return `/players?${new URLSearchParams({ page: String(page), q, sort })}`
+  return `/players?${new URLSearchParams({ page: String(page), pageSize: String(pageSize), q, sort })}`
 }
 
 export default function Players() {
@@ -49,7 +50,7 @@ export default function Players() {
       </form>
     </div>
     <div key={`${page}:${q}:${sort}:${loading}`} className="resource-enter">
-      {loading || error || !data?.users.length ? <ResourceNotice skeleton="directory" loading={loading} error={error} empty="未找到选手。" /> :
+      {loading || error || !data?.users.length ? <ResourceNotice skeleton="players" loading={loading} error={error} empty="未找到选手。" /> :
         <ul className="directory-list player-directory">{data.users.map(player => {
           const projects = player.events.map(code => eventNames.get(code) ?? code).join(' · ')
           return <li key={player.userNo}>
@@ -58,15 +59,17 @@ export default function Players() {
                 <span className="avatar fallback" aria-hidden="true">{[...player.nickname][0]}</span>}
               <span className="player-summary">
                 <strong title={player.nickname}>{player.nickname}</strong>
-                <small title={player.wcaId || undefined}>{player.wcaId || `#${player.userNo}`}</small>
-                <small>加入于 {day(player.createdAt)}</small>
-                <small>{player.recordCount} 条成绩 · {player.eventCount} 项</small>
+                <small className="player-meta">
+                  <span>{player.wcaId || `#${player.userNo}`}</span>
+                  <span>加入于 {day(player.createdAt)}</span>
+                  <span>{player.recordCount} 条成绩 · {player.eventCount} 项</span>
+                </small>
                 <small className="player-events" title={projects || undefined}>{projects}</small>
               </span>
             </Link>
           </li>
         })}</ul>}
     </div>
-    <Pagination page={page} more={Boolean(data?.more)} loading={loading} onPage={next => setFilter({ ...filter, page: next })} />
+    <Pagination page={page} more={Boolean(data?.more)} loading={loading} showPage={loading || Boolean(data?.users.length)} onPage={next => setFilter({ ...filter, page: next })} />
   </>
 }

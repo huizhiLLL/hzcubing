@@ -1,9 +1,10 @@
-export type SkeletonKind = 'page' | 'table' | 'directory' | 'form' | 'summary'
+export type SkeletonKind = 'page' | 'table' | 'directory' | 'players' | 'form' | 'summary'
 
 const shape = {
   page: [2, 1, 1, 1],
   table: [3, 3, 3, 3, 3, 3, 3],
   directory: [2, 2, 2, 2],
+  players: Array.from({ length: 12 }, () => 2),
   form: [1, 1, 1, 1],
   summary: [1, 1],
 } as const
