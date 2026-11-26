@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "hzcubing-production",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-25",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/media/*"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hzcubing-production",
+      "database_id": "38f77b4a-128e-489a-ab75-933d81303755"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "AVATARS",
+      "bucket_name": "hzcubing-production-avatars"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "invocation_logs": false
+    }
+  },
+  "routes": [
+    {
+      "pattern": "hzcubing.fun",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "PASSWORD_SERVICE_URL": "https://password.hzcubing.fun",
+    "SITE_READ_ONLY": "0"
+  }
+}

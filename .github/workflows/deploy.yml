@@ -1,9 +1,6 @@
-name: Deploy hzcubing
+name: Deploy legacy HZCubing API
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:

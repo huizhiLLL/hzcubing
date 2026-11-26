@@ -4,7 +4,7 @@ const DEFAULT_TIMEOUT_MS = 5000
 
 function getAstrBotConfig() {
   return {
-    url: process.env.ASTRBOT_MESSAGE_URL || 'https://astrbot.huizhi.pro/api/v1/im/message',
+    url: process.env.ASTRBOT_MESSAGE_URL || 'https://astrbot.huizhi.ink/api/v1/im/message',
     apiKey: process.env.ASTRBOT_API_KEY,
     umo: process.env.ASTRBOT_MESSAGE_UMO,
     timeoutMs: Number(process.env.ASTRBOT_MESSAGE_TIMEOUT_MS || DEFAULT_TIMEOUT_MS)

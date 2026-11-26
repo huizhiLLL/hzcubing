@@ -62,6 +62,12 @@ Pages 当前会尝试为所有远端分支构建预览。第一次推送重构�
 
 ### 试迁记录与切换准备
 
+- 2026 年 11 月 26 日，`hzcubing.fun` 切至 `hzcubing-production` Worker。最终快照已核对 32 个账号、734 条成绩、70 个项目和 10 张头像，含账号状态、用户编号、原始成绩精度和头像摘要。生产写入已恢复，旧 API 继续保持只读。
+- 正式站通过注册、登录、成绩提交、编辑、删除和 QQ 录入验证，测试账号与成绩已清理。AstrBot 已改用正式 Worker，破纪录公告使用 `astrbot.huizhi.ink` 的专用 API 凭据。
+
+- 2026 年 11 月 26 日，创建独立的生产 D1、R2 和 Worker。生产 D1 已装载表结构及 36 个静态项目，账号和成绩均为空。Worker 已设置密码服务和机器人凭据，保持 `SITE_READ_ONLY=1` 且尚未绑定公开入口。
+- 本地以合成数据验证了 14 个页面的直达入口，以及注册、登录、成绩写入与编辑、榜单、资料上传和 QQ 接口。生产 MongoDB 的新加密备份已在无外网的临时容器完整恢复，核对到 32 个账号、734 条成绩、34 个整活项目、10 张头像及用户编号计数器。正式导入使用停写后的最终快照。
+
 - 2026 年 11 月 25 日，读取 MongoDB 快照并在内存 SQLite 核验了 32 个账号、70 个合并项目、734 条成绩和 10 张头像。其中 18 条成绩保留超过两位小数的原始值，一个用户的规范 ISO 日期字符串转换为同一 UTC 时刻。最终以停写后的快照为准。
 - 工作站已收到 DPAPI 加密的 MongoDB 归档，解密前后的 SHA-256 一致，`mongorestore --dryRun` 验证通过。归档还已恢复到无外网的临时 MongoDB 容器，恢复计数为 32 个账号、734 条成绩、34 个整活项目和 10 张头像。切换时在停写后重新备份并重复校验。
 - `preview.hzcubing.fun` 已绑定 `hzcubing-next-preview`。预览数据库用 `scripts/migration/preview-snapshot.mjs` 从旧站的公开字段生成，包含 32 个选手、70 个项目、734 条成绩和 10 张头像。登录字段使用占位值。预览开启停写，供查看榜单和页面。
@@ -81,7 +87,7 @@ node scripts/migration/convert.mjs <BSON库目录> <新建受控目录>
 node scripts/migration/verify.mjs <转换目录>
 ```
 
-用实际生产绑定的 Wrangler JSON 配置执行导入。脚本在正式写入前检查 D1 业务表为空，按清单上传 R2 对象并导入 SQL。校验命令导出 D1 并下载 R2 对象，核对完成后清理临时导出。按验收结果安排切换。
+用 `wrangler.production.jsonc` 执行生产导入。候选 Worker 的版本发布使用 `wrangler versions upload` 和 `wrangler versions deploy`。域名切换步骤才应用 `wrangler triggers deploy`。脚本在正式写入前检查 D1 业务表为空，按清单上传 R2 对象并导入 SQL。校验命令导出 D1 并下载 R2 对象，核对完成后清理临时导出。按验收结果安排切换。
 
 ```sh
 node scripts/migration/cloud-copy.mjs import <生产Wrangler配置> <转换目录>

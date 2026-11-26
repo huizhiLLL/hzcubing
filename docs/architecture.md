@@ -13,7 +13,7 @@
 | `services/password/` | Node 和 bcryptjs 2.4.3。VPS2 只支持验证密码和生成哈希。 |
 | `server/` 与旧版 `src/` | 切换验收使用的旧行为基线。 |
 
-Workers Static Assets 提供 React SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。`preview.hzcubing.fun` 使用独立的 D1 和 R2，导入旧站公开的选手资料、成绩、项目与头像。导入的旧站选手使用占位登录数据。预览目前允许注册测试账号和提交成绩。正式 `hzcubing.fun` 仍通过 Pages 和 VPS2 旧 API 提供服务。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
+Workers Static Assets 提供 React SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。`preview.hzcubing.fun` 使用独立的 D1 和 R2，导入旧站公开的选手资料、成绩、项目与头像。导入的旧站选手使用占位登录数据。预览目前允许注册测试账号和提交成绩。正式 `hzcubing.fun` 已绑定 `hzcubing-production` Worker，通过独立的生产 D1 和 R2 提供服务。旧 API 保留只读访问。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
 
 官方组件源码放在 `src/next/components/ui/`，该目录保留 coss ui 的 MIT 许可。页面布局与语义色由 `src/next/style.css` 管理。共享表格统一表头层级，并通过列类型设置成绩、排名和日期的样式。榜单和成绩录入使用 coss ui Select，并保留项目分组。榜单筛选的项目按钮随图标和名称调整宽度。榜单、群纪录和成绩管理共用分段切换组件，与搜索框和选择器统一为 34px 高。页面和筛选结果加载时使用扫光骨架。选手目录按窗口宽度确定列数，按页面剩余高度确定每页行数。榜单和选手目录预取常用筛选结果，内存缓存有效期为 30 秒。滑块、下拉菜单和登录注册表单的过渡遵循系统的减少动态效果设置。字体优先使用系统的 SF Pro Text 与 PingFang SC，Vite 从 Fontsource 打包 Geist 和 Noto Sans SC 作为自托管回退字体。顶部导航随滚动收为悬浮玻璃栏，保留原占位以避免内容跳动。浏览器不支持玻璃效果时使用不透明主题底色。首页主按钮与当前导航项使用品牌蓝。当前导航项采用玻璃高亮，桌面端切换时高亮滑到新位置，遵循系统的减少动态效果设置。
 
@@ -34,9 +34,9 @@ Worker 对密码调用设置 3.5 秒超时，凭据错误或依赖不可用时�
 
 | 名称 | 来源 |
 | --- | --- |
-| `DB`、`AVATARS` | Wrangler 中对应环境的 D1、R2 绑定。版本库中的配置用作本地开发。 |
+| `DB`、`AVATARS` | 本地开发使用 `wrangler.jsonc`。生产候选使用 `wrangler.production.jsonc`，绑定独立的 `hzcubing-production` D1 和 `hzcubing-production-avatars` R2。 |
 | `PASSWORD_SERVICE_URL` | 生产和预览填写 `https://password.hzcubing.fun`。开发环境可用回环 HTTP，同时设置 `DEV_PASSWORD_HTTP=1`。 |
 | `PASSWORD_SERVICE_SECRET` | 用 Worker Secret 注入，与 VPS2 `/etc/hzcubing-password.env` 中的值匹配。 |
 | `BOT_SECRET` | AstrBot 插件独享的 Worker Secret。 |
 | `SITE_READ_ONLY` | 为 `1` 时暂停浏览器及 QQ 写入。 |
-| `ASTRBOT_MESSAGE_URL`、`ASTRBOT_API_KEY`、`ASTRBOT_MESSAGE_UMO` | 配齐可用的 AstrBot 服务地址及凭据后启用破纪录通知。 |
+| `ASTRBOT_MESSAGE_URL`、`ASTRBOT_API_KEY`、`ASTRBOT_MESSAGE_UMO` | 生产通过 `https://astrbot.huizhi.ink/api/v1/im/message` 发送破纪录通知。Worker Secret 保存具备 `im` 权限的专用密钥和群会话标识。 |
