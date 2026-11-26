@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { day, type Player } from '../api'
+import { day, prefetchResource, type Player } from '../api'
 import { IconButton, Pagination, ResourceNotice } from '../components/Actions'
 import { Input } from '../components/ui/input'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '../components/ui/select'
@@ -14,12 +14,25 @@ const sortOptions = [
 ]
 type ListedPlayer = Player & { createdAt: number; recordCount: number; eventCount: number; events: string[] }
 
+function playersPath(page: number, q: string, sort: string) {
+  return `/players?${new URLSearchParams({ page: String(page), q, sort })}`
+}
+
 export default function Players() {
   const { events } = useSite()
   const eventNames = new Map(events.map(event => [event.code, event.name]))
   const [filter, setFilter] = useState({ page: 1, q: '', sort: 'latest' })
   const { page, q, sort } = filter
-  const { data, loading, error } = useResource<{ users: ListedPlayer[]; more: boolean }>(`/players?${new URLSearchParams({ page: String(page), q, sort })}`)
+  const { data, loading, error } = useResource<{ users: ListedPlayer[]; more: boolean }>(playersPath(page, q, sort), 0, true)
+  useEffect(() => {
+    if (!data) return
+    if (data.more) prefetchResource(playersPath(page + 1, q, sort))
+    if (page === 1 && !q) {
+      for (const option of sortOptions) {
+        if (option.value !== sort) prefetchResource(playersPath(1, '', option.value))
+      }
+    }
+  }, [data, page, q, sort])
   return <>
     <header className="page-heading"><h1>选手</h1></header>
     <div className="toolbar board-toolbar players-toolbar"><form className="search" role="search" onSubmit={submit => {

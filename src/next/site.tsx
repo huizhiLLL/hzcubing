@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { api, ApiError, type EventInfo, type Session } from './api'
+import { api, ApiError, cachedResource, loadResource, type EventInfo, type Session } from './api'
 
 const SiteContext = createContext<{
   session: Session | null; sessionReady: boolean; setSession: (session: Session | null) => void
@@ -42,18 +42,20 @@ export function useSite() {
   return site
 }
 
-export function useResource<T>(path: string | null, revision = 0) {
+export function useResource<T>(path: string | null, revision = 0, cache = false) {
   const [result, setResult] = useState<{ path: string; revision: number; data?: T; error: string }>()
   useEffect(() => {
     if (!path) return
     const controller = new AbortController()
-    api<T>(path, { signal: controller.signal }).then(data => {
+    const request = cache ? loadResource<T>(path) : api<T>(path, { signal: controller.signal })
+    request.then(data => {
       if (!controller.signal.aborted) setResult({ path, revision, data, error: '' })
     }).catch(error => {
       if (!controller.signal.aborted) setResult({ path, revision, error: error instanceof Error ? error.message : '加载失败' })
     })
     return () => controller.abort()
-  }, [path, revision])
+  }, [path, revision, cache])
   const current = result?.path === path && result.revision === revision ? result : undefined
-  return { data: current?.data, error: current?.error ?? '', loading: Boolean(path && !current) }
+  const data = current?.data ?? (cache && path ? cachedResource<T>(path) : undefined)
+  return { data, error: current?.error ?? '', loading: Boolean(path && !current && data === undefined) }
 }

@@ -1,6 +1,7 @@
+import { useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { day, time, type RecordInfo } from '../api'
+import { day, prefetchResource, time, type RecordInfo } from '../api'
 import { ActionLink, ResourceNotice } from '../components/Actions'
 import { ProjectSelect } from '../components/ProjectSelect'
 import { SegmentedControl } from '../components/SegmentedControl'
@@ -10,15 +11,21 @@ import { useResource, useSite } from '../site'
 
 const metrics = [{ value: 'single', label: '单次' }, { value: 'average', label: '平均' }] as const
 
+function leaderboardPath(event: string, type: string) {
+  return `/records/leaderboard?${new URLSearchParams({ event, type })}`
+}
+
 export default function Board({ historyMode = false }: { historyMode?: boolean }) {
   const { events, session } = useSite()
   const [params, setParams] = useSearchParams()
   const event = params.get('event') || '333'
   const metric = params.get('type') === 'average' ? 'average' : 'single'
-  const filters = new URLSearchParams({ event, type: metric })
   const { data, loading, error } = useResource<RecordInfo[] | Record<'single' | 'average', RecordInfo[]>>(
-    historyMode ? `/records/gr?${new URLSearchParams({ event })}` : `/records/leaderboard?${filters}`,
+    historyMode ? `/records/gr?${new URLSearchParams({ event })}` : leaderboardPath(event, metric), 0, true,
   )
+  useEffect(() => {
+    if (!historyMode && !loading && !error) prefetchResource(leaderboardPath(event, metric === 'single' ? 'average' : 'single'))
+  }, [event, metric, historyMode, loading, error])
   const rows = Array.isArray(data) ? data : data?.[metric] ?? []
   function update(key: string, value: string) {
     const next = new URLSearchParams(params)

@@ -24,7 +24,7 @@ export default function GroupRecords() {
 function Overview() {
   const { events } = useSite()
   const [category, setCategory] = useState<typeof groupCategories[number]>('official')
-  const { data, loading, error } = useResource<GroupRecord[]>('/records/best')
+  const { data, loading, error } = useResource<GroupRecord[]>('/records/best', 0, true)
   const best = new Map(data?.map(record => [record.event, record]))
   const rows = events.flatMap(event => {
     const record = best.get(event.code)
