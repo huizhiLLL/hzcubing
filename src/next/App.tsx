@@ -134,7 +134,7 @@ export default function App() {
         {menuOpen ? <X /> : <Menu />}
       </IconButton>
     </div></header>
-    <main id="main" className="site-main" tabIndex={-1}>
+    <main id="main" className={pathname === '/' ? 'site-main site-main--home' : 'site-main'} tabIndex={-1}>
       <ResourceNotice error={error || initializationError} />
       <Suspense fallback={<Skeleton />}>
         <div className="route-content" key={pathname}>

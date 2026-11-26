@@ -1,4 +1,4 @@
-export type SkeletonKind = 'page' | 'table' | 'directory' | 'players' | 'form' | 'summary'
+export type SkeletonKind = 'page' | 'table' | 'directory' | 'players' | 'form'
 
 const shape = {
   page: [2, 1, 1, 1],
@@ -6,7 +6,6 @@ const shape = {
   directory: [2, 2, 2, 2],
   players: [2],
   form: [1, 1, 1, 1],
-  summary: [1, 1],
 } as const
 
 export function Skeleton({ kind = 'page', count }: { kind?: SkeletonKind; count?: number }) {
