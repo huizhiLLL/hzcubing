@@ -50,11 +50,13 @@ export default function Auth() {
           </IconButton>
         </div>
       </div>
-      {registering && <>
-        <label>昵称<Input name="nickname" maxLength={50} autoComplete="nickname" placeholder="输入昵称" required /></label>
-        <label>QQ 号（选填）<Input name="qqId" inputMode="numeric" pattern="[0-9]{5,15}" maxLength={15} placeholder="输入 QQ 号" /></label>
-        <label>确认密码<Input name="confirmation" type="password" autoComplete="new-password" placeholder="再次输入密码" required /></label>
-      </>}
+      <div className="auth-extra" data-expanded={registering || undefined} inert={!registering}>
+        <fieldset disabled={!registering}>
+          <label>昵称<Input name="nickname" maxLength={50} autoComplete="nickname" placeholder="输入昵称" required /></label>
+          <label>QQ 号（选填）<Input name="qqId" inputMode="numeric" pattern="[0-9]{5,15}" maxLength={15} placeholder="输入 QQ 号" /></label>
+          <label>确认密码<Input name="confirmation" type="password" autoComplete="new-password" placeholder="再次输入密码" required /></label>
+        </fieldset>
+      </div>
       <ResourceNotice error={error} />
       <Button className="auth-submit" type="submit" loading={busy}>{registering ? '创建账号' : '登录'}</Button>
     </form>
