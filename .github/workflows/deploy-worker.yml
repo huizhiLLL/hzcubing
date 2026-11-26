@@ -1,0 +1,52 @@
+name: Deploy HZCubing Worker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hzcubing-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            services/password/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix services/password
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Publish the production Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo '::error::Set the CLOUDFLARE_API_TOKEN Actions secret to a Workers deployment token.'
+            exit 1
+          fi
+          config=wrangler.production.jsonc
+          output=$(npx wrangler versions upload --config "$config" --keep-vars --message "$GITHUB_SHA")
+          printf '%s\n' "$output"
+          version=$(printf '%s\n' "$output" | sed -nE 's/^Worker Version ID: ([a-f0-9-]{36})$/\1/p')
+          test -n "$version"
+          npx wrangler versions deploy "$version@100%" --config "$config" --yes --message "$GITHUB_SHA"
+      - name: Verify production
+        run: |
+          curl -fsS --retry 4 https://hzcubing.fun/api/health | jq -e '.ok == true'
+          asset=$(grep -oE '/assets/index-[^" ]+\.js' dist/index.html | head -1)
+          test -n "$asset"
+          curl -fsS --retry 4 https://hzcubing.fun/ | grep -F "$asset"
