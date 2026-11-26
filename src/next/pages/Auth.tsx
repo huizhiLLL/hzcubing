@@ -5,13 +5,15 @@ import { message, send, type Session } from '../api'
 import { IconButton, ResourceNotice } from '../components/Actions'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
-import { useSite } from '../site'
+import { usePageTitle, useSite } from '../site'
 
 export default function Auth() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { setSession } = useSite()
   const [registering, setRegistering] = useState(false)
+  const pageTitle = registering ? '注册' : '登录'
+  usePageTitle(pageTitle)
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -38,7 +40,7 @@ export default function Auth() {
     finally { setBusy(false) }
   }
   return <section className="form-panel auth-panel" aria-labelledby="auth-heading">
-    <h1 id="auth-heading">{registering ? '注册' : '登录'}</h1>
+    <h1 id="auth-heading">{pageTitle}</h1>
     <form className="fields" onSubmit={submit}>
       <label>邮箱<Input name="email" type="email" maxLength={254} autoComplete="email" placeholder="输入邮箱" required /></label>
       <div className="auth-field">

@@ -36,6 +36,14 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   return <SiteContext.Provider value={{ session, sessionReady, setSession, events, eventsLoading, refreshEvents, initializationError }}>{children}</SiteContext.Provider>
 }
 
+export function usePageTitle(name?: string) {
+  useEffect(() => {
+    if (!name) return
+    document.title = `hzcubing · ${name}`
+    return () => { document.title = 'hzcubing' }
+  }, [name])
+}
+
 export function useSite() {
   const site = useContext(SiteContext)
   if (!site) throw new Error('SiteProvider is missing')

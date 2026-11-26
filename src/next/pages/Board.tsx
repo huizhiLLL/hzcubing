@@ -7,7 +7,7 @@ import { ProjectSelect } from '../components/ProjectSelect'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { Button } from '../components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
-import { useResource, useSite } from '../site'
+import { usePageTitle, useResource, useSite } from '../site'
 
 const metrics = [{ value: 'single', label: '单次' }, { value: 'average', label: '平均' }] as const
 
@@ -17,6 +17,8 @@ function leaderboardPath(event: string, type: string) {
 
 export default function Board({ historyMode = false }: { historyMode?: boolean }) {
   const { events, session } = useSite()
+  const pageTitle = historyMode ? '破纪录历史' : '榜单'
+  usePageTitle(pageTitle)
   const [params, setParams] = useSearchParams()
   const event = params.get('event') || '333'
   const metric = params.get('type') === 'average' ? 'average' : 'single'
@@ -33,7 +35,7 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
     setParams(next, { replace: true })
   }
   return <>
-    <header className="page-heading"><h1>{historyMode ? '破纪录历史' : '榜单'}</h1>{historyMode
+    <header className="page-heading"><h1>{pageTitle}</h1>{historyMode
       ? <Button variant="outline" render={<Link to="/gr" />}>返回群纪录</Button>
       : <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>}</header>
     <div className="toolbar board-toolbar board-filters">

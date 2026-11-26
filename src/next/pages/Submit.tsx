@@ -6,18 +6,20 @@ import { ProjectSelect } from '../components/ProjectSelect'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '../components/ui/select'
-import { useResource, useSite } from '../site'
+import { usePageTitle, useResource, useSite } from '../site'
 
 export default function Submit() {
   const [params] = useSearchParams()
   const location = useLocation()
   const { session, sessionReady, events, eventsLoading } = useSite()
   const id = params.get('edit') || ''
+  const pageTitle = id ? '编辑成绩' : '提交成绩'
+  usePageTitle(pageTitle)
   const { data, loading, error } = useResource<RecordInfo>(id && session ? `/records/${encodeURIComponent(id)}` : null)
   const denied = Boolean(data && data.userNo !== session?.userNo)
   const next = new URLSearchParams({ next: location.pathname + location.search })
   return <>
-    <header className="page-heading"><h1>{id ? '编辑成绩' : '提交成绩'}</h1>
+    <header className="page-heading"><h1>{pageTitle}</h1>
       {session && <Button variant="outline" render={<Link to="/submit/manage" />}>管理我的成绩</Button>}
     </header>
     <section className="form-panel">

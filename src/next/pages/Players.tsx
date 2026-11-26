@@ -5,7 +5,7 @@ import { day, prefetchResource, type Player } from '../api'
 import { IconButton, Pagination, ResourceNotice } from '../components/Actions'
 import { Input } from '../components/ui/input'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '../components/ui/select'
-import { useResource, useSite } from '../site'
+import { usePageTitle, useResource, useSite } from '../site'
 
 const pageSize = 12
 const sortOptions = [
@@ -35,7 +35,7 @@ export default function Players() {
     }
   }, [data, page, q, sort])
   return <>
-    <header className="page-heading"><h1>选手</h1></header>
+    <header className="page-heading"><h1>{pageTitle}</h1></header>
     <div className="toolbar board-toolbar players-toolbar">
       <Select items={sortOptions} value={sort} onValueChange={value => value && setFilter({ ...filter, page: 1, sort: value })}>
         <SelectTrigger aria-label="排序方式"><SelectValue /></SelectTrigger>
@@ -69,6 +69,8 @@ export default function Players() {
             </Link>
           </li>
         })}</ul>}
+  const pageTitle = '选手'
+  usePageTitle(pageTitle)
     </div>
     <Pagination page={page} more={Boolean(data?.more)} loading={loading} showPage={loading || Boolean(data?.users.length)} onPage={next => setFilter({ ...filter, page: next })} />
   </>

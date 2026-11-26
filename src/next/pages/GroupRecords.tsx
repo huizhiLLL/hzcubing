@@ -4,7 +4,7 @@ import { categories, time } from '../api'
 import { ResourceNotice } from '../components/Actions'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
-import { useResource, useSite } from '../site'
+import { usePageTitle, useResource, useSite } from '../site'
 
 type Holder = { userNo: number; nickname: string; seconds: number }
 type GroupRecord = { event: string; single: Holder | null; average: Holder | null }
@@ -23,6 +23,8 @@ export default function GroupRecords() {
 
 function Overview() {
   const { events } = useSite()
+  const pageTitle = '群纪录'
+  usePageTitle(pageTitle)
   const [category, setCategory] = useState<typeof groupCategories[number]>('official')
   const { data, loading, error } = useResource<GroupRecord[]>('/records/best', 0, true)
   const best = new Map(data?.map(record => [record.event, record]))
@@ -32,7 +34,7 @@ function Overview() {
   })
 
   return <>
-    <header className="page-heading"><h1>群纪录</h1></header>
+    <header className="page-heading"><h1>{pageTitle}</h1></header>
     <div className="toolbar board-toolbar">
       <SegmentedControl label="项目类型" options={categoryOptions} value={category} onValueChange={setCategory} />
     </div>

@@ -6,10 +6,12 @@ import { IconButton, ResourceNotice } from '../components/Actions'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Textarea } from '../components/ui/textarea'
-import { useSite } from '../site'
+import { usePageTitle, useSite } from '../site'
 
 export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   const { session, sessionReady, events, eventsLoading, refreshEvents } = useSite()
+  const pageTitle = adminOnly ? '整活项目管理' : '项目'
+  usePageTitle(pageTitle)
   const [editing, setEditing] = useState<EventInfo>()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -34,7 +36,7 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   if (adminOnly && !sessionReady) return <ResourceNotice loading />
   if (adminOnly && !canManage) return <Navigate to={session ? '/' : '/auth?next=%2Fadmin%2Fmeme-events'} replace />
   return <>
-    <header className="page-heading"><h1>{adminOnly ? '整活项目管理' : '项目'}</h1>
+    <header className="page-heading"><h1>{pageTitle}</h1>
       {!adminOnly && canManage && <Button variant="outline" render={<Link to="/admin/meme-events" />}>管理整活项目</Button>}
     </header>
     {adminOnly && <section className="form-panel">

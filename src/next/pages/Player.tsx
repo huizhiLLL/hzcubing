@@ -8,13 +8,14 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { Textarea } from '../components/ui/textarea'
-import { useResource, useSite } from '../site'
+import { usePageTitle, useResource, useSite } from '../site'
 
 type Profile = {
   user: Player & { createdAt: number }; records: RecordInfo[]; best: Best[]; more: boolean
   createdProjects: { code: string; name: string; active: boolean }[]
 }
 type ProfileMode = 'public' | 'settings' | 'manage'
+const titles = { public: '选手主页', settings: '编辑资料', manage: '管理成绩' }
 const categoryOptions = [{ value: '', label: '全部' }, ...Object.entries(categories).map(([value, label]) => ({ value, label }))]
 
 export default function PlayerPage({ mode = 'public', personal = false }: { mode?: ProfileMode; personal?: boolean }) {
@@ -22,6 +23,7 @@ export default function PlayerPage({ mode = 'public', personal = false }: { mode
   const { session, sessionReady } = useSite()
   const location = useLocation()
   const target = personal ? session?.userNo.toString() : userNo
+  usePageTitle(personal && !target ? titles[mode] : undefined)
   if (personal && !target) return sessionReady
     ? <Link to={`/auth?${new URLSearchParams({ next: location.pathname })}`}>请先登录</Link>
     : <ResourceNotice loading />
@@ -38,6 +40,7 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
   const [notice, setNotice] = useState('')
   const [pending, setPending] = useState(false)
   const { data: profile, error: loadError, loading } = useResource<Profile>(`/players/${encodeURIComponent(userNo)}?${new URLSearchParams({ page: String(page), category })}`, revision)
+  usePageTitle(mode === 'public' ? profile?.user.nickname || titles.public : titles[mode])
   const label = (code: string) => events.find(event => event.code === code)?.name ?? code
   async function action(run: () => Promise<unknown>, success: string) {
     setPending(true)
@@ -62,7 +65,7 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
         <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>
       </div>}
     </header> : <header className="page-heading">
-      <h1>{mode === 'settings' ? '编辑资料' : '管理成绩'}</h1>
+      <h1>{titles[mode]}</h1>
       <Button variant="outline" render={<Link to={mode === 'settings' ? '/profile' : '/submit'} />}>
         {mode === 'settings' ? '返回个人主页' : '返回提交'}
       </Button>
