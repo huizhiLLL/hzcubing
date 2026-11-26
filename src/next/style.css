@@ -389,7 +389,13 @@ h2 { margin-bottom: .65rem; font-size: 1rem; font-weight: 600; }
   line-height: normal;
   outline: none;
 }
-[data-slot="input-control"]:has([data-slot="input"]:focus-visible),
+[data-slot="input-control"]:has([data-slot="input"]:focus) {
+  border-color: var(--brand);
+}
+[data-slot="input-control"]:has([aria-invalid="true"]:focus) { border-color: var(--danger); }
+@media (forced-colors: active) {
+  [data-slot="input-control"]:has([data-slot="input"]:focus) { border-color: Highlight; }
+}
 [data-slot="select-trigger"]:focus-visible {
   border-color: var(--control-line);
   outline: 2px solid var(--brand);
@@ -456,6 +462,7 @@ h2 { margin-bottom: .65rem; font-size: 1rem; font-weight: 600; }
 .auth-password { position: relative; }
 .auth-password input { padding-inline-end: 2.875rem; }
 .auth-password > .auth-password-toggle { position: absolute; inset-block-start: 0; inset-inline-end: 0; }
+.auth-password > .auth-password-toggle:is(:hover, :focus-visible) { background: transparent; }
 .auth-password-toggle:focus-visible { outline-offset: -.25rem; }
 .auth-panel .auth-submit { justify-self: stretch; min-block-size: 2.75rem; }
 .auth-switch { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: .25rem; margin-block-start: 1rem; color: var(--muted); }
