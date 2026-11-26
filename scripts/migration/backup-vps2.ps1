@@ -1,5 +1,6 @@
 param(
   [Parameter(Mandatory)] [ValidatePattern('^[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+$')] [string] $SshHost,
+  [ValidatePattern('^[a-zA-Z0-9_.-]+$')] [string] $MongoContainer = 'hzcubing-data',
   [string] $OutputDirectory = (Join-Path $env:LOCALAPPDATA 'HZCubing/backups')
 )
 
@@ -32,7 +33,7 @@ function Invoke-MongoArchiveSsh([string] $Command, [byte[]] $Data) {
   }
 }
 
-[byte[]] $archive = Invoke-MongoArchiveSsh 'docker exec hzcubing-mongo mongodump --db hzcubing --archive --gzip --quiet' $null
+[byte[]] $archive = Invoke-MongoArchiveSsh "docker exec $MongoContainer mongodump --db hzcubing --archive --gzip --quiet" $null
 if ($archive.Length -lt 32 -or $archive[0] -ne 31 -or $archive[1] -ne 139) { throw 'Missing gzip archive' }
 $scope = [Security.Cryptography.DataProtectionScope]::CurrentUser
 $null = New-Item -ItemType Directory -Path $OutputDirectory -Force
@@ -43,7 +44,7 @@ try {
   if ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($archive)) -ne [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($restored))) {
     throw 'Archive checksum mismatch'
   }
-  $restoreCheck = 'docker exec -i hzcubing-mongo mongorestore --archive --gzip --dryRun --nsInclude "hzcubing.*" --quiet; rc=$?; cat >/dev/null; exit "$rc"'
+  $restoreCheck = 'docker exec -i ' + $MongoContainer + ' mongorestore --archive --gzip --dryRun --nsInclude "hzcubing.*" --quiet; rc=$?; cat >/dev/null; exit "$rc"'
   $null = Invoke-MongoArchiveSsh $restoreCheck $restored
   [pscustomobject]@{ Path = $archiveFile; Bytes = $archive.Length; RestoreDryRun = 'passed' }
 } finally {
