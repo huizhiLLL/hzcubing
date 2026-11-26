@@ -50,4 +50,12 @@ jobs:
           curl -fsS --retry 4 https://hzcubing.fun/api/health | jq -e '.ok == true'
           asset=$(grep -oE '/assets/index-[^" ]+\.js' dist/index.html | head -1)
           test -n "$asset"
-          curl -fsS --retry 4 https://hzcubing.fun/ | grep -F "$asset"
+          for attempt in {1..12}; do
+            if curl -fsS --retry 4 https://hzcubing.fun/ | grep -F "$asset"; then
+              exit 0
+            fi
+            echo "Waiting for the published homepage ($attempt/12)"
+            sleep 5
+          done
+          echo '::error::Production homepage did not serve the published build.'
+          exit 1
