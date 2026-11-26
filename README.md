@@ -24,6 +24,10 @@ npm run db:local
 
 运行 `npm test` 和 `npm run typecheck` 做回归检查。本地进程运行后可在隔离数据库执行 `node scripts/smoke-worker.mjs`，默认测试地址为 `http://127.0.0.1:8795`。项目部署、权限与数据迁移见 [架构说明](docs/architecture.md) 和 [迁移路线图](docs/roadmap.md)。
 
+## 正式发布
+
+推送 `main` 后，GitHub Actions 会检查、构建并部署 `hzcubing-production` Worker。发布使用仓库 Actions Secret `CLOUDFLARE_API_TOKEN`，凭据需要包含部署 Worker 的权限。
+
 ## License
 
 MIT
