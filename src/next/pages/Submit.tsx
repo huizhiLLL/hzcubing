@@ -35,7 +35,6 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
   const initialTimes = { singleSeconds: String(record?.singleSeconds ?? ''), averageSeconds: String(record?.averageSeconds ?? '') }
-  const initialSolves = record?.solves?.map(value => value ?? 'DNF').join(' ') ?? ''
   const initialEvent = record?.event ?? '333'
   const [selectedEvent, setSelectedEvent] = useState(initialEvent)
   const [category, setCategory] = useState<string>()
@@ -48,11 +47,10 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
     event.preventDefault()
     const values = new FormData(event.currentTarget)
     const value = (key: string) => String(values.get(key) ?? '').trim()
-    const payload: Record<string, unknown> = { event: value('event'), cube: value('cube'), method: value('method'), competition: value('competition') }
+    const payload: Record<string, unknown> = { event: value('event'), cube: value('cube'), method: value('method') }
     for (const [metric, initial] of Object.entries(initialTimes)) {
       if (!record || value(metric) !== initial) payload[metric] = value(metric)
     }
-    if (value('solves') !== initialSolves) payload.solves = value('solves').split(/[\s,]+/).filter(Boolean)
     setBusy(true)
     setError('')
     try {
@@ -81,12 +79,10 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
       <label>单次<Input name="singleSeconds" defaultValue={initialTimes.singleSeconds} placeholder="12.34" inputMode="decimal" /></label>
       <label>平均<Input name="averageSeconds" defaultValue={initialTimes.averageSeconds} placeholder="13.45" inputMode="decimal" /></label>
     </div>
-    <label>原始成绩<Input name="solves" defaultValue={initialSolves} placeholder="12.34 13.45 DNF" /></label>
     <div className="field-pair">
-      <label>魔方<Input name="cube" defaultValue={record?.cube ?? ''} maxLength={100} /></label>
-      <label>解法<Input name="method" defaultValue={record?.method ?? ''} maxLength={100} /></label>
+      <label>魔方（选填）<Input name="cube" defaultValue={record?.cube ?? ''} maxLength={100} /></label>
+      <label>解法（选填）<Input name="method" defaultValue={record?.method ?? ''} maxLength={100} /></label>
     </div>
-    <label>比赛<Input name="competition" defaultValue={record?.competition ?? ''} maxLength={100} /></label>
     <Button type="submit" loading={busy}>保存成绩</Button>
   </form>
 }
