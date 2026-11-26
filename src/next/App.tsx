@@ -1,20 +1,21 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { CircleUserRound, Layers3, ListOrdered, LogOut, Menu, Trophy, UsersRound, X } from 'lucide-react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { CircleUserRound, Layers3, ListOrdered, Menu, Trophy, UsersRound, X } from 'lucide-react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { message, send } from './api'
-import { ActionLink, IconButton, ResourceNotice } from './components/Actions'
+import { IconButton, ResourceNotice } from './components/Actions'
 import { Skeleton } from './components/Skeleton'
-import { Button } from './components/ui/button'
 import { ThemeToggle } from './components/ThemeToggle'
+import Home from './pages/Home'
 import { useSite } from './site'
 
-const Home = lazy(() => import('./pages/Home'))
+const SignedInAccount = lazy(() => import('./components/SignedInAccount'))
 const Board = lazy(() => import('./pages/Board'))
 const GroupRecords = lazy(() => import('./pages/GroupRecords'))
 const Players = lazy(() => import('./pages/Players'))
 const Player = lazy(() => import('./pages/Player'))
 const Auth = lazy(() => import('./pages/Auth'))
 const Submit = lazy(() => import('./pages/Submit'))
+const Settings = lazy(() => import('./pages/Settings'))
 const Events = lazy(() => import('./pages/Events'))
 const navigation = [
   { to: '/leaderboard', label: '榜单', Icon: ListOrdered },
@@ -26,6 +27,7 @@ const navigation = [
 export default function App() {
   const { session, sessionReady, setSession, initializationError } = useSite()
   const [error, setError] = useState('')
+  const [loggingOut, setLoggingOut] = useState(false)
   const [compactHeader, setCompactHeader] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const headerInner = useRef<HTMLDivElement>(null)
@@ -33,11 +35,29 @@ export default function App() {
   const navigationRef = useRef<HTMLElement>(null)
   const activeIndicator = useRef<HTMLSpanElement>(null)
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, key } = useLocation()
+  const [introKey, setIntroKey] = useState(() => {
+    const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+    return pathname === '/' && (!entry || entry.type === 'navigate') &&
+      matchMedia('(prefers-reduced-motion: no-preference)').matches && 'registerProperty' in CSS ? key : null
+  })
+  const homeIntro = pathname === '/' && introKey === key
+  const finishHomeIntro = useCallback(() => setIntroKey(null), [])
   useEffect(() => {
     window.scrollTo(0, 0)
     setMenuOpen(false)
   }, [pathname])
+  useEffect(() => {
+    if (!homeIntro) {
+      setIntroKey(null)
+      return
+    }
+    const preference = matchMedia('(prefers-reduced-motion: reduce)')
+    const finish = () => { if (preference.matches) setIntroKey(null) }
+    preference.addEventListener('change', finish)
+    finish()
+    return () => preference.removeEventListener('change', finish)
+  }, [homeIntro])
   useLayoutEffect(() => {
     const nav = navigationRef.current
     const indicator = activeIndicator.current
@@ -96,12 +116,23 @@ export default function App() {
     return () => window.removeEventListener('scroll', syncHeader)
   }, [])
   async function logout() {
-    try { await send('/auth/logout', 'POST'); setSession(null); navigate('/') }
-    catch (cause) { setError(message(cause)) }
+    if (loggingOut) return
+    setLoggingOut(true)
+    setError('')
+    try {
+      await send('/auth/logout', 'POST')
+      setSession(null)
+      navigate('/')
+    } catch (cause) { setError(message(cause)) }
+    finally { setLoggingOut(false) }
   }
+  const accountAvatar = session && (session.avatar
+    ? <img className="avatar account-avatar" src={session.avatar} width={28} height={28} alt="" />
+    : <span className="avatar fallback account-avatar">{[...session.nickname][0]}</span>)
+
   return <>
     <a className="skip" href="#main">跳到正文</a>
-    <header className="site-header" data-compact={compactHeader || undefined}><div className="header-inner" ref={headerInner}>
+    <header className="site-header" data-compact={compactHeader || undefined} inert={homeIntro || undefined}><div className="header-inner" ref={headerInner}>
       <Link className="brand" to="/" onClick={() => setMenuOpen(false)}>
         <img src="/brand-wordmark.webp" alt="HZCubing 首页" width={360} height={123} />
       </Link>
@@ -111,11 +142,13 @@ export default function App() {
       </nav>
       <div className="header-actions">
         <ThemeToggle />
-        {session && <>
-          <ActionLink to="/profile" label="我的主页"><CircleUserRound /></ActionLink>
-          <IconButton label="退出登录" onClick={logout}><LogOut /></IconButton>
-        </>}
-        {sessionReady && !session && <Button variant="ghost" className="min-h-11 whitespace-nowrap" render={<Link to="/auth" />}>登录</Button>}
+        {session ? <Suspense fallback={<IconButton className="account-trigger account-trigger--signed-in" label="正在加载账号菜单" disabled>{accountAvatar}</IconButton>}>
+          <SignedInAccount avatar={accountAvatar} loggingOut={loggingOut} onOpen={() => setMenuOpen(false)} onLogout={() => void logout()} />
+        </Suspense> : sessionReady ? <IconButton className="account-trigger" label="登录" render={<Link to="/auth" />}>
+          <CircleUserRound />
+        </IconButton> : <IconButton className="account-trigger" label="正在读取账号状态" disabled>
+          <CircleUserRound />
+        </IconButton>}
       </div>
       <IconButton
         ref={menuButton}
@@ -139,7 +172,7 @@ export default function App() {
       <Suspense fallback={<Skeleton />}>
         <div className="route-content" key={pathname}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home intro={homeIntro} onIntroEnd={finishHomeIntro} />} />
             <Route path="/leaderboard" element={<Board />} />
             <Route path="/gr" element={<GroupRecords />} />
             <Route path="/gr/history" element={<Board historyMode />} />
@@ -147,7 +180,7 @@ export default function App() {
             <Route path="/user/:userNo" element={<Player />} />
             <Route path="/profile/:userNo" element={<Player />} />
             <Route path="/profile" element={<Player personal />} />
-            <Route path="/settings" element={<Player personal mode="settings" />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/submit/manage" element={<Player personal mode="manage" />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/submit" element={<Submit />} />

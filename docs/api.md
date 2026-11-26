@@ -2,7 +2,7 @@
 
 更新时间：2026-11-25
 
-浏览器经站点同域访问。成功直接返回对象或数组，错误返回 `{ "message": "…" }`。写接口使用 `application/json` 与同域 `Origin`。上传头像直接发送图片字节。需要登录的接口由会话 Cookie 鉴权，机器人接口使用独立 Bearer 凭据。
+浏览器经站点同域访问。成功直接返回对象或数组，错误返回 `{ "message": "…" }`。写请求需要同域 `Origin`。常规写接口使用 JSON，单独上传头像发送图片字节，资料和头像一起保存使用 multipart 表单。需要登录的接口由会话 Cookie 鉴权，机器人接口使用独立 Bearer 凭据。
 
 | 方法与路径 | 访问权限 | 用途 |
 | --- | --- | --- |
@@ -12,7 +12,7 @@
 | `GET /api/auth/me`、`POST /api/auth/logout` | 登录 | 查询本人资料、邮箱和角色，或撤销会话。 |
 | `GET /api/players?q=&page=&pageSize=&sort=` | 公开 | 以昵称或 WCA ID 搜索选手，返回加入时间、成绩数、项目数和项目编码。`pageSize` 默认为 30，范围为 1 至 60。响应中的 `total` 是当前搜索条件匹配的选手总数，`more` 表示还有下一页。`sort` 支持 `latest`、`mostRecords`、`mostEvents`。 |
 | `GET /api/players/:userNo?page=&category=` | 公开 | 返回个人资料、创建的整活项目、全部个人最佳和分页历史。可用 `category` 筛选历史成绩。 |
-| `PATCH /api/profile` | 登录 | 更新 `nickname`、`bio` 或 `wcaId`。 |
+| `PATCH /api/profile` | 登录 | 更新 `nickname`、`bio` 或 `wcaId`。使用 `multipart/form-data` 时，可同时传 `avatar` 文件或 `removeAvatar=1`，文件限制同头像上传。未传字段保留原值。 |
 | `PUT /api/profile/avatar` | 登录 | 上传 PNG、JPEG、GIF、WebP 或 AVIF，上限 2 MB。 |
 | `DELETE /api/profile/avatar` | 登录 | 解除当前头像的关联。 |
 | `POST /api/profile/qq` | 登录 | `qqId` 是字符串，绑定当前账号。 |

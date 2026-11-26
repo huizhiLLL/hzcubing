@@ -1,21 +1,18 @@
 import { useState } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { api, categories, day, message, send, time, type Best, type Player, type RecordInfo } from '../api'
+import { categories, day, message, send, time, type Best, type Player, type RecordInfo } from '../api'
 import { ActionLink, IconButton, Pagination, ResourceNotice } from '../components/Actions'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
-import { Textarea } from '../components/ui/textarea'
 import { usePageTitle, useResource, useSite } from '../site'
 
 type Profile = {
   user: Player & { createdAt: number }; records: RecordInfo[]; best: Best[]; more: boolean
-  createdProjects: { code: string; name: string; active: boolean }[]
 }
-type ProfileMode = 'public' | 'settings' | 'manage'
-const titles = { public: '选手主页', settings: '编辑资料', manage: '管理成绩' }
+type ProfileMode = 'public' | 'manage'
+const titles = { public: '选手主页', manage: '管理成绩' }
 const categoryOptions = [{ value: '', label: '全部' }, ...Object.entries(categories).map(([value, label]) => ({ value, label }))]
 
 export default function PlayerPage({ mode = 'public', personal = false }: { mode?: ProfileMode; personal?: boolean }) {
@@ -31,7 +28,7 @@ export default function PlayerPage({ mode = 'public', personal = false }: { mode
 }
 
 function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
-  const { session, setSession, events } = useSite()
+  const { session, events } = useSite()
   const own = session?.userNo === Number(userNo)
   const [page, setPage] = useState(1)
   const [category, setCategory] = useState('')
@@ -50,8 +47,8 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
     catch (cause) { setError(message(cause)) }
     finally { setPending(false) }
   }
-  if (!profile && mode !== 'manage') return <ResourceNotice loading={loading} error={loadError} skeleton={mode === 'settings' ? 'form' : 'page'} />
-  const { user, best = [], records = [], more = false, createdProjects = [] } = profile ?? {}
+  if (!profile && mode !== 'manage') return <ResourceNotice loading={loading} error={loadError} skeleton="page" />
+  const { user, best = [], records = [], more = false } = profile ?? {}
   return <>
     <ResourceNotice error={error} />
     {notice && <p className="notice success" role="status">{notice}</p>}
@@ -69,16 +66,10 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
           {user.bio && <p className="player-profile-bio">{user.bio}</p>}
         </div>
       </div>
-      {own && <div className="actions">
-        <Button variant="outline" render={<Link to="/settings" />}>编辑资料</Button>
-        <Button variant="outline" render={<Link to="/submit/manage" />}>管理成绩</Button>
-        <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>
-      </div>}
+      {own && <ActionLink to="/settings" label="编辑资料"><Pencil /></ActionLink>}
     </header> : <header className="page-heading">
       <h1>{titles[mode]}</h1>
-      <Button variant="outline" render={<Link to={mode === 'settings' ? '/profile' : '/submit'} />}>
-        {mode === 'settings' ? '返回个人主页' : '返回提交'}
-      </Button>
+      <Button variant="outline" render={<Link to="/submit" />}>返回提交</Button>
     </header>}
     {mode === 'public' && <section className="section"><h2>个人最佳</h2>
       {best.length ? <Table><TableHeader><TableRow><TableHead scope="col">项目</TableHead><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead></TableRow></TableHeader>
@@ -110,45 +101,6 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
         </TableRow>)}</TableBody></Table> : <ResourceNotice loading={loading} error={loadError} empty="暂无成绩。" skeleton="table" />}
       </div>
       <Pagination page={page} more={more} loading={loading} onPage={setPage} />
-    </section>}
-    {mode === 'public' && createdProjects.length > 0 && <section className="section">
-      <h2>创建的整活项目</h2>
-      <ul className="directory-list">{createdProjects.map(project => <li key={project.code}>
-        <Link className="directory-link" to={`/leaderboard?${new URLSearchParams({ event: project.code })}`}>
-          <strong>{project.name}</strong><small>{project.active ? '启用中' : '已停用'}</small>
-        </Link>
-      </li>)}</ul>
-    </section>}
-    {mode === 'settings' && session && user && <section className="section form-panel">
-      <form key={revision} className="fields" onSubmit={event => {
-        event.preventDefault()
-        const values = new FormData(event.currentTarget)
-        void action(() => send('/profile', 'PATCH', Object.fromEntries(['nickname', 'wcaId', 'bio'].map(key => [key, String(values.get(key) ?? '').trim()]))), '资料已保存')
-      }}>
-        <label>邮箱<Input type="email" value={session.email} readOnly /></label>
-        <label>昵称<Input name="nickname" defaultValue={user.nickname} maxLength={50} required /></label>
-        <label>WCA ID<Input name="wcaId" defaultValue={user.wcaId} maxLength={20} /></label>
-        <label>简介<Textarea name="bio" defaultValue={user.bio} maxLength={500} rows={3} /></label>
-        <Button type="submit" variant="outline" loading={pending}>保存修改</Button>
-      </form>
-      <div className="standalone avatar-settings">
-        {user.avatar && <img className="avatar" src={user.avatar} alt="当前头像" width={42} height={42} />}
-        <label className="standalone">头像<Input type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif" disabled={pending} onChange={event => {
-        const file = event.target.files?.[0]
-        if (file) void action(() => api('/profile/avatar', { method: 'PUT', body: file }), '头像已更新')
-        }} /></label>
-        {user.avatar && <Button variant="outline" disabled={pending} onClick={() => {
-          if (window.confirm('确定移除当前头像？')) void action(() => send('/profile/avatar', 'DELETE'), '头像已移除')
-        }}>移除头像</Button>}
-      </div>
-      {session.qqBound ? <p className="standalone">已绑定 QQ</p> : <form className="fields standalone" onSubmit={event => {
-        event.preventDefault()
-        const qqId = String(new FormData(event.currentTarget).get('qq') ?? '').trim()
-        void action(async () => { await send('/profile/qq', 'POST', { qqId }); setSession({ ...session, qqBound: true }) }, 'QQ 已绑定')
-      }}>
-        <label>QQ 号码<Input name="qq" inputMode="numeric" minLength={5} maxLength={15} required /></label>
-        <Button type="submit" variant="outline" loading={pending}>绑定 QQ</Button>
-      </form>}
     </section>}
   </>
 }

@@ -50,16 +50,37 @@ players.get('/:userNo', async c => {
 })
 
 export const profile = new Hono<App>()
+export const maxAvatarSize = 2_000_000
+
+export function isProfileForm(contentType?: string) {
+  return /^multipart\/form-data(?:\s*;|$)/i.test(contentType ?? '')
+}
+
 profile.patch('/', async c => {
   const user = signedIn(c)
-  const data = await json(c)
-  const nickname = text(data.nickname ?? user.nickname, 50, true)
-  const bio = text(data.bio ?? user.bio, 500)
-  const wcaId = text(data.wcaId ?? user.wca_id, 20).toUpperCase()
+  const form = isProfileForm(c.req.header('Content-Type'))
+    ? await c.req.formData().catch(() => fail(400, '资料表单格式不正确'))
+    : null
+  const data = form ? { nickname: form.get('nickname'), bio: form.get('bio'), wcaId: form.get('wcaId') } : await json(c)
+  const nickname = data.nickname == null ? null : text(data.nickname, 50, true)
+  const bio = data.bio == null ? null : text(data.bio, 500)
+  const wcaId = data.wcaId == null ? null : text(data.wcaId, 20).toUpperCase()
   if (wcaId && !/^\d{4}[A-Z]{4}\d{2}$/.test(wcaId)) fail(400, 'WCA ID 格式不正确')
-  const updated = await c.env.DB.prepare('UPDATE users SET nickname=?,bio=?,wca_id=?,updated_at=? WHERE id=? RETURNING *')
-    .bind(nickname, bio, wcaId, Date.now(), user.id).first<User>()
-  return c.json(publicUser(updated!))
+
+  const avatar = form?.get('avatar') ?? null
+  const removeAvatar = form?.get('removeAvatar') ?? null
+  if (removeAvatar !== null && (removeAvatar !== '1' || avatar !== null)) fail(400, '头像修改不正确')
+  let avatarKey: string | null = null
+  if (avatar !== null) {
+    if (!(avatar instanceof File)) fail(400, '请选择头像图片')
+    if (avatar.size > maxAvatarSize) fail(413, '头像大小上限为 2 MB')
+    avatarKey = await storeAvatar(c.env.AVATARS, user.id, new Uint8Array(await avatar.arrayBuffer()))
+  }
+  const updated = await c.env.DB.prepare(`UPDATE users SET nickname=COALESCE(?,nickname),bio=COALESCE(?,bio),
+    wca_id=COALESCE(?,wca_id),avatar_key=CASE WHEN ? THEN ? ELSE avatar_key END,updated_at=? WHERE id=? RETURNING *`)
+    .bind(nickname, bio, wcaId, avatar !== null || removeAvatar !== null ? 1 : 0, avatarKey, Date.now(), user.id).first<User>()
+  if (!updated) fail(404, '账号不存在')
+  return c.json(publicUser(updated))
 })
 
 export function qqId(value: unknown) {
@@ -97,9 +118,17 @@ const signatures = [
   { ext: 'webp', type: 'image/webp', match: (b: Uint8Array) => new TextDecoder().decode(b.slice(0, 4)) === 'RIFF' && new TextDecoder().decode(b.slice(8, 12)) === 'WEBP' },
   { ext: 'avif', type: 'image/avif', match: (b: Uint8Array) => new TextDecoder().decode(b.slice(4, 12)) === 'ftypavif' },
 ]
+async function storeAvatar(bucket: R2Bucket, userId: string, bytes: Uint8Array<ArrayBuffer>): Promise<string> {
+  const image = signatures.find(candidate => candidate.match(bytes))
+  if (!image) fail(400, '请选择 PNG、JPEG、GIF、WebP 或 AVIF 图片')
+  const key = `avatars/${userId}/${await digest(bytes)}.${image.ext}`
+  await bucket.put(key, bytes, { httpMetadata: { contentType: image.type } })
+  return key
+}
+
 profile.put('/avatar', async c => {
   const user = signedIn(c)
-  const max = 2_000_000
+  const max = maxAvatarSize
   if (Number(c.req.header('Content-Length')) > max || !c.req.raw.body) fail(413, '头像大小上限为 2 MB')
   const reader = c.req.raw.body.getReader()
   const chunks: Uint8Array[] = []
@@ -114,10 +143,7 @@ profile.put('/avatar', async c => {
   const bytes = new Uint8Array(size)
   let offset = 0
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
-  const image = signatures.find(candidate => candidate.match(bytes))
-  if (!image) fail(400, '请选择 PNG、JPEG、GIF、WebP 或 AVIF 图片')
-  const key = `avatars/${user.id}/${await digest(bytes)}.${image.ext}`
-  await c.env.AVATARS.put(key, bytes, { httpMetadata: { contentType: image.type } })
+  const key = await storeAvatar(c.env.AVATARS, user.id, bytes)
   await c.env.DB.prepare('UPDATE users SET avatar_key=?,updated_at=? WHERE id=?').bind(key, Date.now(), user.id).run()
   return c.json({ avatar: `/media/${key}` })
 })

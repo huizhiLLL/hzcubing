@@ -1,5 +1,5 @@
 import { Pause, Play } from 'lucide-react'
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { EventInfo } from '../api'
 import { IconButton } from '../components/Actions'
 import { useSite } from '../site'
@@ -62,15 +62,65 @@ function distributeProjects(events: EventInfo[]) {
   })
 }
 
-export default function Home() {
+export default function Home({ intro, onIntroEnd }: { intro: boolean; onIntroEnd: () => void }) {
   const { events } = useSite()
   const projects = useMemo(() => distributeProjects(events), [events])
   const logoRef = useRef<HTMLHeadingElement>(null)
+  const logoImageRef = useRef<HTMLImageElement>(null)
+  const revealRef = useRef<HTMLDivElement>(null)
   const sphereRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLCanvasElement>(null)
   const orbitRef = useRef<HTMLUListElement>(null)
   const rotation = useRef({ orientation: initialOrientation, elapsed: 0 })
   const [paused, setPaused] = useState(false)
+  const [logoReady, setLogoReady] = useState(false)
+
+  useEffect(() => {
+    const image = logoImageRef.current
+    if (!intro || !image) return
+
+    let active = true
+    const timeout = window.setTimeout(onIntroEnd, 6000)
+    void image.decode().then(() => {
+      if (active) setLogoReady(true)
+    }, () => {
+      if (active) onIntroEnd()
+    }).finally(() => window.clearTimeout(timeout))
+    return () => {
+      active = false
+      window.clearTimeout(timeout)
+    }
+  }, [intro, onIntroEnd])
+
+  useLayoutEffect(() => {
+    const logo = logoRef.current
+    const reveal = revealRef.current
+    if (!intro || !logo || !reveal) return
+
+    function syncOrigin() {
+      if (!logo || !reveal) return
+      const { left, top, width, height } = logo.getBoundingClientRect()
+      const x = left + width / 2
+      const y = top + height / 2
+      const farX = Math.max(Math.abs(x), Math.abs(window.innerWidth - x))
+      const farY = Math.max(Math.abs(y), Math.abs(window.innerHeight - y))
+      reveal.style.setProperty('--home-reveal-x', x + 'px')
+      reveal.style.setProperty('--home-reveal-y', y + 'px')
+      reveal.style.setProperty('--home-reveal-logo', Math.ceil(Math.hypot(width, height) / 2) + 'px')
+      reveal.style.setProperty('--home-reveal-edge', Math.ceil(Math.hypot(farX, farY)) + 1 + 'px')
+    }
+
+    syncOrigin()
+    const observer = new ResizeObserver(syncOrigin)
+    observer.observe(logo)
+    window.addEventListener('resize', syncOrigin)
+    window.addEventListener('scroll', syncOrigin, { passive: true })
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', syncOrigin)
+      window.removeEventListener('scroll', syncOrigin)
+    }
+  }, [intro])
 
   useLayoutEffect(() => {
     const logo = logoRef.current
@@ -289,9 +339,10 @@ export default function Home() {
   }, [paused, projects])
 
   return <section className="home-showcase" aria-label="HZCubing">
+    {intro && <div className="home-reveal" data-ready={logoReady || undefined} ref={revealRef} onAnimationEnd={event => { if (event.animationName === 'home-reveal') onIntroEnd() }} aria-hidden="true" />}
     <div className="home-orbit-stage">
       <h1 className="home-logo" ref={logoRef}>
-        <img src="/brand-wordmark.webp" alt="HZCubing" width={360} height={123} draggable={false} />
+        <img ref={logoImageRef} src="/brand-wordmark.webp" alt="HZCubing" width={360} height={123} fetchPriority={intro ? 'high' : undefined} draggable={false} />
       </h1>
       {projects.length > 0 && <>
         <div className="home-sphere" ref={sphereRef} aria-hidden="true">

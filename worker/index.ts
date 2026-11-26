@@ -5,7 +5,7 @@ import { auth, loadSession } from './auth'
 import { events, saveEvent } from './events'
 import { digest, fail, json, publicUser } from './http'
 import { addRecord, records } from './records'
-import { players, profile, qqId } from './users'
+import { isProfileForm, maxAvatarSize, players, profile, qqId } from './users'
 import type { App, User } from './types'
 
 const app = new Hono<App>({ strict: false })
@@ -22,7 +22,8 @@ app.use('/api/*', async (c, next) => {
     if (c.env.SITE_READ_ONLY === '1') fail(503, '站点迁移中，暂时暂停写入')
     if (!c.req.path.startsWith('/api/bot/') && c.req.header('Origin') !== new URL(c.req.url).origin) fail(403, '请求来源不匹配')
     if (c.req.path !== '/api/profile/avatar') {
-      return bodyLimit({ maxSize: 32_000, onError: () => fail(413, '请求内容过大') })(c, next)
+      const profileForm = c.req.method === 'PATCH' && /^\/api\/profile\/?$/.test(c.req.path) && isProfileForm(c.req.header('Content-Type'))
+      return bodyLimit({ maxSize: profileForm ? maxAvatarSize + 32_000 : 32_000, onError: () => fail(413, '请求内容过大') })(c, next)
     }
   }
   await next()
