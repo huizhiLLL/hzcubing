@@ -554,14 +554,14 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: .65rem .8rem; border-bottom: 1px solid var(--line); }
 th { background: var(--table-heading); white-space: nowrap; }
 tbody tr:last-child td { border-bottom: 0; }
-[data-slot="table-head"] { color: var(--muted); font-size: .8125rem; font-weight: 500; }
-[data-slot="table-cell"][data-column="date"] { color: var(--muted); font-size: .8125rem; }
+[data-slot="table-head"] { color: var(--muted); font-size: .75rem; font-weight: 500; }
+[data-slot="table-cell"][data-column="date"] { color: var(--muted); font-size: .75rem; }
 [data-slot="table"] :is([data-column="time"], [data-column="rank"]) {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 [data-slot="table"] [data-column="rank"] { width: 4rem; }
-[data-slot="table-cell"][data-column="rank"] { font-family: ui-monospace, monospace; }
+[data-slot="table-cell"][data-column="rank"] { font-family: "Geist Variable", system-ui, sans-serif; }
 [data-slot="table-cell"][data-column="time"], .result-time, .podium { color: var(--ink); font-weight: 700; }
 .players-toolbar { flex-wrap: nowrap; }
 .players-toolbar > [data-slot="select-trigger"] { flex: none; inline-size: 7rem; min-inline-size: 0; }
