@@ -156,7 +156,7 @@ h2 { margin-bottom: .65rem; font-size: 1rem; font-weight: 600; }
       box-shadow var(--header-transition);
   }
 }
-.site-navigation, .header-actions, .player-heading { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.site-navigation, .header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
 .brand { display: inline-flex; flex: none; align-items: center; min-block-size: 2.75rem; }
 .brand img { display: block; inline-size: 7.5rem; block-size: auto; translate: 0 .1875rem; }
 :root[data-theme="dark"] .brand img { filter: contrast(.55) brightness(1.5); }
@@ -366,7 +366,49 @@ h2 { margin-bottom: .65rem; font-size: 1rem; font-weight: 600; }
   background: var(--soft);
 }
 .avatar.fallback { display: grid; place-content: center; font-weight: 600; }
-.player-heading .avatar { inline-size: 3rem; block-size: 3rem; }
+.player-profile-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding-block: .5rem 1.5rem;
+  border-block-end: 1px solid var(--line);
+}
+.player-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(.875rem, 2.5vw, 1.5rem);
+  flex: 1 1 24rem;
+  min-inline-size: 0;
+}
+.player-heading .avatar {
+  inline-size: clamp(3.25rem, 8vw, 4.5rem);
+  block-size: auto;
+  aspect-ratio: 1;
+  font-size: 1.5rem;
+}
+.player-profile-details { overflow-wrap: anywhere; }
+.player-profile-details h1 {
+  font-size: clamp(1.625rem, 4vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+.player-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .2rem .625rem;
+  margin-block-start: .4rem;
+  color: var(--muted);
+  font-size: .875rem;
+}
+.player-profile-number { font-weight: 600; }
+.player-profile-bio {
+  max-inline-size: 60ch;
+  margin-block-start: .875rem;
+  white-space: pre-wrap;
+}
 .actions, .toolbar, .search { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem; }
 .toolbar { margin-bottom: 1rem; }
 .board-toolbar { align-items: center; gap: .5rem .75rem; }

@@ -55,13 +55,23 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
   return <>
     <ResourceNotice error={error} />
     {notice && <p className="notice success" role="status">{notice}</p>}
-    {mode === 'public' && user ? <header className="page-heading">
+    {mode === 'public' && user ? <header className="player-profile-header">
       <div className="player-heading">
-        {user.avatar && <img className="avatar" src={user.avatar} width={48} height={48} alt="" />}
-        <div><h1>{user.nickname}</h1><p>{user.wcaId || `#${user.userNo}`} · 加入于 {day(user.createdAt)}</p></div>
+        {user.avatar ? <img className="avatar" src={user.avatar} width={72} height={72} alt="" /> :
+          <span className="avatar fallback" aria-hidden="true">{[...user.nickname][0]}</span>}
+        <div className="player-profile-details">
+          <h1>{user.nickname}</h1>
+          <p className="player-profile-meta">
+            <span className="player-profile-number">#{user.userNo}</span>
+            {user.wcaId && <span>{user.wcaId}</span>}
+            <span>加入于 {day(user.createdAt)}</span>
+          </p>
+          {user.bio && <p className="player-profile-bio">{user.bio}</p>}
+        </div>
       </div>
       {own && <div className="actions">
         <Button variant="outline" render={<Link to="/settings" />}>编辑资料</Button>
+        <Button variant="outline" render={<Link to="/submit/manage" />}>管理成绩</Button>
         <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>
       </div>}
     </header> : <header className="page-heading">
@@ -70,7 +80,6 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
         {mode === 'settings' ? '返回个人主页' : '返回提交'}
       </Button>
     </header>}
-    {mode === 'public' && user?.bio && <p>{user.bio}</p>}
     {mode === 'public' && <section className="section"><h2>个人最佳</h2>
       {best.length ? <Table><TableHeader><TableRow><TableHead scope="col">项目</TableHead><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead></TableRow></TableHeader>
         <TableBody>{best.map(item => <TableRow key={item.event}>
@@ -78,32 +87,29 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
         </TableRow>)}</TableBody>
       </Table> : <ResourceNotice empty="还没有个人最佳。" />}
     </section>}
-    {mode !== 'settings' && <section className="section">
-      {mode === 'public' && <div className="section-head"><h2>最近提交</h2>
-        {own && <Button variant="outline" render={<Link to="/submit/manage" />}>管理成绩</Button>}
-      </div>}
-      {mode === 'manage' && <div className="toolbar">
+    {mode === 'manage' && <section className="section">
+      <div className="toolbar">
         <SegmentedControl label="项目类型" options={categoryOptions} value={category} onValueChange={next => {
           setCategory(next)
           setPage(1)
         }} />
-      </div>}
+      </div>
       <div key={`${category}:${page}:${loading}`} className="resource-enter">
         {records.length ? <Table><TableHeader><TableRow>
           <TableHead scope="col">项目</TableHead><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead>
-          <TableHead scope="col" column="date">日期</TableHead>{mode === 'manage' && <TableHead scope="col">操作</TableHead>}
-        </TableRow></TableHeader><TableBody>{(mode === 'public' ? records.slice(0, 6) : records).map(item => <TableRow key={item.id}>
+          <TableHead scope="col" column="date">日期</TableHead><TableHead scope="col">操作</TableHead>
+        </TableRow></TableHeader><TableBody>{records.map(item => <TableRow key={item.id}>
           <TableCell>{label(item.event)}</TableCell><TableCell column="time">{time(item.singleSeconds)}</TableCell><TableCell column="time">{time(item.averageSeconds)}</TableCell>
           <TableCell column="date">{day(item.timestamp)}</TableCell>
-          {mode === 'manage' && <TableCell><div className="record-actions">
+          <TableCell><div className="record-actions">
             <ActionLink to={`/submit?${new URLSearchParams({ edit: item.id })}`} label="编辑成绩"><Pencil /></ActionLink>
             <IconButton className="danger-action" label="删除成绩" disabled={pending} onClick={() => {
               if (window.confirm('确定删除这条成绩？')) void action(() => send(`/records/${encodeURIComponent(item.id)}`, 'DELETE'), '成绩已删除')
             }}><Trash2 /></IconButton>
-          </div></TableCell>}
+          </div></TableCell>
         </TableRow>)}</TableBody></Table> : <ResourceNotice loading={loading} error={loadError} empty="暂无成绩。" skeleton="table" />}
       </div>
-      {mode === 'manage' && <Pagination page={page} more={more} loading={loading} onPage={setPage} />}
+      <Pagination page={page} more={more} loading={loading} onPage={setPage} />
     </section>}
     {mode === 'public' && createdProjects.length > 0 && <section className="section">
       <h2>创建的整活项目</h2>
