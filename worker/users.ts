@@ -33,20 +33,20 @@ players.get('/:userNo', async c => {
   if (!user) fail(404, '找不到该选手')
   const page = Math.max(1, Math.min(1000, Number(c.req.query('page')) || 1)) | 0
   const category = text(c.req.query('category'), 20)
-  const projects = c.env.DB.prepare(`SELECT code,name,active FROM events WHERE category='meme' AND created_by=? ORDER BY created_at DESC,code`)
+  const projects = c.env.DB.prepare(`SELECT code,name,active FROM events WHERE category IN ('meme','score') AND created_by=? ORDER BY created_at DESC,code`)
   const [createdProjects, [history, best]] = await Promise.all([
     projects.bind(user.id).all<{ code: string; name: string; active: number }>(),
     c.env.DB.batch<RecordRow>([
       c.env.DB.prepare(`${recordSelect} WHERE r.user_id=? AND (?='' OR r.event IN (SELECT code FROM events WHERE category=?))
         ORDER BY r.timestamp DESC,r.id LIMIT 31 OFFSET ?`).bind(user.id, category, category, (page - 1) * 30),
-      c.env.DB.prepare(`SELECT event, MIN(single_seconds) AS single_seconds, MIN(average_seconds) AS average_seconds
+      c.env.DB.prepare(`SELECT event, MIN(single_seconds) AS single_seconds, MIN(average_seconds) AS average_seconds, MAX(score) AS score
         FROM records WHERE user_id=? GROUP BY event ORDER BY event`).bind(user.id),
     ]),
   ])
   return c.json({ user: { ...publicUser(user), createdAt: user.created_at },
     createdProjects: createdProjects.results.map(row => ({ code: row.code, name: row.name, active: Boolean(row.active) })),
     records: history.results.slice(0, 30).map(recordDto), more: history.results.length > 30,
-    best: best.results.map(row => ({ event: row.event, singleSeconds: row.single_seconds, averageSeconds: row.average_seconds })) })
+    best: best.results.map(row => ({ event: row.event, singleSeconds: row.single_seconds, averageSeconds: row.average_seconds, score: row.score })) })
 })
 
 export const profile = new Hono<App>()
