@@ -10,7 +10,7 @@
 | `GET /api/summary` | 公开 | 账号、成绩与启用项目数量。 |
 | `POST /api/auth/register`、`POST /api/auth/login` | 同域 | 注册传 `email`、`password`、`nickname`，登录传邮箱与密码，注册可选填 `qqId`，成功设置会话。 |
 | `GET /api/auth/me`、`POST /api/auth/logout` | 登录 | 查询本人资料、邮箱和角色，或撤销会话。 |
-| `GET /api/players?q=&page=&pageSize=&sort=` | 公开 | 以昵称或 WCA ID 搜索选手，返回加入时间、成绩数、项目数和项目编码。`pageSize` 默认为 30，范围为 1 至 60。响应中的 `more` 表示还有下一页。`sort` 支持 `latest`、`mostRecords`、`mostEvents`。 |
+| `GET /api/players?q=&page=&pageSize=&sort=` | 公开 | 以昵称或 WCA ID 搜索选手，返回加入时间、成绩数、项目数和项目编码。`pageSize` 默认为 30，范围为 1 至 60。响应中的 `total` 是当前搜索条件匹配的选手总数，`more` 表示还有下一页。`sort` 支持 `latest`、`mostRecords`、`mostEvents`。 |
 | `GET /api/players/:userNo?page=&category=` | 公开 | 返回个人资料、创建的整活项目、全部个人最佳和分页历史。可用 `category` 筛选历史成绩。 |
 | `PATCH /api/profile` | 登录 | 更新 `nickname`、`bio` 或 `wcaId`。 |
 | `PUT /api/profile/avatar` | 登录 | 上传 PNG、JPEG、GIF、WebP 或 AVIF，上限 2 MB。 |

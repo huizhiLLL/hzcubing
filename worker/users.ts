@@ -11,15 +11,20 @@ players.get('/', async c => {
   const pageSize = Math.max(1, Math.min(60, Math.trunc(Number(c.req.query('pageSize'))) || 30))
   const sort = c.req.query('sort')
   const order = sort === 'mostRecords' ? 'record_count DESC,' : sort === 'mostEvents' ? 'event_count DESC,' : ''
-  const { results } = await c.env.DB.prepare(`SELECT u.*, COUNT(r.id) AS record_count, COUNT(DISTINCT r.event) AS event_count,
-      json_group_array(DISTINCT r.event) FILTER (WHERE r.event IS NOT NULL) AS event_codes
-    FROM users u LEFT JOIN records r ON r.user_id=u.id WHERE u.status='active'
-    AND (instr(lower(u.nickname),lower(?))>0 OR instr(lower(u.wca_id),lower(?))>0)
-    GROUP BY u.id ORDER BY ${order} u.created_at DESC,u.user_no DESC LIMIT ? OFFSET ?`)
-    .bind(search, search, pageSize + 1, (page - 1) * pageSize).all<User & { created_at: number; record_count: number; event_count: number; event_codes: string }>()
-  return c.json({ users: results.slice(0, pageSize).map(user => ({
+  const matches = `u.status='active' AND (instr(lower(u.nickname),lower(?))>0 OR instr(lower(u.wca_id),lower(?))>0)`
+  const [directory, count] = await c.env.DB.batch([
+    c.env.DB.prepare(`SELECT u.*, COUNT(r.id) AS record_count, COUNT(DISTINCT r.event) AS event_count,
+        json_group_array(DISTINCT r.event) FILTER (WHERE r.event IS NOT NULL) AS event_codes
+      FROM users u LEFT JOIN records r ON r.user_id=u.id WHERE ${matches}
+      GROUP BY u.id ORDER BY ${order} u.created_at DESC,u.user_no DESC LIMIT ? OFFSET ?`)
+      .bind(search, search, pageSize, (page - 1) * pageSize),
+    c.env.DB.prepare(`SELECT COUNT(*) AS total FROM users u WHERE ${matches}`).bind(search, search),
+  ])
+  const users = directory.results as (User & { created_at: number; record_count: number; event_count: number; event_codes: string })[]
+  const { total } = count.results[0] as { total: number }
+  return c.json({ users: users.map(user => ({
     ...publicUser(user), createdAt: user.created_at, recordCount: user.record_count, eventCount: user.event_count, events: JSON.parse(user.event_codes) as string[],
-  })), more: results.length > pageSize })
+  })), total, more: page < 1000 && page * pageSize < total })
 })
 players.get('/:userNo', async c => {
   const userNo = Number(c.req.param('userNo'))

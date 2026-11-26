@@ -14,13 +14,18 @@ export function ActionLink({ label, to, children }: { label: string; to: string;
   return <IconButton label={label} render={<Link to={to} />}>{children}</IconButton>
 }
 
-export function Pagination({ page, more, loading, onPage, showPage }: {
-  page: number; more: boolean; loading?: boolean; onPage: (page: number) => void; showPage?: boolean
+export function Pagination({ page, more, loading, onPage, showPage, totalPages }: {
+  page: number; more: boolean; loading?: boolean; onPage: (page: number) => void; showPage?: boolean; totalPages?: number | null
 }) {
   if (page <= 1 && !more && !showPage) return null
   return <div className="actions pagination" role="group" aria-label="翻页">
     <IconButton label="上一页" disabled={page <= 1 || loading} onClick={() => onPage(page - 1)}><ChevronLeft /></IconButton>
-    {showPage && <span className="pagination-page" aria-live="polite">第 {page} 页</span>}
+    {showPage && <span className="pagination-page" aria-live="polite">
+      {totalPages === undefined ? <>第 {page} 页</> : <>
+        <span aria-hidden="true">{page}/{totalPages ?? '…'}</span>
+        <span className="sr-only">第 {page} 页{totalPages === null ? '' : `，共 ${totalPages} 页`}</span>
+      </>}
+    </span>}
     <IconButton label="下一页" disabled={!more || loading} onClick={() => onPage(page + 1)}><ChevronRight /></IconButton>
   </div>
 }

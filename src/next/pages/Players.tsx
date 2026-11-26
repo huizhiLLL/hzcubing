@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { day, prefetchResource, type Player } from '../api'
-import { IconButton, Pagination, ResourceNotice } from '../components/Actions'
+import { Pagination, ResourceNotice } from '../components/Actions'
 import { Skeleton } from '../components/Skeleton'
 import { Input } from '../components/ui/input'
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '../components/ui/select'
@@ -74,14 +74,21 @@ export default function Players() {
   const eventNames = new Map(events.map(event => [event.code, event.name]))
   const [filter, setFilter] = useState({ offset: 0, q: '', sort: 'latest' })
   const [pageSize, setPageSize] = useState(0)
+  const composing = useRef(false)
   const resultsRef = useRef<HTMLDivElement>(null)
   const rowRef = useRef<HTMLDivElement>(null)
   const pagerRef = useRef<HTMLDivElement>(null)
   const { offset, q, sort } = filter
   const page = pageSize ? Math.floor(offset / pageSize) + 1 : 1
   const path = pageSize ? playersPath(page, pageSize, q, sort) : null
-  const { data, loading: fetching, error } = useResource<{ users: ListedPlayer[]; more: boolean }>(path, 0, true)
+  const { data, loading: fetching, error } = useResource<{ users: ListedPlayer[]; total: number; more: boolean }>(path, 0, true)
   const loading = !pageSize || fetching
+  const totalPages = data ? Math.min(1000, Math.ceil(data.total / pageSize)) : null
+
+  function search(value: string) {
+    const query = value.trim()
+    setFilter(current => current.q === query ? current : { ...current, offset: 0, q: query })
+  }
 
   useLayoutEffect(() => {
     const results = resultsRef.current
@@ -129,19 +136,26 @@ export default function Players() {
       }
     }
   }, [data, page, pageSize, q, sort])
-  return <>
+  return <div className="players-page">
     <header className="page-heading"><h1>{pageTitle}</h1></header>
     <div className="toolbar board-toolbar players-toolbar">
       <Select items={sortOptions} value={sort} onValueChange={value => value && setFilter({ ...filter, offset: 0, sort: value })}>
         <SelectTrigger aria-label="排序方式"><SelectValue /></SelectTrigger>
         <SelectPopup alignItemWithTrigger={false}>{sortOptions.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectPopup>
       </Select>
-      <form className="search" role="search" onSubmit={submit => {
-        submit.preventDefault()
-        setFilter({ ...filter, offset: 0, q: String(new FormData(submit.currentTarget).get('query') || '').trim() })
-      }}>
-        <Input name="query" aria-label="昵称或 WCA ID" type="search" placeholder="搜索选手昵称" maxLength={50} />
-        <IconButton type="submit" label="搜索"><Search /></IconButton>
+      <form className="player-search" role="search" onSubmit={event => event.preventDefault()}>
+        <Search aria-hidden="true" />
+        <Input unstyled nativeInput name="query" aria-label="搜索选手昵称或 WCA ID" type="search" placeholder="搜索选手昵称" maxLength={50}
+          onCompositionStart={() => { composing.current = true }}
+          onCompositionEnd={event => {
+            composing.current = false
+            search(event.currentTarget.value)
+          }}
+          onChange={event => {
+            if (!composing.current && !('isComposing' in event.nativeEvent && event.nativeEvent.isComposing)) {
+              search(event.currentTarget.value)
+            }
+          }} />
       </form>
     </div>
     <div className="players-results" ref={resultsRef}>
@@ -173,8 +187,8 @@ export default function Players() {
       </div>
     </div>
     <div className="players-pager" ref={pagerRef}>
-      <Pagination page={page} more={Boolean(data?.more)} loading={loading} showPage={loading || Boolean(data?.users.length)}
+      <Pagination page={page} totalPages={totalPages} more={Boolean(data?.more)} loading={loading} showPage={loading || Boolean(data?.users.length)}
         onPage={next => setFilter({ ...filter, offset: (next - 1) * pageSize })} />
     </div>
-  </>
+  </div>
 }
