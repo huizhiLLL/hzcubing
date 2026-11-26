@@ -15,7 +15,7 @@
 
 Workers Static Assets 提供 React SPA。`/api/*` 和 `/media/*` 先进入 Worker，其他深链接按 SPA 规则回到 `index.html`。`preview.hzcubing.fun` 使用独立的 D1 和 R2，导入旧站公开的选手资料、成绩、项目与头像。预览使用占位登录数据，开启 `SITE_READ_ONLY=1`。正式 `hzcubing.fun` 仍通过 Pages 和 VPS2 旧 API 提供服务。实施步骤见 [迁移路线图](./roadmap.md#cloudflare-迁移与全站重构方案)。
 
-官方组件源码放在 `src/next/components/ui/`，该目录保留 coss ui 的 MIT 许可。页面布局与语义色由 `src/next/style.css` 管理。榜单和成绩录入使用 coss ui Select，并保留项目分组。字体优先使用系统的 SF Pro Text 与 PingFang SC，Vite 从 Fontsource 打包 Geist 和 Noto Sans SC 作为自托管回退字体。顶部导航随滚动收为吸顶状态，保留原占位以避免内容跳动。
+官方组件源码放在 `src/next/components/ui/`，该目录保留 coss ui 的 MIT 许可。页面布局与语义色由 `src/next/style.css` 管理。榜单和成绩录入使用 coss ui Select，并保留项目分组。榜单筛选的项目按钮随图标和名称调整宽度。榜单、群纪录和成绩管理共用分段切换组件，选中滑块随切换移动。字体优先使用系统的 SF Pro Text 与 PingFang SC，Vite 从 Fontsource 打包 Geist 和 Noto Sans SC 作为自托管回退字体。顶部导航随滚动收为悬浮玻璃栏，保留原占位以避免内容跳动。浏览器不支持玻璃效果时使用不透明主题底色。首页主按钮与当前导航项使用品牌蓝。当前导航项采用玻璃高亮，桌面端切换时高亮滑到新位置，遵循系统的减少动态效果设置。
 
 ## 数据和权限
 

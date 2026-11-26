@@ -13,7 +13,7 @@ export default function Home() {
         <h1>我来到，我看见<br />我记录<span className="home-subtitle">Veni, Vidi, Vici</span></h1>
         <p>「知识即为力量，记录即是见证」</p>
         <div className="actions home-actions">
-          <Button render={<Link to="/leaderboard" />}>查看榜单</Button>
+          <Button className="border-(--brand) bg-(--brand) text-(--brand-on) shadow-(color:--brand)/24 hover:bg-(--brand)/90" render={<Link to="/leaderboard" />}>查看榜单</Button>
           <Button variant="outline" render={<Link to="/submit" />}>提交成绩</Button>
         </div>
       </div>

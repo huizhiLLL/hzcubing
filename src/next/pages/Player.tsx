@@ -3,6 +3,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, categories, day, message, send, time, type Best, type Player, type RecordInfo } from '../api'
 import { ActionLink, IconButton, Pagination, ResourceNotice } from '../components/Actions'
+import { SegmentedControl } from '../components/SegmentedControl'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
@@ -14,6 +15,7 @@ type Profile = {
   createdProjects: { code: string; name: string; active: boolean }[]
 }
 type ProfileMode = 'public' | 'settings' | 'manage'
+const categoryOptions = [{ value: '', label: '全部' }, ...Object.entries(categories).map(([value, label]) => ({ value, label }))]
 
 export default function PlayerPage({ mode = 'public', personal = false }: { mode?: ProfileMode; personal?: boolean }) {
   const { userNo } = useParams()
@@ -77,10 +79,11 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
       {mode === 'public' && <div className="section-head"><h2>最近提交</h2>
         {own && <Button variant="outline" render={<Link to="/submit/manage" />}>管理成绩</Button>}
       </div>}
-      {mode === 'manage' && <div className="toolbar" role="group" aria-label="项目类型">
-        <div className="segments">{[['', '全部'], ...Object.entries(categories)].map(([value, label]) =>
-          <Button key={value} variant="ghost" aria-pressed={category === value} onClick={() => { setCategory(value); setPage(1) }}>{label}</Button>,
-        )}</div>
+      {mode === 'manage' && <div className="toolbar">
+        <SegmentedControl label="项目类型" options={categoryOptions} value={category} onValueChange={next => {
+          setCategory(next)
+          setPage(1)
+        }} />
       </div>}
       {records.length ? <Table><TableHeader><TableRow>
         <TableHead scope="col">项目</TableHead><TableHead scope="col" className="numeric">单次</TableHead><TableHead scope="col" className="numeric">平均</TableHead>

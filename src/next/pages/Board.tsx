@@ -3,9 +3,12 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { day, time, type RecordInfo } from '../api'
 import { ActionLink, ResourceNotice } from '../components/Actions'
 import { ProjectSelect } from '../components/ProjectSelect'
+import { SegmentedControl } from '../components/SegmentedControl'
 import { Button } from '../components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { useResource, useSite } from '../site'
+
+const metrics = [{ value: 'single', label: '单次' }, { value: 'average', label: '平均' }] as const
 
 export default function Board({ historyMode = false }: { historyMode?: boolean }) {
   const { events, session } = useSite()
@@ -26,12 +29,9 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
     <header className="page-heading"><h1>{historyMode ? '破纪录历史' : '排行榜'}</h1>{historyMode
       ? <Button variant="outline" render={<Link to="/gr" />}>返回 GR 纪录</Button>
       : <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>}</header>
-    <div className="toolbar board-toolbar">
-      <ProjectSelect events={events} value={event} onValueChange={next => update('event', next)} />
-      <div className="segments" role="group" aria-label="成绩类型">
-        <Button variant="ghost" aria-pressed={metric === 'single'} onClick={() => update('type', 'single')}>单次</Button>
-        <Button variant="ghost" aria-pressed={metric === 'average'} onClick={() => update('type', 'average')}>平均</Button>
-      </div>
+    <div className="toolbar board-toolbar board-filters">
+      <ProjectSelect compact events={events} value={event} onValueChange={next => update('event', next)} />
+      <SegmentedControl label="成绩类型" size="compact" options={metrics} value={metric} onValueChange={next => update('type', next)} />
     </div>
     {loading || error || !rows.length ? <ResourceNotice loading={loading} error={error} empty="暂无成绩。" /> :
       <Table><TableHeader><TableRow>

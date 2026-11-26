@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { categories, time } from '../api'
 import { ResourceNotice } from '../components/Actions'
-import { Button } from '../components/ui/button'
+import { SegmentedControl } from '../components/SegmentedControl'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { useResource, useSite } from '../site'
 
 type Holder = { userNo: number; nickname: string; seconds: number }
 type GroupRecord = { event: string; single: Holder | null; average: Holder | null }
 const groupCategories = ['official', 'fun', 'meme'] as const
+const categoryOptions = groupCategories.map(value => ({ value, label: categories[value] }))
 
 function HolderLink({ holder }: { holder: Holder | null }) {
   return holder ? <Link to={`/user/${holder.userNo}`}>{holder.nickname}</Link> : '—'
@@ -32,9 +33,8 @@ function Overview() {
 
   return <>
     <header className="page-heading"><h1>GR 纪录</h1></header>
-    <div className="toolbar board-toolbar" role="group" aria-label="项目类型">
-      <div className="segments">{groupCategories.map(group => <Button key={group} variant="ghost"
-        aria-pressed={category === group} onClick={() => setCategory(group)}>{categories[group]}</Button>)}</div>
+    <div className="toolbar board-toolbar">
+      <SegmentedControl label="项目类型" options={categoryOptions} value={category} onValueChange={setCategory} />
     </div>
     {loading || error || !rows.length ? <ResourceNotice loading={loading} error={error} empty={`暂无${categories[category]}纪录数据`} /> : <>
       <div className="gr-table"><Table><TableHeader><TableRow>

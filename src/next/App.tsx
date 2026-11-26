@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { CircleUserRound, Layers3, ListOrdered, LogIn, LogOut, Menu, Trophy, UsersRound, X } from 'lucide-react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { CircleUserRound, Layers3, ListOrdered, LogOut, Menu, Trophy, UsersRound, X } from 'lucide-react'
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { message, send } from './api'
 import { ActionLink, IconButton, ResourceNotice } from './components/Actions'
+import { Button } from './components/ui/button'
 import { ThemeToggle } from './components/ThemeToggle'
 import { useSite } from './site'
 
@@ -28,11 +29,36 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerInner = useRef<HTMLDivElement>(null)
   const menuButton = useRef<HTMLButtonElement>(null)
+  const navigationRef = useRef<HTMLElement>(null)
+  const activeIndicator = useRef<HTMLSpanElement>(null)
   const navigate = useNavigate()
   const { pathname } = useLocation()
   useEffect(() => {
     window.scrollTo(0, 0)
     setMenuOpen(false)
+  }, [pathname])
+  useLayoutEffect(() => {
+    const nav = navigationRef.current
+    const indicator = activeIndicator.current
+    if (!nav || !indicator) return
+
+    const activeLink = nav.querySelector<HTMLElement>('[aria-current="page"]')
+    if (!activeLink) {
+      indicator.removeAttribute('data-visible')
+      return
+    }
+
+    const syncIndicator = () => {
+      indicator.style.translate = `${activeLink.offsetLeft}px ${activeLink.offsetTop}px`
+      indicator.style.width = `${activeLink.offsetWidth}px`
+      indicator.style.height = `${activeLink.offsetHeight}px`
+      indicator.setAttribute('data-visible', '')
+    }
+    syncIndicator()
+    const observer = new ResizeObserver(syncIndicator)
+    observer.observe(nav)
+    nav.querySelectorAll('.nav-link').forEach(link => observer.observe(link))
+    return () => observer.disconnect()
   }, [pathname])
   useEffect(() => {
     if (!menuOpen) return
@@ -75,19 +101,11 @@ export default function App() {
   return <>
     <a className="skip" href="#main">跳到正文</a>
     <header className="site-header" data-compact={compactHeader || undefined}><div className="header-inner" ref={headerInner}>
-      <Link className="brand" to="/" onClick={() => setMenuOpen(false)}><img src="/logo.png" alt="" width={36} height={36} />hzcubing</Link>
-      <IconButton
-        ref={menuButton}
-        className="menu-toggle"
-        label={menuOpen ? '关闭导航' : '打开导航'}
-        aria-expanded={menuOpen}
-        aria-controls="site-navigation"
-        type="button"
-        onClick={() => setMenuOpen(open => !open)}
-      >
-        {menuOpen ? <X /> : <Menu />}
-      </IconButton>
-      <nav id="site-navigation" className="site-navigation" aria-label="站点导航" data-open={menuOpen || undefined}>
+      <Link className="brand" to="/" onClick={() => setMenuOpen(false)}>
+        <img src="/brand-wordmark.webp" alt="HZCubing 首页" width={360} height={123} />
+      </Link>
+      <nav id="site-navigation" className="site-navigation" ref={navigationRef} aria-label="站点导航" data-open={menuOpen || undefined}>
+        <span className="nav-indicator" ref={activeIndicator} aria-hidden="true" />
         {navigation.map(({ to, label, Icon }) => <NavLink key={to} className="nav-link" to={to} onClick={() => setMenuOpen(false)}><Icon aria-hidden="true" />{label}</NavLink>)}
       </nav>
       <div className="header-actions">
@@ -96,8 +114,24 @@ export default function App() {
           <ActionLink to="/profile" label="我的主页"><CircleUserRound /></ActionLink>
           <IconButton label="退出登录" onClick={logout}><LogOut /></IconButton>
         </>}
-        {sessionReady && !session && <ActionLink to="/auth" label="登录"><LogIn /></ActionLink>}
+        {sessionReady && !session && <Button variant="ghost" className="min-h-11 whitespace-nowrap" render={<Link to="/auth" />}>登录</Button>}
       </div>
+      <IconButton
+        ref={menuButton}
+        className="menu-toggle"
+        label={menuOpen ? '关闭导航' : '打开导航'}
+        aria-expanded={menuOpen}
+        aria-controls="site-navigation"
+        type="button"
+        onClick={event => {
+          setMenuOpen(!menuOpen)
+          if (!menuOpen && event.detail === 0) {
+            requestAnimationFrame(() => navigationRef.current?.querySelector('a')?.focus())
+          }
+        }}
+      >
+        {menuOpen ? <X /> : <Menu />}
+      </IconButton>
     </div></header>
     <main id="main" className="site-main" tabIndex={-1}>
       <ResourceNotice error={error || initializationError} />
