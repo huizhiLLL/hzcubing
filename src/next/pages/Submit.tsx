@@ -22,7 +22,7 @@ export default function Submit() {
     <header className="page-heading"><h1>{pageTitle}</h1>
       {session && <Button variant="outline" render={<Link to="/submit/manage" />}>管理我的成绩</Button>}
     </header>
-    <section className="form-panel">
+    <section className="page-form">
       {sessionReady && !session && <Link to={`/auth?${next}`}>登录后提交成绩</Link>}
       <ResourceNotice skeleton="form" loading={loading || !sessionReady || (Boolean(session) && eventsLoading)} error={denied ? '只能编辑自己的成绩' : error} />
       {session && !eventsLoading && (!id || (data && !denied)) && <RecordForm key={id} record={data} events={events} userNo={session.userNo} />}

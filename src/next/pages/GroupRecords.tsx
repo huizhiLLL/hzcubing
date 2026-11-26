@@ -1,7 +1,8 @@
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { categories, time } from '../api'
-import { ResourceNotice } from '../components/Actions'
+import { ActionLink, ResourceNotice } from '../components/Actions'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
 import { usePageTitle, useResource, useSite } from '../site'
@@ -34,7 +35,10 @@ function Overview() {
   })
 
   return <>
-    <header className="page-heading"><h1>{pageTitle}</h1></header>
+    <header className="page-heading">
+      <h1>{pageTitle}</h1>
+      <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>
+    </header>
     <div className="toolbar board-toolbar">
       <SegmentedControl label="项目类型" options={categoryOptions} value={category} onValueChange={setCategory} />
     </div>

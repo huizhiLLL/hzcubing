@@ -1,5 +1,6 @@
+import { Dialog } from '@base-ui/react/dialog'
+import { Pencil, Plus } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
-import { Pencil, X } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
 import { categories, message, send, type EventInfo } from '../api'
 import { IconButton, ResourceNotice } from '../components/Actions'
@@ -13,48 +14,69 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   const pageTitle = adminOnly ? '整活项目管理' : '项目'
   usePageTitle(pageTitle)
   const [editing, setEditing] = useState<EventInfo>()
+  const [open, setOpen] = useState(false)
+  const [triggerId, setTriggerId] = useState<string | null>(null)
+  const [refreshError, setRefreshError] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const canManage = Boolean(session && session.role !== 'user')
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const form = event.currentTarget
-    const values = new FormData(form)
+    const values = new FormData(event.currentTarget)
     setBusy(true)
     setError('')
+    setRefreshError('')
     try {
       await send(editing ? `/events/${encodeURIComponent(editing.code)}` : '/events', editing ? 'PATCH' : 'POST', {
         code: editing?.code ?? String(values.get('code') ?? '').trim(), name: String(values.get('name') ?? '').trim(),
         description: String(values.get('description') ?? '').trim(), active: values.has('active'),
       })
-      await refreshEvents()
-      setEditing(undefined)
-      form.reset()
+      setOpen(false)
+      await refreshEvents().catch(() => setRefreshError('项目已保存，刷新页面查看最新列表。'))
     } catch (cause) { setError(message(cause)) }
     finally { setBusy(false) }
   }
   if (adminOnly && !sessionReady) return <ResourceNotice loading />
   if (adminOnly && !canManage) return <Navigate to={session ? '/' : '/auth?next=%2Fadmin%2Fmeme-events'} replace />
-  return <>
-    <header className="page-heading"><h1>{pageTitle}</h1>
-      {!adminOnly && canManage && <Button variant="outline" render={<Link to="/admin/meme-events" />}>管理整活项目</Button>}
+  return <Dialog.Root open={open} triggerId={triggerId} onOpenChange={(next, details) => {
+    if (busy) { details.cancel(); return }
+    if (next) {
+      const trigger = details.trigger?.id
+      setEditing(events.find(event => `edit-meme-event-${encodeURIComponent(event.code)}` === trigger))
+      setTriggerId(trigger ?? null)
+      setError('')
+    }
+    setOpen(next)
+  }}>
+    <header className="page-heading">
+      <h1>{pageTitle}</h1>
+      {adminOnly ? <Dialog.Trigger id="add-meme-event" render={<IconButton label="新增整活项目"><Plus /></IconButton>} /> :
+        canManage && <Button variant="outline" render={<Link to="/admin/meme-events" />}>管理整活项目</Button>}
     </header>
-    {adminOnly && <section className="form-panel">
-      <h2>{editing ? '编辑整活项目' : '新增整活项目'}</h2>
-      <form key={editing?.code ?? ''} className="fields" onSubmit={save}>
-        <div className="field-pair">
-          <label>编码<Input name="code" maxLength={60} defaultValue={editing?.code} disabled={Boolean(editing)} required /></label>
-          <label>名称<Input name="name" maxLength={80} defaultValue={editing?.name} required /></label>
-        </div>
-        <label>描述<Textarea name="description" maxLength={500} rows={2} defaultValue={editing?.description} /></label>
-        <label className="check"><input type="checkbox" name="active" defaultChecked={editing?.active ?? true} />启用</label>
-        <ResourceNotice error={error} />
-        <div className="actions">
-          <Button type="submit" loading={busy}>保存</Button>
-          {editing && <IconButton label="取消编辑" disabled={busy} onClick={() => { setEditing(undefined); setError('') }}><X /></IconButton>}
-        </div>
-      </form>
-    </section>}
+    <ResourceNotice error={refreshError} />
+    {adminOnly && <Dialog.Portal>
+      <Dialog.Backdrop className="event-dialog-backdrop" />
+      <Dialog.Viewport className="event-dialog-viewport">
+        <Dialog.Popup className="event-dialog-popup">
+          <Dialog.Title>{editing ? '编辑整活项目' : '新增整活项目'}</Dialog.Title>
+          <form key={editing?.code ?? ''} className="fields" onSubmit={save}>
+            <fieldset className="event-dialog-fields" disabled={busy}>
+              <div className="field-pair">
+                <label>编码<Input name="code" maxLength={60} defaultValue={editing?.code} readOnly={Boolean(editing)} required /></label>
+                <label>名称<Input name="name" maxLength={80} defaultValue={editing?.name} required /></label>
+              </div>
+              <label>描述<Textarea name="description" maxLength={500} rows={3} defaultValue={editing?.description} /></label>
+              <label className="check"><input type="checkbox" name="active" defaultChecked={editing?.active ?? true} />启用</label>
+            </fieldset>
+            <ResourceNotice error={error} />
+            <div className="actions event-dialog-actions">
+              <Dialog.Close render={<Button variant="ghost" disabled={busy} />}>取消</Dialog.Close>
+              <Button type="submit" loading={busy}>保存</Button>
+            </div>
+          </form>
+        </Dialog.Popup>
+      </Dialog.Viewport>
+    </Dialog.Portal>}
     {eventsLoading ? <ResourceNotice loading skeleton="directory" /> : Object.entries(categories).map(([category, name]) => {
       if (adminOnly && category !== 'meme') return null
       const items = events.filter(event => event.category === category)
@@ -65,9 +87,10 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
             <strong>{event.name}</strong>
             {(!event.active || event.code !== event.name) && <small>{event.active ? event.code : '已停用'}</small>}
           </Link>
-          {adminOnly && category === 'meme' && <IconButton label={`编辑${event.name}`} disabled={busy} onClick={() => { setEditing(event); setError('') }}><Pencil /></IconButton>}
+          {adminOnly && <Dialog.Trigger id={`edit-meme-event-${encodeURIComponent(event.code)}`} disabled={busy}
+            render={<IconButton label={`编辑${event.name}`}><Pencil /></IconButton>} />}
         </li>)}</ul>
       </section>
     })}
-  </>
+  </Dialog.Root>
 }
