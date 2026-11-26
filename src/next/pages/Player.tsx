@@ -69,9 +69,9 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
     </header>}
     {mode === 'public' && user?.bio && <p>{user.bio}</p>}
     {mode === 'public' && <section className="section"><h2>个人最佳</h2>
-      {best.length ? <Table><TableHeader><TableRow><TableHead scope="col">项目</TableHead><TableHead scope="col" className="numeric">单次</TableHead><TableHead scope="col" className="numeric">平均</TableHead></TableRow></TableHeader>
+      {best.length ? <Table><TableHeader><TableRow><TableHead scope="col">项目</TableHead><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead></TableRow></TableHeader>
         <TableBody>{best.map(item => <TableRow key={item.event}>
-          <TableCell>{label(item.event)}</TableCell><TableCell className="numeric">{time(item.singleSeconds)}</TableCell><TableCell className="numeric">{time(item.averageSeconds)}</TableCell>
+          <TableCell>{label(item.event)}</TableCell><TableCell column="time">{time(item.singleSeconds)}</TableCell><TableCell column="time">{time(item.averageSeconds)}</TableCell>
         </TableRow>)}</TableBody>
       </Table> : <ResourceNotice empty="还没有个人最佳。" />}
     </section>}
@@ -87,11 +87,11 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
       </div>}
       <div key={`${category}:${page}:${loading}`} className="resource-enter">
         {records.length ? <Table><TableHeader><TableRow>
-          <TableHead scope="col">项目</TableHead><TableHead scope="col" className="numeric">单次</TableHead><TableHead scope="col" className="numeric">平均</TableHead>
-          <TableHead scope="col" className="date-col">日期</TableHead>{mode === 'manage' && <TableHead scope="col">操作</TableHead>}
+          <TableHead scope="col">项目</TableHead><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead>
+          <TableHead scope="col" column="date">日期</TableHead>{mode === 'manage' && <TableHead scope="col">操作</TableHead>}
         </TableRow></TableHeader><TableBody>{(mode === 'public' ? records.slice(0, 6) : records).map(item => <TableRow key={item.id}>
-          <TableCell>{label(item.event)}</TableCell><TableCell className="numeric">{time(item.singleSeconds)}</TableCell><TableCell className="numeric">{time(item.averageSeconds)}</TableCell>
-          <TableCell className="date-col">{day(item.timestamp)}</TableCell>
+          <TableCell>{label(item.event)}</TableCell><TableCell column="time">{time(item.singleSeconds)}</TableCell><TableCell column="time">{time(item.averageSeconds)}</TableCell>
+          <TableCell column="date">{day(item.timestamp)}</TableCell>
           {mode === 'manage' && <TableCell><div className="record-actions">
             <ActionLink to={`/submit?${new URLSearchParams({ edit: item.id })}`} label="编辑成绩"><Pencil /></ActionLink>
             <IconButton className="danger-action" label="删除成绩" disabled={pending} onClick={() => {

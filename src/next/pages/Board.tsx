@@ -33,8 +33,8 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
     setParams(next, { replace: true })
   }
   return <>
-    <header className="page-heading"><h1>{historyMode ? '破纪录历史' : '排行榜'}</h1>{historyMode
-      ? <Button variant="outline" render={<Link to="/gr" />}>返回 GR 纪录</Button>
+    <header className="page-heading"><h1>{historyMode ? '破纪录历史' : '榜单'}</h1>{historyMode
+      ? <Button variant="outline" render={<Link to="/gr" />}>返回群纪录</Button>
       : <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>}</header>
     <div className="toolbar board-toolbar board-filters">
       <ProjectSelect compact events={events} value={event} onValueChange={next => update('event', next)} />
@@ -43,15 +43,15 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
     <div key={`${event}:${metric}:${loading}`} className="resource-enter">
       {loading || error || !rows.length ? <ResourceNotice skeleton="table" loading={loading} error={error} empty="暂无成绩。" /> :
         <Table><TableHeader><TableRow>
-          {!historyMode && <TableHead scope="col" className="rank">排名</TableHead>}
-          <TableHead scope="col">选手</TableHead><TableHead scope="col" className="numeric">成绩</TableHead>
-          <TableHead scope="col" className="date-col">日期</TableHead>
+          {!historyMode && <TableHead scope="col" column="rank">排名</TableHead>}
+          <TableHead scope="col">选手</TableHead><TableHead scope="col" column="time">成绩</TableHead>
+          <TableHead scope="col" column="date">日期</TableHead>
         </TableRow></TableHeader><TableBody>{rows.map(row => <TableRow key={row.id}
           className={!historyMode && row.userNo === session?.userNo ? 'own-rank' : undefined}>
-          {!historyMode && <TableCell className={`rank ${row.rank && row.rank <= 3 ? 'podium' : ''}`}>{row.rank}</TableCell>}
+          {!historyMode && <TableCell column="rank" className={row.rank && row.rank <= 3 ? 'podium' : undefined}>{row.rank}</TableCell>}
           <TableCell><Link to={`/user/${row.userNo}`}>{row.nickname}</Link></TableCell>
-          <TableCell className="numeric result-time">{time(metric === 'average' ? row.averageSeconds : row.singleSeconds)}</TableCell>
-          <TableCell className="date-col">{day(row.timestamp)}</TableCell>
+          <TableCell column="time">{time(metric === 'average' ? row.averageSeconds : row.singleSeconds)}</TableCell>
+          <TableCell column="date">{day(row.timestamp)}</TableCell>
         </TableRow>)}</TableBody></Table>}
     </div>
   </>

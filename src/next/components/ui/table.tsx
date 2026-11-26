@@ -102,10 +102,13 @@ export function TableRow({
   );
 }
 
+type TableColumn = "time" | "date" | "rank";
+
 export function TableHead({
   className,
+  column,
   ...props
-}: React.ComponentProps<"th">): React.ReactElement {
+}: React.ComponentProps<"th"> & { column?: TableColumn }): React.ReactElement {
   return (
     <th
       className={cn(
@@ -113,6 +116,7 @@ export function TableHead({
         className,
       )}
       data-slot="table-head"
+      data-column={column}
       {...props}
     />
   );
@@ -120,8 +124,9 @@ export function TableHead({
 
 export function TableCell({
   className,
+  column,
   ...props
-}: React.ComponentProps<"td">): React.ReactElement {
+}: React.ComponentProps<"td"> & { column?: TableColumn }): React.ReactElement {
   return (
     <td
       className={cn(
@@ -129,6 +134,7 @@ export function TableCell({
         className,
       )}
       data-slot="table-cell"
+      data-column={column}
       {...props}
     />
   );
