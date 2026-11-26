@@ -8,7 +8,7 @@ export const players = new Hono<App>()
 players.get('/', async c => {
   const search = text(c.req.query('q'), 50)
   const page = Math.max(1, Math.min(1000, Number(c.req.query('page')) || 1)) | 0
-  const pageSize = Math.max(1, Math.min(30, Math.trunc(Number(c.req.query('pageSize'))) || 30))
+  const pageSize = Math.max(1, Math.min(60, Math.trunc(Number(c.req.query('pageSize'))) || 30))
   const sort = c.req.query('sort')
   const order = sort === 'mostRecords' ? 'record_count DESC,' : sort === 'mostEvents' ? 'event_count DESC,' : ''
   const { results } = await c.env.DB.prepare(`SELECT u.*, COUNT(r.id) AS record_count, COUNT(DISTINCT r.event) AS event_count,
