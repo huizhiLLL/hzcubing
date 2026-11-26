@@ -6,12 +6,13 @@ import { categories, message, send, type EventInfo } from '../api'
 import { IconButton, ResourceNotice } from '../components/Actions'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Textarea } from '../components/ui/textarea'
 import { usePageTitle, useSite } from '../site'
 
 export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   const { session, sessionReady, events, eventsLoading, refreshEvents } = useSite()
-  const pageTitle = adminOnly ? '整活项目管理' : '项目'
+  const pageTitle = adminOnly ? '项目管理' : '项目'
   usePageTitle(pageTitle)
   const [editing, setEditing] = useState<EventInfo>()
   const [open, setOpen] = useState(false)
@@ -29,7 +30,7 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
     try {
       await send(editing ? `/events/${encodeURIComponent(editing.code)}` : '/events', editing ? 'PATCH' : 'POST', {
         code: editing?.code ?? String(values.get('code') ?? '').trim(), name: String(values.get('name') ?? '').trim(),
-        description: String(values.get('description') ?? '').trim(), active: values.has('active'),
+        category: editing?.category ?? String(values.get('category') ?? 'meme'), description: String(values.get('description') ?? '').trim(), active: values.has('active'),
       })
       setOpen(false)
       await refreshEvents().catch(() => setRefreshError('项目已保存，刷新页面查看最新列表。'))
@@ -50,21 +51,26 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   }}>
     <header className="page-heading">
       <h1>{pageTitle}</h1>
-      {adminOnly ? <Dialog.Trigger id="add-meme-event" render={<IconButton label="新增整活项目"><Plus /></IconButton>} /> :
-        canManage && <Button variant="outline" render={<Link to="/admin/meme-events" />}>管理整活项目</Button>}
+      {adminOnly ? <Dialog.Trigger id="add-meme-event" render={<IconButton label="新增项目"><Plus /></IconButton>} /> :
+        canManage && <Button variant="outline" render={<Link to="/admin/meme-events" />}>管理项目</Button>}
     </header>
     <ResourceNotice error={refreshError} />
     {adminOnly && <Dialog.Portal>
       <Dialog.Backdrop className="event-dialog-backdrop" />
       <Dialog.Viewport className="event-dialog-viewport">
         <Dialog.Popup className="event-dialog-popup">
-          <Dialog.Title>{editing ? '编辑整活项目' : '新增整活项目'}</Dialog.Title>
+          <Dialog.Title>{editing ? '编辑项目' : '新增项目'}</Dialog.Title>
           <form key={editing?.code ?? ''} className="fields" onSubmit={save}>
             <fieldset className="event-dialog-fields" disabled={busy}>
               <div className="field-pair">
                 <label>编码<Input name="code" maxLength={60} defaultValue={editing?.code} readOnly={Boolean(editing)} required /></label>
                 <label>名称<Input name="name" maxLength={80} defaultValue={editing?.name} required /></label>
               </div>
+              <div className="project-select-field"><label id="event-category-label">分类</label>
+                <Select name="category" defaultValue={editing?.category ?? 'meme'} disabled={Boolean(editing)} items={[{ value: 'meme', label: '整活' }, { value: 'score', label: '积分' }]}>
+                  <SelectTrigger aria-labelledby="event-category-label" className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectPopup><SelectItem value="meme">整活</SelectItem><SelectItem value="score">积分</SelectItem></SelectPopup>
+                </Select></div>
               <label>描述<Textarea name="description" maxLength={500} rows={3} defaultValue={editing?.description} /></label>
               <label className="check"><input type="checkbox" name="active" defaultChecked={editing?.active ?? true} />启用</label>
             </fieldset>
@@ -78,7 +84,7 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
       </Dialog.Viewport>
     </Dialog.Portal>}
     {eventsLoading ? <ResourceNotice loading skeleton="directory" /> : Object.entries(categories).map(([category, name]) => {
-      if (adminOnly && category !== 'meme') return null
+      if (adminOnly && category !== 'meme' && category !== 'score') return null
       const items = events.filter(event => event.category === category)
       return items.length > 0 && <section key={category} className="section">
         <h2>{name}项目</h2>

@@ -72,11 +72,15 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
       <Button variant="outline" render={<Link to="/submit" />}>返回提交</Button>
     </header>}
     {mode === 'public' && <section className="section"><h2>个人最佳</h2>
-      {best.length ? <Table><TableHeader><TableRow><TableHead scope="col">项目</TableHead><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead></TableRow></TableHeader>
-        <TableBody>{best.map(item => <TableRow key={item.event}>
-          <TableCell>{label(item.event)}</TableCell><TableCell column="time">{time(item.singleSeconds)}</TableCell><TableCell column="time">{time(item.averageSeconds)}</TableCell>
-        </TableRow>)}</TableBody>
-      </Table> : <ResourceNotice empty="还没有个人最佳。" />}
+      {!best.length && <ResourceNotice empty="还没有个人最佳。" />}
+      {[false, true].map(score => {
+        const rows = best.filter(item => (events.find(event => event.code === item.event)?.category === 'score') === score)
+        return rows.length > 0 && <div key={String(score)}><h3>{score ? '积分' : '计时'}</h3><Table><TableHeader><TableRow>
+          <TableHead scope="col">项目</TableHead>{score ? <TableHead scope="col" column="time">成绩</TableHead> : <><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead></>}
+        </TableRow></TableHeader><TableBody>{rows.map(item => <TableRow key={item.event}>
+          <TableCell>{label(item.event)}</TableCell>{score ? <TableCell column="time">{item.score}</TableCell> : <><TableCell column="time">{time(item.singleSeconds)}</TableCell><TableCell column="time">{time(item.averageSeconds)}</TableCell></>}
+        </TableRow>)}</TableBody></Table></div>
+      })}
     </section>}
     {mode === 'manage' && <section className="section">
       <div className="toolbar">
@@ -86,19 +90,22 @@ function ProfilePage({ userNo, mode }: { userNo: string; mode: ProfileMode }) {
         }} />
       </div>
       <div key={`${category}:${page}:${loading}`} className="resource-enter">
-        {records.length ? <Table><TableHeader><TableRow>
-          <TableHead scope="col">项目</TableHead><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead>
-          <TableHead scope="col" column="date">日期</TableHead><TableHead scope="col">操作</TableHead>
-        </TableRow></TableHeader><TableBody>{records.map(item => <TableRow key={item.id}>
-          <TableCell>{label(item.event)}</TableCell><TableCell column="time">{time(item.singleSeconds)}</TableCell><TableCell column="time">{time(item.averageSeconds)}</TableCell>
-          <TableCell column="date">{day(item.timestamp)}</TableCell>
-          <TableCell><div className="record-actions">
-            <ActionLink to={`/submit?${new URLSearchParams({ edit: item.id })}`} label="编辑成绩"><Pencil /></ActionLink>
-            <IconButton className="danger-action" label="删除成绩" disabled={pending} onClick={() => {
-              if (window.confirm('确定删除这条成绩？')) void action(() => send(`/records/${encodeURIComponent(item.id)}`, 'DELETE'), '成绩已删除')
-            }}><Trash2 /></IconButton>
-          </div></TableCell>
-        </TableRow>)}</TableBody></Table> : <ResourceNotice loading={loading} error={loadError} empty="暂无成绩。" skeleton="table" />}
+        {records.length ? [false, true].map(score => {
+          const rows = records.filter(item => (events.find(event => event.code === item.event)?.category === 'score') === score)
+          return rows.length > 0 && <div key={String(score)}>{score && <h3>积分</h3>}<Table><TableHeader><TableRow>
+            <TableHead scope="col">项目</TableHead>{score ? <TableHead scope="col" column="time">成绩</TableHead> : <><TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" column="time">平均</TableHead></>}
+            <TableHead scope="col" column="date">日期</TableHead><TableHead scope="col">操作</TableHead>
+          </TableRow></TableHeader><TableBody>{rows.map(item => <TableRow key={item.id}>
+            <TableCell>{label(item.event)}</TableCell>{score ? <TableCell column="time">{item.score}</TableCell> : <><TableCell column="time">{time(item.singleSeconds)}</TableCell><TableCell column="time">{time(item.averageSeconds)}</TableCell></>}
+            <TableCell column="date">{day(item.timestamp)}</TableCell><TableCell><div className="record-actions">
+              <ActionLink to={`/submit?${new URLSearchParams({ edit: item.id })}`} label="编辑成绩"><Pencil /></ActionLink>
+              <IconButton className="danger-action" label="删除成绩" disabled={pending} onClick={() => {
+                if (window.confirm('确定删除这条成绩？')) void action(() => send(`/records/${encodeURIComponent(item.id)}`, 'DELETE'), '成绩已删除')
+              }}><Trash2 /></IconButton>
+            </div></TableCell>
+          </TableRow>)}</TableBody></Table></div>
+        }) : <ResourceNotice loading={loading} error={loadError} empty="暂无成绩。" skeleton="table" />}
+
       </div>
       <Pagination page={page} more={more} loading={loading} onPage={setPage} />
     </section>}

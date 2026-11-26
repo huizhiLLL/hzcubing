@@ -3,12 +3,12 @@ export interface Player {
 }
 export interface Session extends Player { email: string; role: string; qqBound: boolean }
 export interface EventInfo { code: string; name: string; category: string; description: string; iconId: string | null; active: boolean }
-export interface Best { event: string; singleSeconds: number | null; averageSeconds: number | null }
+export interface Best { event: string; singleSeconds: number | null; averageSeconds: number | null; score: number | null }
 export interface RecordInfo extends Best {
   id: string; timestamp: number; userNo: number; nickname: string; avatar: string | null
   rank?: number; cube: string | null; method: string | null; competition: string | null; solves: (number | null)[] | null
 }
-export const categories = { official: '官方', fun: '趣味', meme: '整活', historical: '历史' }
+export const categories = { official: '官方', fun: '趣味', meme: '整活', score: '积分', historical: '历史' }
 
 export class ApiError extends Error {
   constructor(readonly status: number, message: string) { super(message) }

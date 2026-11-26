@@ -8,8 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { usePageTitle, useResource, useSite } from '../site'
 
 type Holder = { userNo: number; nickname: string; seconds: number }
-type GroupRecord = { event: string; single: Holder | null; average: Holder | null }
-const groupCategories = ['official', 'fun', 'meme'] as const
+type GroupRecord = { event: string; single: Holder | null; average: Holder | null; score: (Omit<Holder, 'seconds'> & { value: number }) | null }
+const groupCategories = ['official', 'fun', 'meme', 'score'] as const
 const categoryOptions = groupCategories.map(value => ({ value, label: categories[value] }))
 
 function HolderLink({ holder }: { holder: Holder | null }) {
@@ -46,17 +46,17 @@ function Overview() {
       {loading || error || !rows.length ? <ResourceNotice skeleton="table" loading={loading} error={error} empty={`暂无${categories[category]}纪录数据`} /> : <>
         <div className="gr-table"><Table><TableHeader><TableRow>
           <TableHead scope="col">项目</TableHead><TableHead scope="col" aria-label="单次选手">选手</TableHead>
-          <TableHead scope="col" column="time">单次</TableHead><TableHead scope="col" aria-label="平均选手">选手</TableHead>
-          <TableHead scope="col" column="time">平均</TableHead>
+          <TableHead scope="col" column="time">{category === 'score' ? '成绩' : '单次'}</TableHead>{category !== 'score' && <TableHead scope="col" aria-label="平均选手">选手</TableHead>}
+          {category !== 'score' && <TableHead scope="col" column="time">平均</TableHead>}
         </TableRow></TableHeader><TableBody>{rows.map(row => <TableRow key={row.event}>
           <TableCell><Link to={`/gr/history?${new URLSearchParams({ event: row.event })}`}>{row.name}</Link></TableCell>
-          <TableCell column="player"><HolderLink holder={row.single} /></TableCell><TableCell column="time">{time(row.single?.seconds ?? null)}</TableCell>
-          <TableCell column="player"><HolderLink holder={row.average} /></TableCell><TableCell column="time">{time(row.average?.seconds ?? null)}</TableCell>
+          <TableCell column="player"><HolderLink holder={category === 'score' ? row.score && { ...row.score, seconds: row.score.value } : row.single} /></TableCell><TableCell column="time">{category === 'score' ? row.score?.value ?? '—' : time(row.single?.seconds ?? null)}</TableCell>
+          {category !== 'score' && <><TableCell column="player"><HolderLink holder={row.average} /></TableCell><TableCell column="time">{time(row.average?.seconds ?? null)}</TableCell></>}
         </TableRow>)}</TableBody></Table></div>
         <ul className="gr-cards">{rows.map(row => <li key={row.event}>
           <h2><Link to={`/gr/history?${new URLSearchParams({ event: row.event })}`}>{row.name}</Link></h2>
-          <dl>{([['单次', row.single], ['平均', row.average]] as const).map(([label, holder]) => <div key={label}>
-            <dt>{label}</dt><dd><strong className="result-time">{time(holder?.seconds ?? null)}</strong><HolderLink holder={holder} /></dd>
+          <dl>{(category === 'score' ? [['成绩', row.score && { ...row.score, seconds: row.score.value }]] as const : [['单次', row.single], ['平均', row.average]] as const).map(([label, holder]) => <div key={label}>
+            <dt>{label}</dt><dd><strong className="result-time">{category === 'score' ? holder?.seconds ?? '—' : time(holder?.seconds ?? null)}</strong><HolderLink holder={holder} /></dd>
           </div>)}</dl>
         </li>)}</ul>
       </>}

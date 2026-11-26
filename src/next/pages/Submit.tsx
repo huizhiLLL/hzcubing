@@ -39,7 +39,9 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
   const [selectedEvent, setSelectedEvent] = useState(initialEvent)
   const [category, setCategory] = useState<string>()
   const categoryId = useId()
-  const options = events.filter(event => event.active || event.code === initialEvent)
+  const originalScore = events.find(event => event.code === initialEvent)?.category === 'score'
+  const options = events.filter(event => (event.active || event.code === initialEvent) && (!record || (event.category === 'score') === originalScore))
+  const isScore = options.find(event => event.code === selectedEvent)?.category === 'score'
   const activeCategory = category ?? options.find(event => event.code === initialEvent)?.category ?? 'official'
   const groups = Object.entries(categories).filter(([key]) => options.some(event => event.category === key))
   const projectOptions = options.filter(event => event.category === activeCategory)
@@ -48,7 +50,9 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
     const values = new FormData(event.currentTarget)
     const value = (key: string) => String(values.get(key) ?? '').trim()
     const payload: Record<string, unknown> = { event: value('event'), cube: value('cube'), method: value('method') }
-    for (const [metric, initial] of Object.entries(initialTimes)) {
+    if (isScore) {
+      if (!record || value('score') !== String(record.score ?? '')) payload.score = value('score')
+    } else for (const [metric, initial] of Object.entries(initialTimes)) {
       if (!record || value(metric) !== initial) payload[metric] = value(metric)
     }
     setBusy(true)
@@ -75,10 +79,10 @@ function RecordForm({ record, events, userNo }: { record?: RecordInfo; events: E
       </div>
       <ProjectSelect events={projectOptions} name="event" required value={selectedEvent} onValueChange={setSelectedEvent} />
     </div>
-    <div className="field-pair">
+    {isScore ? <label key="score">成绩<Input name="score" defaultValue={record?.score ?? ''} inputMode="decimal" required /></label> : <div className="field-pair" key="time">
       <label>单次<Input name="singleSeconds" defaultValue={initialTimes.singleSeconds} placeholder="12.34" inputMode="decimal" /></label>
       <label>平均<Input name="averageSeconds" defaultValue={initialTimes.averageSeconds} placeholder="13.45" inputMode="decimal" /></label>
-    </div>
+    </div>}
     <div className="field-pair">
       <label>魔方（选填）<Input name="cube" defaultValue={record?.cube ?? ''} maxLength={100} /></label>
       <label>解法（选填）<Input name="method" defaultValue={record?.method ?? ''} maxLength={100} /></label>

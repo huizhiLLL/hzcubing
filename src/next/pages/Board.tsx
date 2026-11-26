@@ -21,14 +21,15 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
   usePageTitle(pageTitle)
   const [params, setParams] = useSearchParams()
   const event = params.get('event') || '333'
+  const isScore = events.find(item => item.code === event)?.category === 'score'
   const metric = params.get('type') === 'average' ? 'average' : 'single'
-  const { data, loading, error } = useResource<RecordInfo[] | Record<'single' | 'average', RecordInfo[]>>(
+  const { data, loading, error } = useResource<RecordInfo[] | Record<'single' | 'average' | 'score', RecordInfo[]>>(
     historyMode ? `/records/gr?${new URLSearchParams({ event })}` : leaderboardPath(event, metric), 0, true,
   )
   useEffect(() => {
-    if (!historyMode && !loading && !error) prefetchResource(leaderboardPath(event, metric === 'single' ? 'average' : 'single'))
-  }, [event, metric, historyMode, loading, error])
-  const rows = Array.isArray(data) ? data : data?.[metric] ?? []
+    if (!isScore && !historyMode && !loading && !error) prefetchResource(leaderboardPath(event, metric === 'single' ? 'average' : 'single'))
+  }, [event, metric, historyMode, loading, error, isScore])
+  const rows = Array.isArray(data) ? data : data?.[isScore ? 'score' : metric] ?? []
   function update(key: string, value: string) {
     const next = new URLSearchParams(params)
     next.set(key, value)
@@ -40,7 +41,7 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
       : <ActionLink to="/submit" label="提交成绩"><Plus /></ActionLink>}</header>
     <div className="toolbar board-toolbar board-filters">
       <ProjectSelect compact events={events} value={event} onValueChange={next => update('event', next)} />
-      <SegmentedControl label="成绩类型" options={metrics} value={metric} onValueChange={next => update('type', next)} />
+      {!isScore && <SegmentedControl label="成绩类型" options={metrics} value={metric} onValueChange={next => update('type', next)} />}
     </div>
     <div key={`${event}:${metric}:${loading}`} className="resource-enter">
       {loading || error || !rows.length ? <ResourceNotice skeleton="table" loading={loading} error={error} empty="暂无成绩。" /> :
@@ -52,7 +53,7 @@ export default function Board({ historyMode = false }: { historyMode?: boolean }
           className={!historyMode && row.userNo === session?.userNo ? 'own-rank' : undefined}>
           {!historyMode && <TableCell column="rank" className={row.rank && row.rank <= 3 ? 'podium' : undefined}>{row.rank}</TableCell>}
           <TableCell column="player"><Link to={`/user/${row.userNo}`}>{row.nickname}</Link></TableCell>
-          <TableCell column="time">{time(metric === 'average' ? row.averageSeconds : row.singleSeconds)}</TableCell>
+          <TableCell column="time">{isScore ? row.score : time(metric === 'average' ? row.averageSeconds : row.singleSeconds)}</TableCell>
           <TableCell column="date">{day(row.timestamp)}</TableCell>
         </TableRow>)}</TableBody></Table>}
     </div>
