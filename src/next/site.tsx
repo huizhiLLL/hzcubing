@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api, ApiError, cachedResource, loadResource, type EventInfo, type Session } from './api'
+import { orderEvents } from './eventOrder'
 
 const SiteContext = createContext<{
   session: Session | null; sessionReady: boolean; setSession: (session: Session | null) => void
@@ -13,7 +14,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
   const [eventsLoading, setEventsLoading] = useState(true)
   const [initializationError, setInitializationError] = useState('')
   const setSession = (value: Session | null) => { setCurrentSession(value); setSessionReady(true) }
-  const refreshEvents = async () => setEvents(await api<EventInfo[]>('/events'))
+  const refreshEvents = async () => setEvents(orderEvents(await api<EventInfo[]>('/events')))
   useEffect(() => {
     const controller = new AbortController()
     const options = { signal: controller.signal }
@@ -25,7 +26,7 @@ export function SiteProvider({ children }: { children: ReactNode }) {
       if (!(error instanceof ApiError) || error.status !== 401) setInitializationError('暂时无法读取登录状态')
     })
     api<EventInfo[]>('/events', options).then(value => {
-      if (!controller.signal.aborted) setEvents(value)
+      if (!controller.signal.aborted) setEvents(orderEvents(value))
     }).catch(() => {
       if (!controller.signal.aborted) setInitializationError('暂时无法加载项目')
     }).finally(() => {
