@@ -36,6 +36,8 @@ const image = await fetch(origin + avatar)
 assert.equal(image.headers.get('content-type'), 'image/png')
 assert.deepEqual(Buffer.from(await image.arrayBuffer()), png)
 await call('/api/events', { method: 'POST', status: 403, data: { code: 'smoke', name: '烟测' } })
+await call('/api/events', { method: 'DELETE', status: 403 })
+await call('/api/events/333', { method: 'DELETE', status: 403 })
 await call('/api/bot/player?qqId=10000', { status: 401, signedIn: false })
 const botToken = process.env.HZ_TEST_BOT_SECRET
 if (botToken) {
@@ -66,6 +68,11 @@ if (process.env.HZ_TEST_ADMIN_EMAIL && process.env.HZ_TEST_ADMIN_PASSWORD) {
   const code = `score-${randomUUID()}`
   const eventData = { code, name: '积分烟测', category: 'score', active: true }
   assert.equal((await call('/api/events', { method: 'POST', status: 201, data: eventData })).category, 'score')
+  const singleCode = `single-${randomUUID()}`
+  await call('/api/events', { method: 'POST', status: 201, data: { code: singleCode, name: '单项删除烟测' } })
+  await call(`/api/events/${singleCode}`, { method: 'DELETE', status: 204 })
+  await call(`/api/events/${singleCode}`, { method: 'DELETE', status: 404 })
+  await call('/api/events/333', { method: 'DELETE', status: 404 })
   await call(`/api/events/${code}`, { method: 'PATCH', status: 400, data: { ...eventData, category: 'meme' } })
   const bot = { Authorization: `Bearer ${botToken}` }
   if (botToken) await call('/api/bot/events', { method: 'POST', status: 201, headers: bot, signedIn: false,
@@ -102,6 +109,14 @@ if (process.env.HZ_TEST_ADMIN_EMAIL && process.env.HZ_TEST_ADMIN_PASSWORD) {
   assert.equal((await call(`/api/records/${records[3].id}`, { method: 'PATCH', data: { cube: '测试' } })).score, 10)
   assert.equal((await call(`/api/records/${records[3].id}`, { method: 'PATCH', data: { score: -2.5 } })).score, -2.5)
   cookie = adminCookie
+  await call(`/api/events/${code}`, { method: 'DELETE', status: 409 })
+  const unusedCode = `unused-${randomUUID()}`
+  await call('/api/events', { method: 'POST', status: 201, data: { code: unusedCode, name: '批量删除烟测', active: false } })
+  assert.ok((await call('/api/events', { method: 'DELETE' })).deleted >= 1)
+  const remainingEvents = await call('/api/events')
+  assert.ok(!remainingEvents.some(event => event.code === unusedCode))
+  assert.ok(remainingEvents.some(event => event.code === code))
+  assert.ok(remainingEvents.some(event => event.code === '333'))
   await call(`/api/events/${code}`, { method: 'PATCH', data: { ...eventData, active: false } })
   await call('/api/records', { method: 'POST', status: 400, data: { event: code, score: 12 } })
   cookie = records[3].cookie

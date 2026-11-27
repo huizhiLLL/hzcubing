@@ -41,3 +41,21 @@ events.get('/', async c => {
 })
 events.post('/', async c => c.json(await saveEvent(c, admin(c), await json(c)), 201))
 events.patch('/:code', async c => c.json(await saveEvent(c, admin(c), await json(c), c.req.param('code'))))
+events.delete('/', async c => {
+  admin(c)
+  const result = await c.env.DB.prepare(`DELETE FROM events WHERE category IN ('meme','score')
+    AND NOT EXISTS (SELECT 1 FROM records WHERE records.event=events.code)`).run()
+  return c.json({ deleted: result.meta.changes })
+})
+events.delete('/:code', async c => {
+  admin(c)
+  const code = c.req.param('code')
+  const deleted = await c.env.DB.prepare(`DELETE FROM events WHERE code=? AND category IN ('meme','score')
+    AND NOT EXISTS (SELECT 1 FROM records WHERE records.event=events.code) RETURNING code`).bind(code).first()
+  if (!deleted) {
+    const existing = await c.env.DB.prepare("SELECT code FROM events WHERE code=? AND category IN ('meme','score')").bind(code).first()
+    if (!existing) fail(404, '找不到该项目')
+    fail(409, '该项目已有成绩记录，无法删除')
+  }
+  return c.body(null, 204)
+})

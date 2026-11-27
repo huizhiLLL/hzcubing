@@ -67,6 +67,8 @@ hzcubing 是面向魔方玩家的社区成绩系统，核心围绕用户、成�
 - 统一错误处理中间件：`server/middleware/errorHandler.js`。
 - Mongoose 模型：`User`、`Record`、`MemeEvent`、`Counter`。
 
+管理员可在项目管理页清理没有成绩记录的整活和积分项目，也可在编辑窗口删除单个无成绩项目。已有成绩的项目保留，仍可停用。
+
 ## 积分项目
 
 积分项目已发布：支持管理员维护、积分录入、并列榜单、个人最佳和群纪录。实现和迁移规则详见 [积分项目实施设计](./score-events-design.md)。

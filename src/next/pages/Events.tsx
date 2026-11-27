@@ -18,9 +18,26 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   const [open, setOpen] = useState(false)
   const [triggerId, setTriggerId] = useState<string | null>(null)
   const [refreshError, setRefreshError] = useState('')
+  const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const canManage = Boolean(session && session.role !== 'user')
+  async function remove(unused: boolean) {
+    if (!unused && !editing) return
+    const prompt = unused ? '确定清理所有没有成绩记录的整活和积分项目吗？' : `确定删除项目「${editing!.name}」吗？`
+    if (!window.confirm(prompt)) return
+    setBusy(true)
+    setError('')
+    setRefreshError('')
+    setNotice('')
+    try {
+      const result = await send<{ deleted: number } | undefined>(unused ? '/events' : `/events/${encodeURIComponent(editing!.code)}`, 'DELETE')
+      setOpen(false)
+      setNotice(unused ? `已清理 ${result!.deleted} 个项目` : '项目已删除')
+      await refreshEvents().catch(() => setRefreshError('操作已完成，刷新页面查看最新列表。'))
+    } catch (cause) { unused ? setRefreshError(message(cause)) : setError(message(cause)) }
+    finally { setBusy(false) }
+  }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const values = new FormData(event.currentTarget)
@@ -51,10 +68,11 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   }}>
     <header className="page-heading">
       <h1>{pageTitle}</h1>
-      {adminOnly ? <Dialog.Trigger id="add-meme-event" render={<IconButton label="新增项目"><Plus /></IconButton>} /> :
+      {adminOnly ? <div className="actions"><Button variant="outline" disabled={busy || eventsLoading} onClick={() => void remove(true)}>清理无成绩项目</Button><Dialog.Trigger id="add-meme-event" render={<IconButton label="新增项目"><Plus /></IconButton>} /></div> :
         canManage && <Button variant="outline" render={<Link to="/admin/meme-events" />}>管理项目</Button>}
     </header>
     <ResourceNotice error={refreshError} />
+    {notice && <p className="notice success" role="status">{notice}</p>}
     {adminOnly && <Dialog.Portal>
       <Dialog.Backdrop className="event-dialog-backdrop" />
       <Dialog.Viewport className="event-dialog-viewport">
@@ -76,6 +94,7 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
             </fieldset>
             <ResourceNotice error={error} />
             <div className="actions event-dialog-actions">
+              {editing && <Button variant="destructive-outline" className="event-delete" disabled={busy} onClick={() => void remove(false)}>删除项目</Button>}
               <Dialog.Close render={<Button variant="ghost" disabled={busy} />}>取消</Dialog.Close>
               <Button type="submit" loading={busy}>保存</Button>
             </div>
