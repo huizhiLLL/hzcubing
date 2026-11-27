@@ -109,7 +109,6 @@ if (process.env.HZ_TEST_ADMIN_EMAIL && process.env.HZ_TEST_ADMIN_PASSWORD) {
   assert.equal((await call(`/api/records/${records[3].id}`, { method: 'PATCH', data: { cube: '测试' } })).score, 10)
   assert.equal((await call(`/api/records/${records[3].id}`, { method: 'PATCH', data: { score: -2.5 } })).score, -2.5)
   cookie = adminCookie
-  await call(`/api/events/${code}`, { method: 'DELETE', status: 409 })
   const unusedCode = `unused-${randomUUID()}`
   await call('/api/events', { method: 'POST', status: 201, data: { code: unusedCode, name: '批量删除烟测', active: false } })
   assert.ok((await call('/api/events', { method: 'DELETE' })).deleted >= 1)
@@ -123,5 +122,10 @@ if (process.env.HZ_TEST_ADMIN_EMAIL && process.env.HZ_TEST_ADMIN_PASSWORD) {
   await call(`/api/records/${records[3].id}`, { method: 'PATCH', data: { score: 11 } })
   await call(`/api/records/${records[3].id}`, { method: 'DELETE', status: 204 })
   assert.equal((await call(`/api/records/best?event=${code}`))[0].score.userNo, users[2].userNo)
+  cookie = adminCookie
+  await call(`/api/events/${code}`, { method: 'DELETE', status: 204 })
+  for (const record of records.slice(0, 3)) await call(`/api/records/${record.id}`, { status: 404 })
+  assert.ok(!(await call('/api/events')).some(event => event.code === code))
+  assert.ok((await call('/api/events')).some(event => event.code === '333'))
   console.log('Score event validation, ranking, GR, updates, deactivation and bot checks passed.')
 }

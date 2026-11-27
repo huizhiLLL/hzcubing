@@ -24,7 +24,7 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   const canManage = Boolean(session && session.role !== 'user')
   async function remove(unused: boolean) {
     if (!unused && !editing) return
-    const prompt = unused ? '确定清理所有没有成绩记录的整活和积分项目吗？' : `确定删除项目「${editing!.name}」吗？`
+    const prompt = unused ? '确定清理所有没有成绩记录的整活和积分项目吗？' : `确定删除项目「${editing!.name}」吗？该项目下的所有成绩也会永久删除，无法恢复。`
     if (!window.confirm(prompt)) return
     setBusy(true)
     setError('')
@@ -68,7 +68,7 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
   }}>
     <header className="page-heading">
       <h1>{pageTitle}</h1>
-      {adminOnly ? <div className="actions"><Button variant="outline" disabled={busy || eventsLoading} onClick={() => void remove(true)}>清理无成绩项目</Button><Dialog.Trigger id="add-meme-event" render={<IconButton label="新增项目"><Plus /></IconButton>} /></div> :
+      {adminOnly ? <div className="actions event-heading-actions"><Button variant="outline" title="清理无成绩项目" aria-label="清理无成绩项目" disabled={busy || eventsLoading} onClick={() => void remove(true)}>清理</Button><Dialog.Trigger id="add-meme-event" render={<IconButton label="新增项目"><Plus /></IconButton>} /></div> :
         canManage && <Button variant="outline" render={<Link to="/admin/meme-events" />}>管理项目</Button>}
     </header>
     <ResourceNotice error={refreshError} />
@@ -113,7 +113,7 @@ export default function Events({ adminOnly = false }: { adminOnly?: boolean }) {
             {(!event.active || event.code !== event.name) && <small>{event.active ? event.code : '已停用'}</small>}
           </Link>
           {adminOnly && <Dialog.Trigger id={`edit-meme-event-${encodeURIComponent(event.code)}`} disabled={busy}
-            render={<IconButton label={`编辑${event.name}`}><Pencil /></IconButton>} />}
+            render={<IconButton className="event-edit-action" label={`编辑${event.name}`}><Pencil /></IconButton>} />}
         </li>)}</ul>
       </section>
     })}

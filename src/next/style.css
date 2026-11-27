@@ -862,6 +862,11 @@ input:not([data-slot="input"]), textarea:not([data-slot="textarea"]) { width: 10
 }
 .event-dialog-actions { justify-content: flex-end; align-items: center; }
 .event-dialog-actions .event-delete { margin-right: auto; }
+.event-heading-actions { align-items: center; }
+@media (hover: hover) and (pointer: fine) {
+  .directory-list > li > .event-edit-action { opacity: 0; }
+  .directory-list > li:hover > .event-edit-action, .directory-list > li:focus-within > .event-edit-action { opacity: 1; }
+}
 .fields { display: grid; gap: .75rem; margin-top: .75rem; } .fields label, .standalone { display: grid; gap: .25rem; }
 .fields button { justify-self: start; } .fields label.check { display: flex; align-items: center; } .check input { width: 1.15rem; min-height: 1.15rem; }
 .field-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }

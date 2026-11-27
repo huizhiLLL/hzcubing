@@ -50,12 +50,11 @@ events.delete('/', async c => {
 events.delete('/:code', async c => {
   admin(c)
   const code = c.req.param('code')
-  const deleted = await c.env.DB.prepare(`DELETE FROM events WHERE code=? AND category IN ('meme','score')
-    AND NOT EXISTS (SELECT 1 FROM records WHERE records.event=events.code) RETURNING code`).bind(code).first()
-  if (!deleted) {
-    const existing = await c.env.DB.prepare("SELECT code FROM events WHERE code=? AND category IN ('meme','score')").bind(code).first()
-    if (!existing) fail(404, '找不到该项目')
-    fail(409, '该项目已有成绩记录，无法删除')
-  }
+  const [, deleted] = await c.env.DB.batch([
+    c.env.DB.prepare(`DELETE FROM records WHERE event IN
+      (SELECT code FROM events WHERE code=? AND category IN ('meme','score'))`).bind(code),
+    c.env.DB.prepare("DELETE FROM events WHERE code=? AND category IN ('meme','score')").bind(code),
+  ])
+  if (!deleted.meta.changes) fail(404, '找不到该项目')
   return c.body(null, 204)
 })

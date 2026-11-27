@@ -19,7 +19,7 @@
 | `GET /api/events` | 公开 | 项目编码、名称、分类、描述和状态。 |
 | `POST /api/events`、`PATCH /api/events/:code` | 管理员 | 创建或编辑整活、积分项目，使用 `code`、`name`、`description`、`active`。创建时 `category` 可选 `meme`（默认）或 `score`，编码和分类创建后不可修改。 |
 | `DELETE /api/events` | 管理员 | 清理没有成绩记录的整活和积分项目，返回 `{ "deleted": 数量 }`。 |
-| `DELETE /api/events/:code` | 管理员 | 删除没有成绩记录的整活或积分项目，成功返回 `204`；已有成绩时返回 `409`。 |
+| `DELETE /api/events/:code` | 管理员 | 删除整活或积分项目及其全部成绩，成功返回 `204`；项目不存在或不可管理时返回 `404`。 |
 | `GET /api/records/leaderboard?event=&type=&q=&limit=` | 公开 | 计时项目按 `single` 或 `average` 排名，积分项目按积分降序并列排名；支持排名后的昵称过滤。 |
 | `GET /api/records/best?event=` | 公开 | 各项目当前单次、平均和积分群纪录，积分持有人使用 `score: { value, userNo, nickname, timestamp }`。 |
 | `GET /api/records/gr?event=` | 公开 | 单次、平均和积分（`score` 数组）的群纪录历史。 |
